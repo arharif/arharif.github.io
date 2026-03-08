@@ -20,12 +20,12 @@ The experience is Web3-inspired (glassmorphism, gradients, subtle motion), respo
 Because this is a **GitHub Pages user site** (`arharif.github.io`), runtime/build config is root-based:
 - Vite `base` is `/`.
 - Router has **no project basename**.
-- SEO links target `https://arharif.github.io`.
+- SEO links target `https://arharif.github.io/`.
 - 404 fallback includes SPA route recovery logic for direct/deep links.
 
 ## Local Development
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
@@ -37,7 +37,7 @@ npm run preview
 
 ## Deploy (GitHub Pages)
 Deployment runs from `.github/workflows/deploy.yml` on push to `main` and uses official actions:
-1. install dependencies (`npm install`, lockfile-agnostic for CI robustness)
+1. install dependencies via `npm ci` (requires committed `package-lock.json`)
 2. build `dist/`
 3. configure pages
 4. upload artifact
@@ -51,13 +51,15 @@ Deployment runs from `.github/workflows/deploy.yml` on push to `main` and uses o
 - `public/` SEO/static assets
 - `404.html` SPA fallback + polished not-found presentation
 
-## Troubleshooting Blank Page Issues
-If GitHub Pages shows a blank screen:
+## Troubleshooting Blank Page / Build Issues
+If GitHub Pages shows a blank screen or CI fails:
 - verify `vite.config.ts` still uses `base: '/'`
-- ensure router basename is not set for a subpath; user site should resolve from `/`
-- ensure `robots.txt`, sitemap, canonical URLs reference `https://arharif.github.io`
+- verify there are no old project-subpath path assumptions from earlier repo naming
+- ensure router basename is not set for a subpath; user site resolves from `/`
+- ensure `robots.txt`, sitemap, canonical/OG URLs reference `https://arharif.github.io/`
 - ensure Pages artifact uploads from `dist`
-- if `npm ci` is used, ensure `package-lock.json` is committed; otherwise use `npm install` in workflow
+- if `npm ci` fails, confirm `package-lock.json` exists and is committed
+- ensure Vite alias config remains ESM-safe (avoid `__dirname` issues in TS config)
 - confirm no stale CNAME/custom-domain override is present
 
 ## Git Workflow Note
@@ -66,5 +68,3 @@ This repo is maintained directly on `main`; operational sync command:
 git push --force-with-lease origin main
 ```
 Then merge/deploy via GitHub Pages workflow execution on `main`.
-
-- missing lockfile / CI failures
