@@ -1,13 +1,11 @@
-import { content } from '@/content/data';
-import { ContentItem } from '@/content/types';
+import { ContentRecord } from '@/content/types';
 
-export const getByUniverse = (universe: ContentItem['universe']) => content.filter((item) => item.universe === universe);
-export const getByKind = (kind: ContentItem['kind']) => content.filter((item) => item.kind === kind);
-export const getBySlug = (slug?: string) => content.find((item) => item.slug === slug);
-
-export const queryItems = (items: ContentItem[], query: string, tag?: string) =>
-  items.filter((item) => {
-    const hit = `${item.title} ${item.description} ${item.tags.join(' ')}`.toLowerCase().includes(query.toLowerCase());
-    const tagged = tag ? item.tags.includes(tag) || item.category.toLowerCase() === tag.toLowerCase() : true;
-    return hit && tagged;
+export function searchContent(items: ContentRecord[], query: string, tag = '') {
+  const q = query.toLowerCase();
+  return items.filter((item) => {
+    const full = `${item.title} ${item.excerpt} ${item.tags.join(' ')} ${item.category}`.toLowerCase();
+    const queryOk = q ? full.includes(q) : true;
+    const tagOk = tag ? item.tags.includes(tag) || item.category.toLowerCase() === tag.toLowerCase() : true;
+    return queryOk && tagOk;
   });
+}

@@ -10,11 +10,11 @@ export function Navbar({ mode, onTheme }: { mode: ThemeMode; onTheme: (m: ThemeM
     { to: '/', label: 'Landing' },
     { to: '/professional', label: 'Professional' },
     { to: '/personal', label: 'Personal' },
-    { to: '/#contact', label: 'Contact' },
+    { to: '/admin', label: 'Admin' },
   ];
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-black/20 backdrop-blur">
+    <header className="sticky top-0 z-50 border-b border-white/10 bg-black/30 backdrop-blur-xl">
       <div className="mx-auto flex max-w-6xl items-center justify-between p-4">
         <Link to="/" className="font-semibold tracking-[0.2em]">ARHARIF</Link>
         <nav className="hidden gap-6 md:flex">
@@ -29,7 +29,13 @@ export function Navbar({ mode, onTheme }: { mode: ThemeMode; onTheme: (m: ThemeM
       </div>
       {open && (
         <div className="glass mx-4 mb-4 rounded-2xl p-4 md:hidden">
-          <div className="mb-3 flex flex-col gap-2">{links.map((l) => <Link key={l.label} to={l.to} onClick={() => setOpen(false)}>{l.label}</Link>)}</div>
+          <div className="mb-3 flex flex-col gap-2">
+            {links.map((link) => (
+              <Link key={link.label} to={link.to} onClick={() => setOpen(false)}>
+                {link.label}
+              </Link>
+            ))}
+          </div>
           <ThemeSwitcher mode={mode} onChange={onTheme} />
         </div>
       )}

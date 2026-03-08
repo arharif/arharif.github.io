@@ -1,26 +1,32 @@
-import { ContentItem } from '@/content/types';
+import { ContentRecord } from '@/content/types';
 
-export function ArticleView({ item, related, onOpen }: { item: ContentItem; related: ContentItem[]; onOpen: (s: string)=>void }) {
-  const sections = ['Overview', 'Core Ideas', 'Implementation', 'Takeaways'];
+function renderLine(line: string, idx: number) {
+  if (!line.trim()) return <div key={idx} className="h-2" />;
+  if (line.startsWith('# ')) return <h2 key={idx} className="mt-4 text-2xl font-semibold">{line.slice(2)}</h2>;
+  if (line.startsWith('## ')) return <h3 key={idx} className="mt-4 text-xl font-semibold">{line.slice(3)}</h3>;
+  if (line.startsWith('- ')) return <li key={idx} className="ml-5 list-disc">{line.slice(2)}</li>;
+  if (line.startsWith('![')) {
+    const m = line.match(/!\[(.*?)\]\((.*?)\)/);
+    if (m) return <img key={idx} src={m[2]} alt={m[1]} className="my-4 rounded-xl" />;
+  }
+  if (line.startsWith('> ')) return <blockquote key={idx} className="glass my-4 rounded-xl p-3 text-sm">{line.slice(2)}</blockquote>;
+  return <p key={idx} className="text-muted leading-7">{line}</p>;
+}
+
+export function ArticleView({ item }: { item: ContentRecord }) {
   return (
     <article className="mx-auto max-w-4xl">
-      <div className={`mb-6 h-56 rounded-2xl bg-gradient-to-br ${item.cover}`} />
-      <h1 className="text-4xl font-semibold">{item.title}</h1>
-      <p className="mt-2 text-sm text-muted">{item.date} · {item.readingTime}</p>
-      <div className="mt-6 grid gap-6 md:grid-cols-[1fr_240px]">
-        <div>
-          <div className="glass mb-4 rounded-xl p-4 text-sm">{item.description}</div>
-          <div className="space-y-4 text-[15px] leading-7 text-muted whitespace-pre-line">{item.body}</div>
-          <div className="glass mt-6 rounded-xl p-4">
-            <p className="text-sm font-semibold">Related posts</p>
-            <div className="mt-2 flex flex-wrap gap-2">{related.map((r)=><button key={r.slug} onClick={()=>onOpen(r.slug)} className="rounded-full bg-white/10 px-3 py-1 text-xs">{r.title}</button>)}</div>
-          </div>
-        </div>
-        <aside className="glass h-fit rounded-xl p-4 text-sm">
-          <p className="mb-2 font-semibold">Table of contents</p>
-          <ul className="space-y-2 text-muted">{sections.map((s)=><li key={s}>• {s}</li>)}</ul>
-        </aside>
+      <div className="h-56 overflow-hidden rounded-2xl bg-gradient-to-br from-violet-500/30 to-cyan-500/20">
+        {item.coverImageUrl && <img src={item.coverImageUrl} alt={item.title} className="h-full w-full object-cover" />}
       </div>
+      <h1 className="mt-6 text-4xl font-semibold">{item.title}</h1>
+      <p className="mt-2 text-sm text-muted">{item.category} · {item.authorName}</p>
+      {item.videoUrl && (
+        <div className="mt-6 aspect-video overflow-hidden rounded-2xl">
+          <iframe src={item.videoUrl} title="Embedded video" className="h-full w-full" allowFullScreen />
+        </div>
+      )}
+      <div className="mt-6 space-y-2">{item.body.split('\n').map(renderLine)}</div>
     </article>
   );
 }

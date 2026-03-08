@@ -1,16 +1,46 @@
-export type Universe = 'professional' | 'personal';
+export type ThemeUniverse = 'professional' | 'personal';
 
-export interface ContentItem {
-  title: string;
+export type ContentType =
+  | 'professional_blog'
+  | 'book_summary'
+  | 'anime_summary'
+  | 'anime_blog'
+  | 'series_summary'
+  | 'series_blog';
+
+export type ContentStatus = 'draft' | 'published';
+
+export interface ContentRecord {
+  id: string;
   slug: string;
-  description: string;
-  date: string;
+  title: string;
+  excerpt: string;
+  body: string;
+  contentType: ContentType;
+  universe: ThemeUniverse;
   category: string;
   tags: string[];
-  readingTime: string;
-  featured?: boolean;
-  cover: string;
-  kind: 'blog' | 'book-summary' | 'anime-summary' | 'anime-blog' | 'series-summary' | 'series-blog';
-  universe: Universe;
+  coverImageUrl?: string;
+  videoUrl?: string;
+  status: ContentStatus;
+  publishedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  authorName: string;
+}
+
+export interface ContentInput {
+  slug: string;
+  title: string;
+  excerpt: string;
   body: string;
+  contentType: ContentType;
+  universe: ThemeUniverse;
+  category: string;
+  tags: string[];
+  coverImageUrl?: string;
+  videoUrl?: string;
+  status: ContentStatus;
+  publishedAt?: string;
+  authorName: string;
 }

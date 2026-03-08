@@ -1,27 +1,51 @@
-# arharif.github.io — Premium Dual-Universe Personal Website
+# arharif.github.io
 
-Production-ready GitHub Pages **USER SITE** for **https://arharif.github.io/**.
+Premium GitHub Pages **USER SITE** deployed at **https://arharif.github.io/**.
 
-## Overview
-This repository delivers a design-forward personal website with two cinematic entry paths:
-- **Professional**: cybersecurity articles and technical insights.
-- **Personal**: books, anime, and series summaries/blogs.
-
-The experience is Web3-inspired (glassmorphism, gradients, subtle motion), responsive, and theme-aware.
-
-## Tech Stack
+## Stack
 - React + TypeScript + Vite
-- Tailwind CSS
-- Framer Motion
-- React Router
-- GitHub Actions Pages deployment
+- Tailwind CSS + Framer Motion
+- React Router (SPA)
+- Supabase (Auth + Postgres + Storage) for admin CMS
+- GitHub Actions for Pages deployment
 
-## User-Site Pages Configuration (Critical)
-Because this is a **GitHub Pages user site** (`arharif.github.io`), runtime/build config is root-based:
-- Vite `base` is `/`.
-- Router has **no project basename**.
-- SEO links target `https://arharif.github.io/`.
-- 404 fallback includes SPA route recovery logic for direct/deep links.
+## Public Experience
+- Cinematic split landing: **Professional** and **Personal**
+- Premium card/grid browsing with search + tag filters
+- Rich article pages with cover images, markdown-like body rendering, and video embeds
+- Three themes: **dark**, **light**, **purple**
+
+## Private Admin CMS
+- `/login` for admin authentication (Supabase email/password)
+- `/admin` protected route (admin allowlist via env)
+- Create / edit / delete content
+- Draft vs published status
+- Image upload (Supabase Storage bucket)
+- Video embed URL field (YouTube/Vimeo embed URL)
+- Public site renders only published content
+
+## Environment Configuration
+Create `.env` from `.env.example`:
+
+```bash
+cp .env.example .env
+```
+
+Required variables:
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+- `VITE_ADMIN_EMAILS` (comma-separated admin emails)
+- `VITE_SUPABASE_MEDIA_BUCKET` (default `content-media`)
+
+## Supabase Setup
+Run SQL in `docs/supabase.sql` (edit admin email allowlist in policies first).
+
+This creates:
+- `content_entries` table
+- RLS policies for:
+  - public read of `published`
+  - admin write access by email allowlist
+- `content-media` storage bucket + read/write policies
 
 ## Local Development
 ```bash
@@ -29,42 +53,42 @@ npm ci
 npm run dev
 ```
 
-## Production Build
+## Build
 ```bash
 npm run build
 npm run preview
 ```
 
-## Deploy (GitHub Pages)
-Deployment runs from `.github/workflows/deploy.yml` on push to `main` and uses official actions:
-1. install dependencies via `npm ci` (requires committed `package-lock.json`)
-2. build `dist/`
-3. configure pages
-4. upload artifact
-5. deploy
+## GitHub Pages Deployment
+Workflow: `.github/workflows/deploy.yml`
+- trigger: push to `main`
+- install: `npm ci`
+- build: `npm run build`
+- deploy artifact: `dist/`
+- actions: official `configure-pages`, `upload-pages-artifact`, `deploy-pages`
 
-## Architecture Summary
-- `src/components/` reusable UI primitives
-- `src/content/` typed content model and seeded entries
-- `src/lib/` theme and content query helpers
-- `src/styles/` design tokens + utilities
-- `public/` SEO/static assets
-- `404.html` SPA fallback + polished not-found presentation
+## GitHub Pages User-Site Requirements (already applied)
+- Vite `base: '/'`
+- No project subpath basename
+- SPA fallback via `404.html` redirect strategy
+- Canonical/sitemap/robots point to `https://arharif.github.io/`
 
-## Troubleshooting Blank Page / Build Issues
-If GitHub Pages shows a blank screen or CI fails:
-- verify `vite.config.ts` still uses `base: '/'`
-- verify there are no old project-subpath path assumptions from earlier repo naming
-- ensure router basename is not set for a subpath; user site resolves from `/`
-- ensure `robots.txt`, sitemap, canonical/OG URLs reference `https://arharif.github.io/`
-- ensure Pages artifact uploads from `dist`
-- if `npm ci` fails, confirm `package-lock.json` exists and is committed
-- ensure Vite alias config remains ESM-safe (avoid `__dirname` issues in TS config)
-- confirm no stale CNAME/custom-domain override is present
+## Troubleshooting
+- **Blank page after deploy**
+  - verify `vite.config.ts` still has `base: '/'`
+  - verify no broken route basename/subpath assumptions
+  - verify `404.html` SPA fallback exists
+- **CI install fails (`npm ci`)**
+  - ensure `package-lock.json` is committed
+- **Admin login fails**
+  - verify Supabase URL + anon key
+  - verify user exists in Supabase Auth
+  - verify email appears in `VITE_ADMIN_EMAILS`
+- **Uploads fail**
+  - verify storage bucket name and RLS policies
 
-## Git Workflow Note
-This repo is maintained directly on `main`; operational sync command:
-```bash
-git push --force-with-lease origin main
-```
-Then merge/deploy via GitHub Pages workflow execution on `main`.
+## Security Notes
+- Frontend uses **anon key only** (safe for client apps)
+- Never expose Supabase service-role key in this repository
+- Enforce mutations via Supabase RLS policies
+
