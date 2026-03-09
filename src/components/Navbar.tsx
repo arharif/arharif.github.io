@@ -13,6 +13,7 @@ export function Navbar({ mode, onTheme }: { mode: ThemeMode; onTheme: (m: ThemeM
     { to: '/personal', label: 'Personal' },
     { to: '/search', label: 'Search' },
     { to: '/games', label: 'Games' },
+    { to: '/admin', label: 'Admin' },
   ];
 
   return (
@@ -23,7 +24,7 @@ export function Navbar({ mode, onTheme }: { mode: ThemeMode; onTheme: (m: ThemeM
         </Link>
         <nav className="hidden gap-6 md:flex">
           {links.map((link) => (
-            <Link key={link.label} to={link.to} className="text-sm text-muted hover:text-white">
+            <Link key={link.label} to={link.to} className={`text-sm hover:text-white ${link.label === 'Admin' ? 'text-muted/90' : 'text-muted'}`}>
               {link.label}
             </Link>
           ))}
@@ -35,7 +36,7 @@ export function Navbar({ mode, onTheme }: { mode: ThemeMode; onTheme: (m: ThemeM
         <div className="glass mx-4 mb-4 rounded-2xl p-4 md:hidden">
           <div className="mb-3 flex flex-col gap-2">
             {links.map((link) => (
-              <Link key={link.label} to={link.to} onClick={() => setOpen(false)}>
+              <Link key={link.label} to={link.to} onClick={() => setOpen(false)} className={`rounded-lg px-2 py-1 ${link.label === 'Admin' ? 'bg-white/5 text-muted' : ''}`}>
                 {link.label}
               </Link>
             ))}

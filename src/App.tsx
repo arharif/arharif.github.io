@@ -32,7 +32,7 @@ function Landing() {
   return (
     <section className="grid gap-6 py-10 md:grid-cols-2">
       <EntryCard title="Professional" description="Interactive digital books and slide-guides for GRC, IAM, PCI DSS, and security architecture." onClick={() => nav('/professional')} />
-      <EntryCard title="Personal" description="Philosophy and Anime, Books, and Hobbies in an expressive, premium space." onClick={() => nav('/personal')} />
+      <EntryCard title="Personal" description="Curated writing across philosophy, books, and hobbies." onClick={() => nav('/personal')} />
     </section>
   );
 }
@@ -200,16 +200,42 @@ function AdminPage() {
 
   const published = content.filter((c) => c.status === 'published').length;
   const drafts = content.length - published;
+  const recentPublished = content.filter((c) => c.status === 'published').slice(0, 5);
+  const recentTopics = topics.slice(0, 5);
 
   return (
     <section className="space-y-4">
       {notice && <div className="glass rounded-xl border border-emerald-300/30 p-3 text-xs text-emerald-200">{notice}</div>}
       {error && <div className="glass rounded-xl border border-rose-300/30 p-3 text-xs text-rose-200">{error}</div>}
-      <div className="grid gap-3 md:grid-cols-4">
-        <div className="glass rounded-xl p-3"><p className="text-xs text-muted">Posted</p><p className="text-2xl font-semibold">{published}</p></div>
+      <div className="glass rounded-2xl p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-muted">Admin Dashboard</p>
+            <p className="text-sm text-muted">Simple publishing controls and recent updates.</p>
+          </div>
+          <div className="flex gap-2">
+            <button className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm hover:bg-white/15" onClick={() => setSelectedTopic(undefined)}>Create Topic</button>
+            <button className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm hover:bg-white/15" onClick={() => setSelectedContent(undefined)}>Create Content</button>
+            <button className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm font-medium hover:bg-white/15" onClick={async()=>logout()}>Logout</button>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-3">
+        <div className="glass rounded-xl p-3"><p className="text-xs text-muted">Published</p><p className="text-2xl font-semibold">{published}</p></div>
         <div className="glass rounded-xl p-3"><p className="text-xs text-muted">Unposted</p><p className="text-2xl font-semibold">{drafts}</p></div>
         <div className="glass rounded-xl p-3"><p className="text-xs text-muted">Topics</p><p className="text-2xl font-semibold">{topics.length}</p></div>
-        <div className="glass rounded-xl p-3"><button className="w-full rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm font-medium hover:bg-white/15" onClick={async()=>logout()}>Logout</button></div>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-2">
+        <div className="glass rounded-xl p-3">
+          <p className="mb-2 text-xs text-muted">Recent published</p>
+          <div className="space-y-1 text-sm">{recentPublished.length ? recentPublished.map((item) => <button key={item.id} className="block w-full rounded bg-white/5 px-2 py-1 text-left hover:bg-white/10" onClick={() => setSelectedContent(item)}>{item.title}</button>) : <p className="text-xs text-muted">No published content yet.</p>}</div>
+        </div>
+        <div className="glass rounded-xl p-3">
+          <p className="mb-2 text-xs text-muted">Recent topics</p>
+          <div className="space-y-1 text-sm">{recentTopics.length ? recentTopics.map((item) => <button key={item.id} className="block w-full rounded bg-white/5 px-2 py-1 text-left hover:bg-white/10" onClick={() => setSelectedTopic(item)}>{item.title}</button>) : <p className="text-xs text-muted">No topics yet.</p>}</div>
+        </div>
       </div>
       <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
         <aside className="glass rounded-2xl p-4">

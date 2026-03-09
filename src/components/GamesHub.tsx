@@ -35,8 +35,9 @@ export function GamesHub() {
   return (
     <section className="space-y-5">
       <header className="game-store rounded-3xl p-6">
-        <p className="text-xs uppercase tracking-[0.25em] text-pink-200/80">Game Lounge</p>
+        <p className="text-xs uppercase tracking-[0.25em] text-pink-200/80">🎮 Curated Lounge</p>
         <h1 className="mt-2 text-3xl font-semibold">Games</h1>
+        <p className="mt-2 text-sm text-pink-100/85">Featured, new, and strategy picks in a premium mini-store layout.</p>
       </header>
 
       {games.length > 0 && (
@@ -51,9 +52,14 @@ export function GamesHub() {
         </div>
       )}
 
+      <div className="mb-1 flex flex-wrap gap-2 text-xs text-pink-100/80">
+        <span className="rounded-full bg-white/10 px-3 py-1">⭐ Featured Games</span>
+        <span className="rounded-full bg-white/10 px-3 py-1">🕹️ New Games</span>
+        <span className="rounded-full bg-white/10 px-3 py-1">🎯 Popular Picks</span>
+      </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {Object.entries(gameMeta).map(([k, meta]) => (
-          <button key={k} onClick={() => setActive(k as GameKey)} className={`game-card rounded-2xl bg-gradient-to-br ${meta.color} p-4 text-left transition hover:-translate-y-1 ${active === k ? 'ring-2 ring-pink-200/70' : ''}`}>
+          <button key={k} onClick={() => setActive(k as GameKey)} className={`game-card rounded-2xl bg-gradient-to-br ${meta.color} p-5 text-left transition duration-200 hover:-translate-y-1 hover:shadow-2xl ${active === k ? 'ring-2 ring-pink-200/70' : ''}`}>
             <p className="text-xl">{meta.icon}</p>
             <h3 className="text-lg font-semibold">{meta.title}</h3>
             <p className="mt-1 text-sm text-pink-100/90">{meta.desc}</p>
