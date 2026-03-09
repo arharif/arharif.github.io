@@ -97,3 +97,8 @@ Use this repository workflow as the deployment source:
 3. Confirm deployed HTML references `/assets/...` files (not `/src/main.tsx`).
 
 The workflow now includes a guard step that fails deployment if `dist/index.html` still references `/src/main.tsx`.
+
+
+## Best-effort keepalive
+
+A scheduled GitHub Actions workflow (`.github/workflows/keepalive.yml`) pings `https://arharif.github.io/healthz.json` every 5 days and optionally performs a lightweight Supabase REST read when secrets are configured. This is only a best-effort workaround and is not guaranteed to prevent inactivity behavior on free tiers. Upgrading your database/service plan is the only reliable solution.

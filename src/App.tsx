@@ -43,7 +43,7 @@ function SearchPage() {
   const [content, setContent] = useState<ContentRecord[]>([]);
   const [query, setQuery] = useState('');
   const nav = useNavigate();
-  useEffect(() => { Promise.all([listPublishedTopics(), listPublishedContent()]).then(([t, c]) => { setTopics(t); setContent(c); }); }, []);
+  useEffect(() => { Promise.all([listPublishedTopics(), listPublishedContent()]).then(([t, c]) => { setTopics(t); setContent(c); }).catch(() => { setTopics([]); setContent([]); }); }, []);
   const matchedTopics = topics.filter((t) => `${t.title} ${t.description} ${t.category}`.toLowerCase().includes(query.toLowerCase()));
   const matchedContent = searchContent(content, query);
   return <section><h1 className="mb-4 text-3xl font-semibold">Search</h1><div className="glass mb-5 rounded-2xl p-3"><input className="w-full bg-transparent outline-none" placeholder="Search topics, articles, tags, collections" value={query} onChange={(e) => setQuery(e.target.value)} /></div><div className="grid gap-6 md:grid-cols-2"><div><h2 className="mb-2 text-xl font-semibold">Topics</h2>{matchedTopics.map((t)=><button key={t.id} onClick={()=>nav(normUniverse(t.universe)==='professional'?`/professional/topic/${t.slug}`:'/personal')} className="glass mb-2 block w-full rounded-xl p-3 text-left">{t.title}</button>)}</div><div><h2 className="mb-2 text-xl font-semibold">Content</h2>{matchedContent.map((c)=>{ const topic = topics.find((t)=>t.id===c.topicId); return <button key={c.id} onClick={()=>nav(topic && normUniverse(topic.universe)==='professional'?`/professional/topic/${topic.slug}`:`/personal/post/${c.slug}`)} className="glass mb-2 block w-full rounded-xl p-3 text-left">{c.title}</button>; })}</div></div></section>;
@@ -113,7 +113,7 @@ function ProfessionalBook() {
       const t = topics.find((x) => x.slug === slug && normUniverse(x.universe) === 'professional') || null;
       setTopic(t);
       setChapters(t ? content.filter((c) => c.topicId === t.id) : []);
-    });
+    }).catch(() => { setTopic(null); setChapters([]); });
   }, [slug]);
   useEffect(() => {
     const onScroll = () => {
@@ -165,7 +165,7 @@ function PersonalHub() {
 function PersonalPost() {
   const { slug } = useParams();
   const [item, setItem] = useState<ContentRecord | null>(null);
-  useEffect(() => { listPublishedContent().then((c) => setItem(c.find((x) => x.slug === slug) || null)); }, [slug]);
+  useEffect(() => { listPublishedContent().then((c) => setItem(c.find((x) => x.slug === slug) || null)).catch(() => setItem(null)); }, [slug]);
   if (!item) return <div className="glass rounded-2xl p-6">Loading...</div>;
   return <ArticleView item={item} />;
 }
@@ -342,7 +342,7 @@ function Shell() {
           </motion.div>
         </AnimatePresence>
       </main>
-      <footer className="mx-auto mt-8 flex max-w-6xl items-center justify-between border-t border-white/10 p-6 text-sm text-muted"><span>arharif © 2026</span><a href={config.linkedinUrl} target="_blank" rel="noreferrer" aria-label="LinkedIn" className="rounded-full bg-white/10 p-2 transition hover:bg-white/20"><Linkedin size={16} /></a></footer>
+      <footer className="mx-auto mt-8 flex max-w-6xl items-center justify-between border-t border-white/10 p-6 text-sm text-muted"><span>arharif © 2026</span><a href={config.linkedinUrl} target="_blank" rel="noreferrer" aria-label="LinkedIn" className="rounded-full bg-[#0A66C2] p-2 text-white transition hover:bg-[#0c5cad]"><Linkedin size={16} /></a></footer>
     </div>
   );
 }

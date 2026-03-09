@@ -42,7 +42,6 @@ export function X1Mark({ size = 'md', mode }: { size?: 'sm' | 'md' | 'lg'; mode?
         <span className="x1-mark__mouth" />
         <span className="x1-mark__cheek x1-mark__cheek--left" />
         <span className="x1-mark__cheek x1-mark__cheek--right" />
-        <span className="x1-mark__gesture" />
       </span>
     </motion.div>
   );
