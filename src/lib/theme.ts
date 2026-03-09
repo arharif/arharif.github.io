@@ -8,6 +8,10 @@ export const themeMap: Record<ThemeMode, string> = {
 };
 
 export const initTheme = (): ThemeMode => {
-  const stored = localStorage.getItem('theme') as ThemeMode | null;
-  return stored && stored in themeMap ? stored : 'dark';
+  try {
+    const stored = localStorage.getItem('theme') as ThemeMode | null;
+    return stored && stored in themeMap ? stored : 'dark';
+  } catch {
+    return 'dark';
+  }
 };

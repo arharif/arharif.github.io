@@ -16,8 +16,16 @@ const storageKey = 'x1-auth-session';
 
 export function AuthProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<AuthSession | null>(() => {
-    const raw = localStorage.getItem(storageKey);
-    return raw ? (JSON.parse(raw) as AuthSession) : null;
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as AuthSession;
+      if (!parsed?.access_token || !parsed?.refresh_token || !parsed?.token_type || !parsed?.user?.id) return null;
+      return parsed;
+    } catch {
+      localStorage.removeItem(storageKey);
+      return null;
+    }
   });
   const [loading, setLoading] = useState(false);
   const [challengeEmail, setChallengeEmail] = useState<string | null>(null);
