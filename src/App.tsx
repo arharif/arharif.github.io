@@ -280,7 +280,6 @@ function AdminPage() {
   if (!isAdmin) return <div className="glass rounded-2xl p-6">Access could not be granted.</div>;
 
   const published = content.filter((c) => c.status === 'published').length;
-  const drafts = content.length - published;
   const recentPublished = content.filter((c) => c.status === 'published').slice(0, 5);
   const recentTopics = topics.slice(0, 5);
   const saveTopic = async (payload: any) => {
@@ -336,7 +335,7 @@ function AdminPage() {
 
       <div className="grid gap-3 md:grid-cols-3">
         <div className="glass rounded-xl p-3"><p className="text-xs text-muted">Published</p><p className="text-2xl font-semibold">{published}</p></div>
-        <div className="glass rounded-xl p-3"><p className="text-xs text-muted">Unposted</p><p className="text-2xl font-semibold">{drafts}</p></div>
+        <div className="glass rounded-xl p-3"><p className="text-xs text-muted">Workflow</p><p className="text-sm font-semibold text-emerald-300">Publish only</p></div>
         <div className="glass rounded-xl p-3"><p className="text-xs text-muted">Topics</p><p className="text-2xl font-semibold">{topics.length}</p></div>
       </div>
 

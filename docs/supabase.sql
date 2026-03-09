@@ -16,6 +16,7 @@ create table if not exists public.topics (
   cover_image_url text,
   icon text,
   order_index int not null default 1,
+  status text not null default 'published' check (status in ('draft','published')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -30,7 +31,7 @@ create table if not exists public.content_entries (
   content_type text not null,
   cover_image_url text,
   video_url text,
-  status text not null default 'draft' check (status in ('draft','published')),
+  status text not null default 'published' check (status in ('draft','published')),
   published_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
@@ -68,6 +69,18 @@ create table if not exists public.content_collections (
   collection_id uuid references public.collections(id) on delete cascade,
   primary key (content_id, collection_id)
 );
+
+
+-- Migration safety for existing projects
+alter table public.topics add column if not exists status text not null default 'published';
+alter table public.topics alter column status set default 'published';
+alter table public.topics drop constraint if exists topics_status_check;
+alter table public.topics add constraint topics_status_check check (status in ('draft','published'));
+
+alter table public.content_entries alter column status set default 'published';
+
+update public.topics set status = 'published' where status = 'draft' or status is null;
+update public.content_entries set status = 'published', published_at = coalesce(published_at, now()) where status = 'draft';
 
 drop trigger if exists handle_topics_updated on public.topics;
 create trigger handle_topics_updated before update on public.topics

@@ -58,7 +58,7 @@ export function AdminEditor({
       contentType: value.contentType,
       coverImageUrl: value.coverImageUrl ?? '',
       videoUrl: value.videoUrl ?? '',
-      status: value.status,
+      status: 'published',
       publishedAt: value.publishedAt,
       authorName: value.authorName ?? 'X1',
       tags: value.tags ?? [],
@@ -87,7 +87,7 @@ export function AdminEditor({
           {topics.map((topic) => <option key={topic.id} value={topic.id}>{topic.title}</option>)}
         </select>
         <input className="rounded-xl bg-white/10 p-2" placeholder="Content type" value={form.contentType} onChange={(e) => update('contentType', e.target.value)} />
-        <label className="flex items-center gap-2 rounded-xl bg-white/10 p-2 text-sm"><input type="checkbox" checked={form.status === 'published'} onChange={(e)=>update('status', e.target.checked ? 'published' : 'draft')} /> Post is published</label>
+        <div className="rounded-xl bg-emerald-500/15 p-2 text-sm text-emerald-200">Publish-only workflow: this post will be published immediately.</div>
         <input className="rounded-xl bg-white/10 p-2" placeholder="Author" value={form.authorName} onChange={(e) => update('authorName', e.target.value)} />
       </div>
       <input className="mt-3 w-full rounded-xl bg-white/10 p-2" placeholder="Quick tags (optional, text only)" value={tagsLike} onChange={(e) => setTagsLike(e.target.value)} />
@@ -128,7 +128,7 @@ export function AdminEditor({
           return;
         }
         setLocalError('');
-        onSave({ ...form, contentType: form.contentType, title: form.title.trim(), slug: form.slug.trim(), body: `${form.body}${tagsLike ? `\n\n> tags: ${tagsLike}` : ''}`, publishedAt: form.status === 'published' ? (form.publishedAt || new Date().toISOString()) : undefined });
+        onSave({ ...form, status: 'published', contentType: form.contentType, title: form.title.trim(), slug: form.slug.trim(), body: `${form.body}${tagsLike ? `\n\n> tags: ${tagsLike}` : ''}`, publishedAt: form.publishedAt || new Date().toISOString() });
       }} className="mt-4 rounded-xl bg-white/15 px-4 py-2 hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-60">
         {saving ? 'Saving...' : 'Save Content'}
       </button>

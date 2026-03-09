@@ -12,7 +12,7 @@ const normalizeTopic = (r: Record<string, unknown>): TopicRecord => ({
   universe: String(r.universe) as TopicRecord['universe'], category: String(r.category ?? ''), subcategory: r.subcategory ? String(r.subcategory) : undefined,
   displayStyle: String(r.display_style) as TopicRecord['displayStyle'], coverImageUrl: r.cover_image_url ? String(r.cover_image_url) : undefined,
   palette: r.palette ? String(r.palette) : undefined, mood: r.mood ? String(r.mood) : undefined,
-  icon: r.icon ? String(r.icon) : undefined, orderIndex: Number(r.order_index ?? 0), featured: Boolean(r.featured), createdAt: String(r.created_at), updatedAt: String(r.updated_at),
+  icon: r.icon ? String(r.icon) : undefined, orderIndex: Number(r.order_index ?? 0), featured: Boolean(r.featured), status: String(r.status ?? 'published') as TopicRecord['status'], createdAt: String(r.created_at), updatedAt: String(r.updated_at),
 });
 
 const normalizeContent = (r: Record<string, unknown>): ContentRecord => ({
@@ -29,8 +29,8 @@ const normalizeContent = (r: Record<string, unknown>): ContentRecord => ({
   topic: r.topic && typeof r.topic === 'object' ? normalizeTopic(r.topic as Record<string, unknown>) : undefined,
 });
 
-const topicRow = (i: TopicInput) => ({ slug: i.slug, title: i.title, description: i.description, universe: i.universe, category: i.category, subcategory: i.subcategory ?? null, display_style: i.displayStyle, cover_image_url: i.coverImageUrl ?? null, icon: i.icon ?? null, order_index: i.orderIndex });
-const contentRow = (i: ContentInput) => ({ topic_id: i.topicId, slug: i.slug, title: i.title, excerpt: i.excerpt, body: i.body, content_type: i.contentType, cover_image_url: i.coverImageUrl ?? null, video_url: i.videoUrl ?? null, status: i.status, published_at: i.publishedAt ?? null, author_name: i.authorName });
+const topicRow = (i: TopicInput) => ({ slug: i.slug, title: i.title, description: i.description, universe: i.universe, category: i.category, subcategory: i.subcategory ?? null, display_style: i.displayStyle, cover_image_url: i.coverImageUrl ?? null, icon: i.icon ?? null, order_index: i.orderIndex, status: i.status ?? 'published' });
+const contentRow = (i: ContentInput) => ({ topic_id: i.topicId, slug: i.slug, title: i.title, excerpt: i.excerpt, body: i.body, content_type: i.contentType, cover_image_url: i.coverImageUrl ?? null, video_url: i.videoUrl ?? null, status: 'published', published_at: i.publishedAt ?? new Date().toISOString(), author_name: i.authorName });
 
 const getLocalTopics = () => {
   const raw = localStorage.getItem(localTopicsKey);
@@ -58,9 +58,9 @@ export async function listCollections(): Promise<CollectionRecord[]> {
 }
 
 export async function listPublishedTopics() {
-  if (!isSupabaseConfigured) return getLocalTopics().sort((a, b) => a.orderIndex - b.orderIndex);
+  if (!isSupabaseConfigured) return getLocalTopics().filter((t) => (t.status ?? 'published') === 'published').sort((a, b) => a.orderIndex - b.orderIndex);
   const rows = await supabaseRest<Record<string, unknown>[]>('topics?select=*&order=order_index.asc');
-  return rows.map(normalizeTopic);
+  return rows.map(normalizeTopic).filter((t) => (t.status ?? 'published') === 'published');
 }
 
 export async function listAdminTopics(accessToken: string) {
@@ -71,7 +71,7 @@ export async function listAdminTopics(accessToken: string) {
 
 export async function createTopic(input: TopicInput, accessToken: string) {
   if (!isSupabaseConfigured) {
-    const next: TopicRecord = { ...input, id: crypto.randomUUID(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+    const next: TopicRecord = { ...input, status: 'published', id: crypto.randomUUID(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
     setLocalTopics([...getLocalTopics(), next]);
     return;
   }
@@ -80,7 +80,7 @@ export async function createTopic(input: TopicInput, accessToken: string) {
 
 export async function updateTopic(id: string, input: TopicInput, accessToken: string) {
   if (!isSupabaseConfigured) {
-    setLocalTopics(getLocalTopics().map((t) => (t.id === id ? { ...t, ...input, updatedAt: new Date().toISOString() } : t)));
+    setLocalTopics(getLocalTopics().map((t) => (t.id === id ? { ...t, ...input, status: 'published', updatedAt: new Date().toISOString() } : t)));
     return;
   }
   await supabaseRest(`topics?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify(topicRow(input)) }, accessToken);
@@ -109,7 +109,7 @@ export async function listAdminContent(accessToken: string) {
 
 export async function createContent(input: ContentInput, accessToken: string) {
   if (!isSupabaseConfigured) {
-    const next: ContentRecord = { ...input, id: crypto.randomUUID(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+    const next: ContentRecord = { ...input, status: 'published', publishedAt: input.publishedAt ?? new Date().toISOString(), id: crypto.randomUUID(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
     setLocalContent([next, ...getLocalContent()]);
     return;
   }
@@ -118,7 +118,7 @@ export async function createContent(input: ContentInput, accessToken: string) {
 
 export async function updateContent(id: string, input: ContentInput, accessToken: string) {
   if (!isSupabaseConfigured) {
-    setLocalContent(getLocalContent().map((c) => (c.id === id ? { ...c, ...input, updatedAt: new Date().toISOString() } : c)));
+    setLocalContent(getLocalContent().map((c) => (c.id === id ? { ...c, ...input, status: 'published', publishedAt: input.publishedAt ?? c.publishedAt ?? new Date().toISOString(), updatedAt: new Date().toISOString() } : c)));
     return;
   }
   await supabaseRest(`content?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify(contentRow(input)) }, accessToken);

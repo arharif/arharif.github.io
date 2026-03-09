@@ -2,6 +2,8 @@ export type ThemeUniverse = 'professional' | 'personal';
 export type PersonalCategory = 'Philosophy and Anime' | 'Books' | 'Hobbies';
 export type TopicDisplayStyle = 'book' | 'slides' | 'article';
 
+export type TopicStatus = 'draft' | 'published';
+
 export interface TopicRecord {
   id: string;
   slug: string;
@@ -17,6 +19,7 @@ export interface TopicRecord {
   icon?: string;
   orderIndex: number;
   featured?: boolean;
+  status?: TopicStatus;
   createdAt: string;
   updatedAt: string;
 }
@@ -35,6 +38,7 @@ export interface TopicInput {
   icon?: string;
   orderIndex: number;
   featured?: boolean;
+  status?: TopicStatus;
 }
 
 export type ContentStatus = 'draft' | 'published' | 'archived';
