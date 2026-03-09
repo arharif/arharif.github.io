@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ContentInput, ContentRecord, ContentStatus, TopicRecord } from '@/content/types';
+import { ContentInput, ContentRecord, TopicRecord } from '@/content/types';
 
 export function AdminEditor({
   value,
@@ -7,8 +7,7 @@ export function AdminEditor({
   onSave,
   onUpload,
   saving,
-  title = 'Create Content',
-  forceContentType,
+  title = 'Create Content'
 }: {
   value?: ContentRecord;
   topics: TopicRecord[];
@@ -16,7 +15,6 @@ export function AdminEditor({
   onUpload: (file: File) => Promise<string>;
   saving: boolean;
   title?: string;
-  forceContentType?: string;
 }) {
   const defaultTopic = useMemo(() => topics[0]?.id ?? '', [topics]);
   const blankForm = useMemo<ContentInput>(() => ({
@@ -25,10 +23,10 @@ export function AdminEditor({
     title: '',
     excerpt: '',
     body: '',
-    contentType: forceContentType ?? 'chapter',
+    contentType: 'article',
     coverImageUrl: '',
     videoUrl: '',
-    status: 'draft',
+    status: 'published',
     publishedAt: undefined,
     authorName: 'X1',
     tags: [],
@@ -38,7 +36,7 @@ export function AdminEditor({
     ogImageUrl: '',
     featured: false,
     favorite: false,
-  }), [defaultTopic, forceContentType]);
+  }), [defaultTopic]);
   const [form, setForm] = useState<ContentInput>(blankForm);
   const [tagsLike, setTagsLike] = useState('');
 
@@ -54,7 +52,7 @@ export function AdminEditor({
       title: value.title,
       excerpt: value.excerpt,
       body: value.body,
-      contentType: forceContentType ?? value.contentType,
+      contentType: value.contentType,
       coverImageUrl: value.coverImageUrl ?? '',
       videoUrl: value.videoUrl ?? '',
       status: value.status,
@@ -82,8 +80,8 @@ export function AdminEditor({
         <select className="rounded-xl bg-white/10 p-2" value={form.topicId} onChange={(e) => update('topicId', e.target.value)}>
           {topics.map((topic) => <option key={topic.id} value={topic.id}>{topic.title}</option>)}
         </select>
-        {forceContentType ? <input className="rounded-xl bg-white/10 p-2" value={forceContentType} readOnly /> : <input className="rounded-xl bg-white/10 p-2" placeholder="Content type" value={form.contentType} onChange={(e) => update('contentType', e.target.value)} />}
-        <select className="rounded-xl bg-white/10 p-2" value={form.status} onChange={(e) => update('status', e.target.value as ContentStatus)}>{['draft', 'published', 'archived'].map((s) => <option key={s} value={s}>{s}</option>)}</select>
+        <input className="rounded-xl bg-white/10 p-2" placeholder="Content type" value={form.contentType} onChange={(e) => update('contentType', e.target.value)} />
+        <label className="flex items-center gap-2 rounded-xl bg-white/10 p-2 text-sm"><input type="checkbox" checked={form.status === 'published'} onChange={(e)=>update('status', e.target.checked ? 'published' : 'draft')} /> Post is published</label>
         <input className="rounded-xl bg-white/10 p-2" placeholder="Author" value={form.authorName} onChange={(e) => update('authorName', e.target.value)} />
       </div>
       <input className="mt-3 w-full rounded-xl bg-white/10 p-2" placeholder="Quick tags (optional, text only)" value={tagsLike} onChange={(e) => setTagsLike(e.target.value)} />
@@ -112,7 +110,7 @@ export function AdminEditor({
         <label><input type="checkbox" checked={Boolean(form.featured)} onChange={(e)=>update('featured', e.target.checked)} /> Featured</label>
         <label><input type="checkbox" checked={Boolean(form.favorite)} onChange={(e)=>update('favorite', e.target.checked)} /> Favorite</label>
       </div>
-      <button disabled={saving || !form.topicId || !form.title.trim() || !form.slug.trim()} onClick={() => onSave({ ...form, contentType: forceContentType ?? form.contentType, title: form.title.trim(), slug: form.slug.trim(), body: `${form.body}${tagsLike ? `\n\n> tags: ${tagsLike}` : ''}`, publishedAt: form.status === 'published' ? new Date().toISOString() : undefined })} className="mt-4 rounded-xl bg-white/15 px-4 py-2 hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-60">
+      <button disabled={saving || !form.topicId || !form.title.trim() || !form.slug.trim()} onClick={() => onSave({ ...form, contentType: form.contentType, title: form.title.trim(), slug: form.slug.trim(), body: `${form.body}${tagsLike ? `\n\n> tags: ${tagsLike}` : ''}`, publishedAt: form.status === 'published' ? (form.publishedAt || new Date().toISOString()) : undefined })} className="mt-4 rounded-xl bg-white/15 px-4 py-2 hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-60">
         {saving ? 'Saving...' : 'Save Content'}
       </button>
     </div>

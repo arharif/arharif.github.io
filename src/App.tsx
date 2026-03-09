@@ -25,15 +25,6 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
   }
 }
 
-function InsightBanner() {
-  const insights = [
-    'Insight of the day: Great systems scale because they are reviewable, not because they are complex.',
-    'Insight of the day: Narrative clarity is a competitive advantage in both security and culture writing.',
-  ];
-  const text = insights[new Date().getDate() % insights.length];
-  return <div className="glass mb-4 rounded-2xl p-3 text-sm text-muted">{text}</div>;
-}
-
 function Landing() {
   const nav = useNavigate();
   return (
@@ -135,7 +126,6 @@ function AdminPage() {
   const { session, isAdmin, logout } = useAuth();
   const [topics, setTopics] = useState<TopicRecord[]>([]);
   const [content, setContent] = useState<ContentRecord[]>([]);
-  const [panel, setPanel] = useState<'content'|'games'>('content');
   const [selectedTopic, setSelectedTopic] = useState<TopicRecord | undefined>();
   const [selectedContent, setSelectedContent] = useState<ContentRecord | undefined>();
   const [saving, setSaving] = useState(false);
@@ -156,7 +146,7 @@ function AdminPage() {
     try {
       const [t, c] = await Promise.all([listAdminTopics(token), listAdminContent(token)]);
       setTopics(t);
-      setContent(c);
+      setContent(c.filter((item) => item.contentType !== 'game'));
     } catch (e) {
       setError(friendly(e));
     }
@@ -168,38 +158,32 @@ function AdminPage() {
   if (!isAdmin) return <div className="glass rounded-2xl p-6">Access could not be granted.</div>;
 
   const published = content.filter((c) => c.status === 'published').length;
-  const drafts = content.filter((c) => c.status === 'draft').length;
-  const games = content.filter((c) => c.contentType === 'game');
-  const regular = content.filter((c) => c.contentType !== 'game');
+  const drafts = content.length - published;
 
   return (
     <section className="space-y-4">
       {notice && <div className="glass rounded-xl border border-emerald-300/30 p-3 text-xs text-emerald-200">{notice}</div>}
       {error && <div className="glass rounded-xl border border-rose-300/30 p-3 text-xs text-rose-200">{error}</div>}
       <div className="grid gap-3 md:grid-cols-4">
-        <div className="glass rounded-xl p-3"><p className="text-xs text-muted">Published</p><p className="text-2xl font-semibold">{published}</p></div>
-        <div className="glass rounded-xl p-3"><p className="text-xs text-muted">Drafts</p><p className="text-2xl font-semibold">{drafts}</p></div>
+        <div className="glass rounded-xl p-3"><p className="text-xs text-muted">Posted</p><p className="text-2xl font-semibold">{published}</p></div>
+        <div className="glass rounded-xl p-3"><p className="text-xs text-muted">Unposted</p><p className="text-2xl font-semibold">{drafts}</p></div>
         <div className="glass rounded-xl p-3"><p className="text-xs text-muted">Topics</p><p className="text-2xl font-semibold">{topics.length}</p></div>
         <div className="glass rounded-xl p-3"><button className="text-sm" onClick={async()=>logout()}>Logout</button></div>
-      </div>
-      <div className="flex gap-2">
-        <button onClick={() => setPanel('content')} className={`rounded-xl px-3 py-2 text-sm ${panel==='content' ? 'bg-white/30' : 'bg-white/10'}`}>Content</button>
-        <button onClick={() => setPanel('games')} className={`rounded-xl px-3 py-2 text-sm ${panel==='games' ? 'bg-white/30' : 'bg-white/10'}`}>Games</button>
       </div>
       <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
         <aside className="glass rounded-2xl p-4">
           <p className="mb-2 text-xs text-muted">Topics</p>
           <button className="mb-2 w-full rounded-xl bg-white/10 p-2 text-left" onClick={() => setSelectedTopic(undefined)}>+ New Topic</button>
           <div className="space-y-1">
-            {topics.map((t)=><div key={t.id} className="rounded-lg bg-white/5 p-2"><button className="text-left text-sm" onClick={()=>setSelectedTopic(t)}>{t.title}</button><button className="ml-2 text-xs text-rose-300" onClick={async()=>{ setNotice(''); setError(''); try { await deleteTopic(t.id, token); await load(); setNotice('Topic updated successfully.'); } catch (e) { setError(friendly(e)); } }}>delete</button></div>)}
+            {topics.map((t)=><div key={t.id} className="rounded-lg bg-white/5 p-2"><button className="text-left text-sm" onClick={()=>setSelectedTopic(t)}>{t.title}</button><button className="ml-2 text-xs text-rose-300" onClick={async()=>{ setNotice(''); setError(''); try { await deleteTopic(t.id, token); await load(); setNotice('Topic removed.'); } catch (e) { setError(friendly(e)); } }}>delete</button></div>)}
           </div>
-          <p className="mb-2 mt-4 text-xs text-muted">{panel === 'games' ? 'Games' : 'Content'}</p>
-          <button className="mb-2 w-full rounded-xl bg-white/10 p-2 text-left" onClick={() => setSelectedContent(undefined)}>{panel === 'games' ? '+ New Game' : '+ New Content'}</button>
-          <div className="space-y-1">{(panel === 'games' ? games : regular).slice(0,14).map((c)=><div key={c.id} className="rounded-lg bg-white/5 p-2"><button className="text-left text-sm" onClick={()=>setSelectedContent(c)}>{c.title}</button><button className="ml-2 text-xs text-rose-300" onClick={async()=>{ setNotice(''); setError(''); try { await deleteContent(c.id, token); await load(); setNotice('Content updated successfully.'); } catch (e) { setError(friendly(e)); } }}>delete</button></div>)}</div>
+          <p className="mb-2 mt-4 text-xs text-muted">Posts</p>
+          <button className="mb-2 w-full rounded-xl bg-white/10 p-2 text-left" onClick={() => setSelectedContent(undefined)}>+ New Post</button>
+          <div className="space-y-1">{content.slice(0,14).map((c)=><div key={c.id} className="rounded-lg bg-white/5 p-2"><button className="text-left text-sm" onClick={()=>setSelectedContent(c)}>{c.title}</button><button className="ml-2 text-xs text-rose-300" onClick={async()=>{ setNotice(''); setError(''); try { await deleteContent(c.id, token); await load(); setNotice('Post removed.'); } catch (e) { setError(friendly(e)); } }}>delete</button></div>)}</div>
         </aside>
         <div className="space-y-6">
-          {panel === 'content' && <TopicEditor value={selectedTopic} saving={saving} onSave={async (payload)=>{ setSaving(true); setNotice(''); setError(''); try { selectedTopic ? await updateTopic(selectedTopic.id,payload,token) : await createTopic(payload,token); await load(); setSelectedTopic(undefined); setNotice('Topic saved successfully.'); } catch (e) { setError(friendly(e)); } finally { setSaving(false); } }} />}
-          <AdminEditor title={panel === 'games' ? 'Create Game' : 'Create Content'} forceContentType={panel === 'games' ? 'game' : undefined} topics={topics} value={selectedContent} saving={saving} onUpload={(f)=>uploadMedia(f,token)} onSave={async (payload)=>{ setSaving(true); setNotice(''); setError(''); try { selectedContent ? await updateContent(selectedContent.id,payload,token) : await createContent(payload,token); await load(); setSelectedContent(undefined); setNotice(panel === 'games' ? 'Game saved successfully.' : 'Content saved successfully.'); } catch (e) { setError(friendly(e)); } finally { setSaving(false); } }} />
+          <TopicEditor value={selectedTopic} saving={saving} onSave={async (payload)=>{ setSaving(true); setNotice(''); setError(''); try { selectedTopic ? await updateTopic(selectedTopic.id,payload,token) : await createTopic(payload,token); await load(); setSelectedTopic(undefined); setNotice('Topic saved.'); } catch (e) { setError(friendly(e)); } finally { setSaving(false); } }} />
+          <AdminEditor title="Create Post" topics={topics} value={selectedContent} saving={saving} onUpload={(f)=>uploadMedia(f,token)} onSave={async (payload)=>{ setSaving(true); setNotice(''); setError(''); try { const clean = { ...payload, contentType: payload.contentType || 'article' }; selectedContent ? await updateContent(selectedContent.id,clean,token) : await createContent(clean,token); await load(); setSelectedContent(undefined); setNotice('Post saved.'); } catch (e) { setError(friendly(e)); } finally { setSaving(false); } }} />
         </div>
       </div>
     </section>
@@ -218,7 +202,6 @@ function Shell() {
       <Navbar mode={mode} onTheme={setMode} />
       <main className="mx-auto max-w-6xl p-4 md:p-8">
         {!hasSupabaseCoreConfig && <div className="glass mb-4 rounded-xl p-3 text-xs text-amber-300">Configuration is incomplete. Some authenticated features may be unavailable.</div>}
-        <InsightBanner />
         <AnimatePresence mode="wait">
           <motion.div key={location.pathname} initial={{ opacity: 0, y: 10, filter: 'blur(6px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.25 }}>
             <Routes>
