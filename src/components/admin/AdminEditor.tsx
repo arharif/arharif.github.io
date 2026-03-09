@@ -40,11 +40,13 @@ export function AdminEditor({
   const [form, setForm] = useState<ContentInput>(blankForm);
   const [tagsLike, setTagsLike] = useState('');
   const [localError, setLocalError] = useState('');
+  const [bodyFormat, setBodyFormat] = useState<'github' | 'markdown'>('markdown');
 
   useEffect(() => {
     if (!value) {
       setForm(blankForm);
       setTagsLike('');
+      setBodyFormat('markdown');
       return;
     }
     setForm({
@@ -68,6 +70,7 @@ export function AdminEditor({
       favorite: value.favorite ?? false,
     });
     setTagsLike((value.tags ?? []).join(','));
+    setBodyFormat((value.body || '').includes('## Overview') ? 'github' : 'markdown');
   }, [value, blankForm]);
 
   const update = <K extends keyof ContentInput>(key: K, val: ContentInput[K]) => setForm((f) => ({ ...f, [key]: val }));
@@ -89,7 +92,8 @@ export function AdminEditor({
       </div>
       <input className="mt-3 w-full rounded-xl bg-white/10 p-2" placeholder="Quick tags (optional, text only)" value={tagsLike} onChange={(e) => setTagsLike(e.target.value)} />
       <textarea className="mt-3 w-full rounded-xl bg-white/10 p-2" rows={2} placeholder="Excerpt" value={form.excerpt} onChange={(e) => update('excerpt', e.target.value)} />
-      <textarea className="mt-3 w-full rounded-xl bg-white/10 p-2" rows={12} placeholder="Body (markdown-friendly)" value={form.body} onChange={(e) => update('body', e.target.value)} />
+      <div className="mt-3 grid gap-2 md:grid-cols-[220px_1fr]"><select className="rounded-xl bg-white/10 p-2" value={bodyFormat} onChange={(e)=>setBodyFormat(e.target.value as 'github' | 'markdown')}><option value="markdown">Markdown</option><option value="github">GitHub README friendly</option></select><button type="button" className="rounded-xl bg-white/10 px-3 py-2 text-sm text-left hover:bg-white/15" onClick={() => { if (bodyFormat === 'github' && !form.body.trim()) update('body', '# Title\n\n## Overview\n\n## Key points\n- item\n\n## Notes\n'); }}>Insert starter template</button></div>
+      <textarea className="mt-3 w-full rounded-xl bg-white/10 p-2" rows={12} placeholder={bodyFormat === 'github' ? 'README-friendly structure' : 'Body (markdown-friendly)'} value={form.body} onChange={(e) => update('body', e.target.value)} />
       <input className="mt-3 w-full rounded-xl bg-white/10 p-2" placeholder="Video embed URL" value={form.videoUrl ?? ''} onChange={(e) => update('videoUrl', e.target.value)} />
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <input type="file" accept="image/*" onChange={async (e) => {

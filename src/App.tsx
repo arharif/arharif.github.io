@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
+import { Linkedin } from 'lucide-react';
 import { Component, ReactNode, useEffect, useState } from 'react';
 import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { AdminEditor } from '@/components/admin/AdminEditor';
@@ -73,7 +74,7 @@ function ProfessionalHome() {
   return (
     <section>
       <h1 className="mb-2 text-3xl font-semibold">Professional</h1>
-      <p className="mb-5 text-muted">AI, Cybersecurity, IoT, digital innovation, and modern engineering insights.</p>
+      <p className="mb-5 text-muted">This universe is for everything related to the latest technology including AI, Cybersecurity, IoT, OT/ICS, Blockchain, and modern engineering insights.</p>
 
       {topics.length > 0 ? (
         <div className="mb-6 grid gap-4 md:grid-cols-3">
@@ -144,15 +145,20 @@ function PersonalHub() {
 
   useEffect(() => {
     Promise.all([listPublishedTopics(), listPublishedContent()]).then(([t, c]) => {
-      setTopics(t.filter((x) => normUniverse(x.universe) === 'personal'));
-      setContent(c);
+      const personalTopics = t.filter((x) => normUniverse(x.universe) === 'personal');
+      const personalTopicIds = new Set(personalTopics.map((x) => x.id));
+      setTopics(personalTopics);
+      setContent(c.filter((item) => personalTopicIds.has(item.topicId)));
+    }).catch(() => {
+      setTopics([]);
+      setContent([]);
     });
   }, []);
 
-  const categories = [...new Set(topics.map((t) => t.category).filter(Boolean))];
+  const categories = [...new Set(topics.map((t) => t.category?.trim() || 'Uncategorized').filter(Boolean))];
   const allTags = [...new Set(content.flatMap((c) => c.tags || []))].slice(0, 12);
 
-  return <section><h1 className="mb-2 text-3xl font-semibold">Personal</h1><p className="mb-4 text-muted">Philosophy, anime, books, hobbies, and reflective personal themes.</p><div className="glass mb-6 rounded-2xl p-4"><input className="w-full bg-transparent outline-none" placeholder="Search themes and notes" value={query} onChange={(e) => setQuery(e.target.value)} /><div className="mt-3 flex flex-wrap gap-2">{allTags.map((t)=><button key={t} onClick={()=>setTag(t)} className={`rounded-full px-3 py-1 text-xs ${tag===t?'bg-white/30':'bg-white/10'}`}>#{t}</button>)}<button className="text-xs" onClick={()=>setTag('')}>clear</button></div></div>{categories.map((cat) => { const t = topics.filter((x) => x.category === cat); const posts = searchContent(content.filter((c) => t.some((tt) => tt.id === c.topicId) && (!tag || (c.tags||[]).includes(tag))), query); return <section key={cat} className="mb-8"><h2 className="mb-3 text-2xl font-semibold">{cat}</h2><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{posts.map((p) => <ContentCard key={p.id} item={p} onOpen={() => nav(`/personal/post/${p.slug}`)} />)}</div></section>; })}{categories.length===0 && <div className="glass rounded-xl p-4 text-sm text-muted">No personal topics are visible yet.</div>}</section>;
+  return <section><h1 className="mb-2 text-3xl font-semibold">Personal</h1><p className="mb-4 text-muted">Philosophy, anime, books, hobbies, and reflective personal themes.</p><div className="glass mb-6 rounded-2xl p-4"><input className="w-full bg-transparent outline-none" placeholder="Search themes and notes" value={query} onChange={(e) => setQuery(e.target.value)} /><div className="mt-3 flex flex-wrap gap-2">{allTags.map((t)=><button key={t} onClick={()=>setTag(t)} className={`rounded-full px-3 py-1 text-xs ${tag===t?'bg-white/30':'bg-white/10'}`}>#{t}</button>)}<button className="text-xs" onClick={()=>setTag('')}>clear</button></div></div>{categories.map((cat) => { const t = topics.filter((x) => (x.category?.trim() || 'Uncategorized') === cat); const posts = searchContent(content.filter((c) => t.some((tt) => tt.id === c.topicId) && (!tag || (c.tags||[]).includes(tag))), query); return <section key={cat} className="mb-8"><h2 className="mb-3 text-2xl font-semibold">{cat}</h2><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{posts.map((p) => <ContentCard key={p.id} item={p} onOpen={() => nav(`/personal/post/${p.slug}`)} />)}</div></section>; })}{topics.length===0 && <div className="glass rounded-xl p-4 text-sm text-muted">No personal topics are visible yet.</div>}</section>;
 }
 
 
@@ -336,7 +342,7 @@ function Shell() {
           </motion.div>
         </AnimatePresence>
       </main>
-      <footer className="mx-auto mt-8 flex max-w-6xl items-center justify-between border-t border-white/10 p-6 text-sm text-muted"><span>arharif © 2026</span><a href={config.linkedinUrl} target="_blank" rel="noreferrer" aria-label="LinkedIn" className="rounded-full bg-white/10 px-2 py-1 text-base transition hover:bg-white/20">💼</a></footer>
+      <footer className="mx-auto mt-8 flex max-w-6xl items-center justify-between border-t border-white/10 p-6 text-sm text-muted"><span>arharif © 2026</span><a href={config.linkedinUrl} target="_blank" rel="noreferrer" aria-label="LinkedIn" className="rounded-full bg-white/10 p-2 transition hover:bg-white/20"><Linkedin size={16} /></a></footer>
     </div>
   );
 }
