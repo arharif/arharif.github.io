@@ -1,4 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { listPublishedContent } from '@/lib/cms';
+import { ContentRecord } from '@/content/types';
 
 type Cell = 'X' | 'O' | null;
 
@@ -12,6 +14,8 @@ const quiz = [
 
 export function GamesHub() {
   const [active, setActive] = useState<GameKey>('memory');
+  const [games, setGames] = useState<ContentRecord[]>([]);
+  useEffect(() => { listPublishedContent().then((rows) => setGames(rows.filter((r) => r.contentType === 'game'))).catch(() => setGames([])); }, []);
   return (
     <section>
       <div className="mb-5 flex items-end justify-between gap-4">
@@ -20,6 +24,7 @@ export function GamesHub() {
           <p className="mt-1 text-sm text-muted">Playful mini-games inside the Personal universe.</p>
         </div>
       </div>
+      {games.length > 0 && <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{games.map((g)=><article key={g.id} className="glass rounded-xl p-3"><p className="text-xs text-muted">CMS Game</p><h3 className="mt-1 text-lg font-semibold">{g.title}</h3><p className="mt-1 text-sm text-muted">{g.excerpt || 'No description yet.'}</p></article>)}</div>}
       <div className="mb-5 flex flex-wrap gap-2">
         {[
           ['memory', 'Memory'],

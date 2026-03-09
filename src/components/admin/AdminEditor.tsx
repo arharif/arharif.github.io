@@ -7,12 +7,16 @@ export function AdminEditor({
   onSave,
   onUpload,
   saving,
+  title = 'Create Content',
+  forceContentType,
 }: {
   value?: ContentRecord;
   topics: TopicRecord[];
   onSave: (payload: ContentInput) => Promise<void>;
   onUpload: (file: File) => Promise<string>;
   saving: boolean;
+  title?: string;
+  forceContentType?: string;
 }) {
   const defaultTopic = useMemo(() => topics[0]?.id ?? '', [topics]);
   const blankForm = useMemo<ContentInput>(() => ({
@@ -21,7 +25,7 @@ export function AdminEditor({
     title: '',
     excerpt: '',
     body: '',
-    contentType: 'chapter',
+    contentType: forceContentType ?? 'chapter',
     coverImageUrl: '',
     videoUrl: '',
     status: 'draft',
@@ -34,7 +38,7 @@ export function AdminEditor({
     ogImageUrl: '',
     featured: false,
     favorite: false,
-  }), [defaultTopic]);
+  }), [defaultTopic, forceContentType]);
   const [form, setForm] = useState<ContentInput>(blankForm);
   const [tagsLike, setTagsLike] = useState('');
 
@@ -50,7 +54,7 @@ export function AdminEditor({
       title: value.title,
       excerpt: value.excerpt,
       body: value.body,
-      contentType: value.contentType,
+      contentType: forceContentType ?? value.contentType,
       coverImageUrl: value.coverImageUrl ?? '',
       videoUrl: value.videoUrl ?? '',
       status: value.status,
@@ -71,14 +75,14 @@ export function AdminEditor({
 
   return (
     <div className="glass rounded-2xl p-4">
-      <h3 className="mb-4 text-xl font-semibold">{value ? 'Edit Content' : 'Create Content'}</h3>
+      <h3 className="mb-4 text-xl font-semibold">{value ? `Edit ${title.replace('Create ', '')}` : title}</h3>
       <div className="grid gap-3 md:grid-cols-2">
         <input className="rounded-xl bg-white/10 p-2" placeholder="Title" value={form.title} onChange={(e) => { const title = e.target.value; update('title', title); if (!value) update('slug', title.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-')); }} />
         <input className="rounded-xl bg-white/10 p-2" placeholder="Slug" value={form.slug} onChange={(e) => update('slug', e.target.value.toLowerCase().replace(/\s+/g, '-'))} />
         <select className="rounded-xl bg-white/10 p-2" value={form.topicId} onChange={(e) => update('topicId', e.target.value)}>
           {topics.map((topic) => <option key={topic.id} value={topic.id}>{topic.title}</option>)}
         </select>
-        <input className="rounded-xl bg-white/10 p-2" placeholder="Content type" value={form.contentType} onChange={(e) => update('contentType', e.target.value)} />
+        {forceContentType ? <input className="rounded-xl bg-white/10 p-2" value={forceContentType} readOnly /> : <input className="rounded-xl bg-white/10 p-2" placeholder="Content type" value={form.contentType} onChange={(e) => update('contentType', e.target.value)} />}
         <select className="rounded-xl bg-white/10 p-2" value={form.status} onChange={(e) => update('status', e.target.value as ContentStatus)}>{['draft', 'published', 'archived'].map((s) => <option key={s} value={s}>{s}</option>)}</select>
         <input className="rounded-xl bg-white/10 p-2" placeholder="Author" value={form.authorName} onChange={(e) => update('authorName', e.target.value)} />
       </div>
@@ -108,7 +112,7 @@ export function AdminEditor({
         <label><input type="checkbox" checked={Boolean(form.featured)} onChange={(e)=>update('featured', e.target.checked)} /> Featured</label>
         <label><input type="checkbox" checked={Boolean(form.favorite)} onChange={(e)=>update('favorite', e.target.checked)} /> Favorite</label>
       </div>
-      <button disabled={saving || !form.topicId || !form.title.trim() || !form.slug.trim()} onClick={() => onSave({ ...form, title: form.title.trim(), slug: form.slug.trim(), body: `${form.body}${tagsLike ? `\n\n> tags: ${tagsLike}` : ''}`, publishedAt: form.status === 'published' ? new Date().toISOString() : undefined })} className="mt-4 rounded-xl bg-white/15 px-4 py-2 hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-60">
+      <button disabled={saving || !form.topicId || !form.title.trim() || !form.slug.trim()} onClick={() => onSave({ ...form, contentType: forceContentType ?? form.contentType, title: form.title.trim(), slug: form.slug.trim(), body: `${form.body}${tagsLike ? `\n\n> tags: ${tagsLike}` : ''}`, publishedAt: form.status === 'published' ? new Date().toISOString() : undefined })} className="mt-4 rounded-xl bg-white/15 px-4 py-2 hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-60">
         {saving ? 'Saving...' : 'Save Content'}
       </button>
     </div>

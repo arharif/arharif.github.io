@@ -105,7 +105,7 @@ function PersonalHub() {
   useEffect(() => { Promise.all([listPublishedTopics(), listPublishedContent()]).then(([t, c]) => { setTopics(t.filter((x) => x.universe === 'personal')); setContent(c); }); }, []);
   const categories = ['Philosophy and Anime', 'Books', 'Hobbies'];
   const allTags = [...new Set(content.flatMap((c) => c.tags || []))].slice(0, 12);
-  return <section><h1 className="mb-2 text-3xl font-semibold">Personal Culture Hub</h1><p className="mb-4 text-muted">Distinct thematic identities across philosophy/anime, books, hobbies, and games.</p><div className="mb-6 grid gap-3 md:grid-cols-3"><button onClick={() => nav('/personal/games')} className="glass rounded-2xl p-4 text-left transition hover:-translate-y-0.5 hover:bg-white/15"><p className="text-xs text-muted">New</p><h3 className="mt-1 text-lg font-semibold">Games</h3><p className="mt-1 text-sm text-muted">Lightweight premium mini-games.</p></button></div><div className="glass mb-6 rounded-2xl p-4"><input className="w-full bg-transparent outline-none" placeholder="Search themes and notes" value={query} onChange={(e) => setQuery(e.target.value)} /><div className="mt-3 flex flex-wrap gap-2">{allTags.map((t)=><button key={t} onClick={()=>setTag(t)} className={`rounded-full px-3 py-1 text-xs ${tag===t?'bg-white/30':'bg-white/10'}`}>#{t}</button>)}<button className="text-xs" onClick={()=>setTag('')}>clear</button></div></div>{categories.map((cat) => { const t = topics.filter((x) => x.category === cat); const posts = searchContent(content.filter((c) => t.some((tt) => tt.id === c.topicId) && (!tag || (c.tags||[]).includes(tag))), query); return <section key={cat} className="mb-8"><h2 className="mb-3 text-2xl font-semibold">{cat}</h2><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{posts.map((p) => <ContentCard key={p.id} item={p} onOpen={() => nav(`/personal/post/${p.slug}`)} />)}</div></section>; })}</section>;
+  return <section><h1 className="mb-2 text-3xl font-semibold">Personal Culture Hub</h1><p className="mb-4 text-muted">Distinct thematic identities across philosophy/anime, books, and hobbies.</p><div className="glass mb-6 rounded-2xl p-4"><input className="w-full bg-transparent outline-none" placeholder="Search themes and notes" value={query} onChange={(e) => setQuery(e.target.value)} /><div className="mt-3 flex flex-wrap gap-2">{allTags.map((t)=><button key={t} onClick={()=>setTag(t)} className={`rounded-full px-3 py-1 text-xs ${tag===t?'bg-white/30':'bg-white/10'}`}>#{t}</button>)}<button className="text-xs" onClick={()=>setTag('')}>clear</button></div></div>{categories.map((cat) => { const t = topics.filter((x) => x.category === cat); const posts = searchContent(content.filter((c) => t.some((tt) => tt.id === c.topicId) && (!tag || (c.tags||[]).includes(tag))), query); return <section key={cat} className="mb-8"><h2 className="mb-3 text-2xl font-semibold">{cat}</h2><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{posts.map((p) => <ContentCard key={p.id} item={p} onOpen={() => nav(`/personal/post/${p.slug}`)} />)}</div></section>; })}</section>;
 }
 
 function PersonalPost() {
@@ -135,6 +135,7 @@ function AdminPage() {
   const { session, isAdmin, logout } = useAuth();
   const [topics, setTopics] = useState<TopicRecord[]>([]);
   const [content, setContent] = useState<ContentRecord[]>([]);
+  const [panel, setPanel] = useState<'content'|'games'>('content');
   const [selectedTopic, setSelectedTopic] = useState<TopicRecord | undefined>();
   const [selectedContent, setSelectedContent] = useState<ContentRecord | undefined>();
   const [saving, setSaving] = useState(false);
@@ -143,6 +144,7 @@ function AdminPage() {
   const token = session?.access_token || '';
 
   const friendly = (err: unknown) => {
+    if (import.meta.env.DEV) console.error('Admin request failed:', err);
     const message = err instanceof Error ? err.message.toLowerCase() : '';
     if (message.includes('row-level security') || message.includes('permission') || message.includes('not allowed')) return genericAccessDenied;
     return 'Unable to complete request. Please try again.';
@@ -167,6 +169,8 @@ function AdminPage() {
 
   const published = content.filter((c) => c.status === 'published').length;
   const drafts = content.filter((c) => c.status === 'draft').length;
+  const games = content.filter((c) => c.contentType === 'game');
+  const regular = content.filter((c) => c.contentType !== 'game');
 
   return (
     <section className="space-y-4">
@@ -178,6 +182,10 @@ function AdminPage() {
         <div className="glass rounded-xl p-3"><p className="text-xs text-muted">Topics</p><p className="text-2xl font-semibold">{topics.length}</p></div>
         <div className="glass rounded-xl p-3"><button className="text-sm" onClick={async()=>logout()}>Logout</button></div>
       </div>
+      <div className="flex gap-2">
+        <button onClick={() => setPanel('content')} className={`rounded-xl px-3 py-2 text-sm ${panel==='content' ? 'bg-white/30' : 'bg-white/10'}`}>Content</button>
+        <button onClick={() => setPanel('games')} className={`rounded-xl px-3 py-2 text-sm ${panel==='games' ? 'bg-white/30' : 'bg-white/10'}`}>Games</button>
+      </div>
       <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
         <aside className="glass rounded-2xl p-4">
           <p className="mb-2 text-xs text-muted">Topics</p>
@@ -185,15 +193,13 @@ function AdminPage() {
           <div className="space-y-1">
             {topics.map((t)=><div key={t.id} className="rounded-lg bg-white/5 p-2"><button className="text-left text-sm" onClick={()=>setSelectedTopic(t)}>{t.title}</button><button className="ml-2 text-xs text-rose-300" onClick={async()=>{ setNotice(''); setError(''); try { await deleteTopic(t.id, token); await load(); setNotice('Topic updated successfully.'); } catch (e) { setError(friendly(e)); } }}>delete</button></div>)}
           </div>
-          <p className="mb-2 mt-4 text-xs text-muted">Content</p>
-          <button className="mb-2 w-full rounded-xl bg-white/10 p-2 text-left" onClick={() => setSelectedContent(undefined)}>+ New Content</button>
-          <div className="space-y-1">
-            {content.slice(0,14).map((c)=><div key={c.id} className="rounded-lg bg-white/5 p-2"><button className="text-left text-sm" onClick={()=>setSelectedContent(c)}>{c.title}</button><button className="ml-2 text-xs text-rose-300" onClick={async()=>{ setNotice(''); setError(''); try { await deleteContent(c.id, token); await load(); setNotice('Content updated successfully.'); } catch (e) { setError(friendly(e)); } }}>delete</button></div>)}
-          </div>
+          <p className="mb-2 mt-4 text-xs text-muted">{panel === 'games' ? 'Games' : 'Content'}</p>
+          <button className="mb-2 w-full rounded-xl bg-white/10 p-2 text-left" onClick={() => setSelectedContent(undefined)}>{panel === 'games' ? '+ New Game' : '+ New Content'}</button>
+          <div className="space-y-1">{(panel === 'games' ? games : regular).slice(0,14).map((c)=><div key={c.id} className="rounded-lg bg-white/5 p-2"><button className="text-left text-sm" onClick={()=>setSelectedContent(c)}>{c.title}</button><button className="ml-2 text-xs text-rose-300" onClick={async()=>{ setNotice(''); setError(''); try { await deleteContent(c.id, token); await load(); setNotice('Content updated successfully.'); } catch (e) { setError(friendly(e)); } }}>delete</button></div>)}</div>
         </aside>
         <div className="space-y-6">
-          <TopicEditor value={selectedTopic} saving={saving} onSave={async (payload)=>{ setSaving(true); setNotice(''); setError(''); try { selectedTopic ? await updateTopic(selectedTopic.id,payload,token) : await createTopic(payload,token); await load(); setSelectedTopic(undefined); setNotice('Topic saved successfully.'); } catch (e) { setError(friendly(e)); } finally { setSaving(false); } }} />
-          <AdminEditor topics={topics} value={selectedContent} saving={saving} onUpload={(f)=>uploadMedia(f,token)} onSave={async (payload)=>{ setSaving(true); setNotice(''); setError(''); try { selectedContent ? await updateContent(selectedContent.id,payload,token) : await createContent(payload,token); await load(); setSelectedContent(undefined); setNotice('Content saved successfully.'); } catch (e) { setError(friendly(e)); } finally { setSaving(false); } }} />
+          {panel === 'content' && <TopicEditor value={selectedTopic} saving={saving} onSave={async (payload)=>{ setSaving(true); setNotice(''); setError(''); try { selectedTopic ? await updateTopic(selectedTopic.id,payload,token) : await createTopic(payload,token); await load(); setSelectedTopic(undefined); setNotice('Topic saved successfully.'); } catch (e) { setError(friendly(e)); } finally { setSaving(false); } }} />}
+          <AdminEditor title={panel === 'games' ? 'Create Game' : 'Create Content'} forceContentType={panel === 'games' ? 'game' : undefined} topics={topics} value={selectedContent} saving={saving} onUpload={(f)=>uploadMedia(f,token)} onSave={async (payload)=>{ setSaving(true); setNotice(''); setError(''); try { selectedContent ? await updateContent(selectedContent.id,payload,token) : await createContent(payload,token); await load(); setSelectedContent(undefined); setNotice(panel === 'games' ? 'Game saved successfully.' : 'Content saved successfully.'); } catch (e) { setError(friendly(e)); } finally { setSaving(false); } }} />
         </div>
       </div>
     </section>
@@ -222,8 +228,8 @@ function Shell() {
               <Route path="/professional" element={<ProfessionalHome />} />
               <Route path="/professional/topic/:slug" element={<ProfessionalBook />} />
               <Route path="/personal" element={<PersonalHub />} />
-              <Route path="/personal/games" element={<GamesHub />} />
               <Route path="/personal/post/:slug" element={<PersonalPost />} />
+              <Route path="/games" element={<GamesHub />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />

@@ -13,6 +13,7 @@ export function Navbar({ mode, onTheme }: { mode: ThemeMode; onTheme: (m: ThemeM
     { to: '/personal', label: 'Personal' },
     { to: '/search', label: 'Search' },
     { to: '/now', label: 'Now' },
+    { to: '/games', label: 'Games' },
     { to: '/admin', label: 'Admin' },
   ];
 
@@ -20,7 +21,7 @@ export function Navbar({ mode, onTheme }: { mode: ThemeMode; onTheme: (m: ThemeM
     <header className="sticky top-0 z-50 border-b border-white/10 bg-black/30 backdrop-blur-xl">
       <div className="mx-auto flex max-w-6xl items-center justify-between p-4">
         <Link to="/" className="flex items-center" aria-label="Home">
-          <X1Mark size="sm" />
+          <X1Mark size="sm" mode={mode} />
         </Link>
         <nav className="hidden gap-6 md:flex">
           {links.map((link) => (
