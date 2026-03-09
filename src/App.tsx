@@ -1,0 +1,194 @@
+import { AnimatePresence, motion } from 'framer-motion';
+import { Component, ReactNode, useEffect, useState } from 'react';
+import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { AdminEditor } from '@/components/admin/AdminEditor';
+import { TopicEditor } from '@/components/admin/TopicEditor';
+import { X1Mark } from '@/components/branding/X1Mark';
+import { ArticleView } from '@/components/ArticleView';
+import { ContentCard, EntryCard } from '@/components/Cards';
+import { Navbar } from '@/components/Navbar';
+import { AuthProvider, useAuth } from '@/hooks/useAuth';
+import { createContent, createTopic, deleteContent, deleteTopic, listAdminContent, listAdminTopics, listCollections, listPublishedContent, listPublishedTopics, updateContent, updateTopic, uploadMedia } from '@/lib/cms';
+import { searchContent } from '@/lib/content';
+import { genericAccessDenied, genericAuthError, hasSupabaseCoreConfig } from '@/lib/config';
+import { initTheme, ThemeMode, themeMap } from '@/lib/theme';
+import { CollectionRecord, ContentRecord, TopicRecord } from './content/types';
+
+class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; message?: string }> {
+  state = { hasError: false, message: undefined as string | undefined };
+  static getDerivedStateFromError(error: Error) { return { hasError: true, message: error.message }; }
+  render() {
+    if (this.state.hasError) return <div className="mx-auto max-w-3xl p-10"><div className="glass rounded-2xl p-6"><h1 className="text-2xl font-semibold">Unable to load page</h1><p className="mt-3 text-muted">A temporary issue interrupted rendering. Please refresh and try again.</p></div></div>;
+    return this.props.children;
+  }
+}
+
+function InsightBanner() {
+  const insights = [
+    'Insight of the day: Great systems scale because they are reviewable, not because they are complex.',
+    'Insight of the day: Narrative clarity is a competitive advantage in both security and culture writing.',
+  ];
+  const text = insights[new Date().getDate() % insights.length];
+  return <div className="glass mb-4 rounded-2xl p-3 text-sm text-muted">{text}</div>;
+}
+
+function Landing() {
+  const nav = useNavigate();
+  return (
+    <section className="grid gap-6 py-10 md:grid-cols-2">
+      <EntryCard title="Professional Framework Academy" description="Interactive digital books and slide-guides for GRC, IAM, PCI DSS, and security architecture." onClick={() => nav('/professional')} />
+      <EntryCard title="Personal Culture Hub" description="Philosophy and Anime, Books, and Hobbies in an expressive, premium space." onClick={() => nav('/personal')} />
+    </section>
+  );
+}
+
+function SearchPage() {
+  const [topics, setTopics] = useState<TopicRecord[]>([]);
+  const [content, setContent] = useState<ContentRecord[]>([]);
+  const [query, setQuery] = useState('');
+  const nav = useNavigate();
+  useEffect(() => { Promise.all([listPublishedTopics(), listPublishedContent()]).then(([t, c]) => { setTopics(t); setContent(c); }); }, []);
+  const matchedTopics = topics.filter((t) => `${t.title} ${t.description} ${t.category}`.toLowerCase().includes(query.toLowerCase()));
+  const matchedContent = searchContent(content, query);
+  return <section><h1 className="mb-4 text-3xl font-semibold">Global Smart Search</h1><div className="glass mb-5 rounded-2xl p-3"><input className="w-full bg-transparent outline-none" placeholder="Search topics, articles, tags, collections" value={query} onChange={(e) => setQuery(e.target.value)} /></div><div className="grid gap-6 md:grid-cols-2"><div><h2 className="mb-2 text-xl font-semibold">Topics</h2>{matchedTopics.map((t)=><button key={t.id} onClick={()=>nav(t.universe==='professional'?`/professional/topic/${t.slug}`:'/personal')} className="glass mb-2 block w-full rounded-xl p-3 text-left">{t.title}</button>)}</div><div><h2 className="mb-2 text-xl font-semibold">Content</h2>{matchedContent.map((c)=><button key={c.id} onClick={()=>nav(`/personal/post/${c.slug}`)} className="glass mb-2 block w-full rounded-xl p-3 text-left">{c.title}</button>)}</div></div></section>;
+}
+
+function ProfessionalHome() {
+  const [topics, setTopics] = useState<TopicRecord[]>([]);
+  const [collections, setCollections] = useState<CollectionRecord[]>([]);
+  const nav = useNavigate();
+  useEffect(() => { Promise.all([listPublishedTopics(), listCollections()]).then(([t, c]) => { setTopics(t.filter((x) => x.universe === 'professional')); setCollections(c.filter((x) => x.universe === 'professional')); }); }, []);
+  return <section><h1 className="mb-2 text-3xl font-semibold">Framework Academy</h1><p className="mb-5 text-muted">Each topic opens as an interactive digital book or slides experience.</p><div className="mb-6 grid gap-4 md:grid-cols-3">{topics.map((t)=><motion.button whileHover={{y:-5}} key={t.id} onClick={()=>nav(`/professional/topic/${t.slug}`)} className="glass rounded-2xl p-5 text-left"><p className="text-xs text-muted">{t.category} · {t.displayStyle}</p><h3 className="mt-2 text-xl font-semibold">{t.title}</h3><p className="mt-2 text-sm text-muted">{t.description}</p></motion.button>)}</div><h2 className="mb-3 text-xl font-semibold">Curated Collections</h2><div className="grid gap-3 md:grid-cols-2">{collections.map((c)=><div className="glass rounded-xl p-3" key={c.id}><p className="text-sm font-semibold">{c.title}</p><p className="text-xs text-muted">{c.description}</p></div>)}</div></section>;
+}
+
+function ProfessionalBook() {
+  const { slug } = useParams();
+  const [topic, setTopic] = useState<TopicRecord | null>(null);
+  const [chapters, setChapters] = useState<ContentRecord[]>([]);
+  const [progress, setProgress] = useState(0);
+  useEffect(() => {
+    Promise.all([listPublishedTopics(), listPublishedContent()]).then(([topics, content]) => {
+      const t = topics.find((x) => x.slug === slug && x.universe === 'professional') || null;
+      setTopic(t);
+      setChapters(t ? content.filter((c) => c.topicId === t.id) : []);
+    });
+  }, [slug]);
+  useEffect(() => {
+    const onScroll = () => {
+      const scrolled = window.scrollY;
+      const h = document.documentElement.scrollHeight - window.innerHeight;
+      setProgress(h > 0 ? Math.min(100, (scrolled / h) * 100) : 0);
+    };
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  if (!topic) return <div className="glass rounded-2xl p-6">Loading topic book...</div>;
+
+  return (
+    <section className="grid gap-6 lg:grid-cols-[260px_1fr]">
+      <div className="fixed left-0 top-0 z-40 h-1 bg-gradient-to-r from-cyan-400 via-violet-500 to-fuchsia-500" style={{ width: `${progress}%` }} />
+      <aside className="glass sticky top-24 h-fit rounded-2xl p-4"><p className="text-xs uppercase tracking-[0.2em] text-muted">Table of contents</p><h2 className="mt-2 text-xl font-semibold">{topic.title}</h2><ul className="mt-3 space-y-2 text-sm">{chapters.map((c) => <li key={c.id}><a href={`#${c.slug}`} className="text-muted hover:text-white">{c.title}</a></li>)}</ul></aside>
+      <div><div className="glass mb-6 rounded-3xl p-8"><p className="text-xs uppercase tracking-[0.2em] text-muted">Interactive guide · {topic.displayStyle}</p><h1 className="mt-2 text-4xl font-semibold">{topic.title}</h1><p className="mt-3 text-muted">{topic.description}</p></div><div className="space-y-8">{chapters.map((c) => <section key={c.id} id={c.slug} className="glass rounded-2xl p-5"><h3 className="mb-3 text-2xl font-semibold">{c.title}</h3><ArticleView item={c} /></section>)}</div></div>
+    </section>
+  );
+}
+
+function PersonalHub() {
+  const [topics, setTopics] = useState<TopicRecord[]>([]);
+  const [content, setContent] = useState<ContentRecord[]>([]);
+  const [query, setQuery] = useState('');
+  const [tag, setTag] = useState('');
+  const nav = useNavigate();
+  useEffect(() => { Promise.all([listPublishedTopics(), listPublishedContent()]).then(([t, c]) => { setTopics(t.filter((x) => x.universe === 'personal')); setContent(c); }); }, []);
+  const categories = ['Philosophy and Anime', 'Books', 'Hobbies'];
+  const allTags = [...new Set(content.flatMap((c) => c.tags || []))].slice(0, 12);
+  return <section><h1 className="mb-2 text-3xl font-semibold">Personal Culture Hub</h1><p className="mb-4 text-muted">Distinct thematic identities across philosophy/anime, books, and hobbies.</p><div className="glass mb-6 rounded-2xl p-4"><input className="w-full bg-transparent outline-none" placeholder="Search themes and notes" value={query} onChange={(e) => setQuery(e.target.value)} /><div className="mt-3 flex flex-wrap gap-2">{allTags.map((t)=><button key={t} onClick={()=>setTag(t)} className={`rounded-full px-3 py-1 text-xs ${tag===t?'bg-white/30':'bg-white/10'}`}>#{t}</button>)}<button className="text-xs" onClick={()=>setTag('')}>clear</button></div></div>{categories.map((cat) => { const t = topics.filter((x) => x.category === cat); const posts = searchContent(content.filter((c) => t.some((tt) => tt.id === c.topicId) && (!tag || (c.tags||[]).includes(tag))), query); return <section key={cat} className="mb-8"><h2 className="mb-3 text-2xl font-semibold">{cat}</h2><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{posts.map((p) => <ContentCard key={p.id} item={p} onOpen={() => nav(`/personal/post/${p.slug}`)} />)}</div></section>; })}</section>;
+}
+
+function PersonalPost() {
+  const { slug } = useParams();
+  const [item, setItem] = useState<ContentRecord | null>(null);
+  useEffect(() => { listPublishedContent().then((c) => setItem(c.find((x) => x.slug === slug) || null)); }, [slug]);
+  if (!item) return <div className="glass rounded-2xl p-6">Loading...</div>;
+  return <ArticleView item={item} />;
+}
+
+function NowPage() { return <section className="glass rounded-2xl p-6"><h1 className="text-3xl font-semibold">Now</h1><p className="mt-3 text-muted">Currently building long-form security knowledge books, writing cultural analysis, and improving systems design craft.</p></section>; }
+
+function LoginPage() {
+  const { verifyOtpCode, beginSecureLogin, loading, isAdmin, session } = useAuth();
+  const nav = useNavigate();
+  const [email, setEmail] = useState('');
+  const [step, setStep] = useState<1 | 2>(1);
+  const [password, setPassword] = useState('');
+  const [otp, setOtp] = useState('');
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+  useEffect(() => { if (session && isAdmin) nav('/admin'); }, [isAdmin, nav, session]);
+  return <section className="mx-auto max-w-md py-20"><div className="glass rounded-2xl p-6"><div className="flex items-center gap-3"><X1Mark size="md" /><h1 className="text-2xl font-semibold">Sign in</h1></div><p className="mt-2 text-sm text-muted">Two-step verification required to continue.</p>{!hasSupabaseCoreConfig && <p className="mt-3 text-xs text-amber-300">Configuration is incomplete. Authentication is currently unavailable.</p>}<div className="mt-4"><div className="mb-2 flex items-center justify-between text-xs text-muted"><span>Step {step} of 2</span><span>{step === 1 ? 'Credentials' : 'Verification'}</span></div><div className="h-1 rounded-full bg-white/10"><motion.div className="h-1 rounded-full bg-gradient-to-r from-cyan-300 via-violet-400 to-rose-400" initial={false} animate={{ width: step === 1 ? '50%' : '100%' }} transition={{ duration: 0.25 }} /></div></div><AnimatePresence mode="wait"><motion.div key={step} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.2 }}><input className="mt-4 w-full rounded-xl bg-white/10 p-2" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" disabled={step === 2} />{step === 1 ? <><input className="mt-3 w-full rounded-xl bg-white/10 p-2" type="password" value={password} onChange={(e)=>setPassword(e.target.value)} placeholder="Password" /><button className="mt-3 w-full rounded-xl bg-white/15 px-4 py-2" disabled={loading || !hasSupabaseCoreConfig} onClick={async()=>{ setError(''); setMessage(''); try { await beginSecureLogin(email, password); setStep(2); setMessage('If the sign-in request can be completed, a verification code will be sent.'); } catch { setError(genericAuthError); } }}>{loading ? 'Processing...' : 'Continue'}</button></> : <><input className="mt-3 w-full rounded-xl bg-white/10 p-2 tracking-[0.35em]" value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="OTP code" /><button className="mt-3 w-full rounded-xl bg-white/15 px-4 py-2" disabled={loading || !hasSupabaseCoreConfig} onClick={async () => { setError(''); setMessage(''); try { await verifyOtpCode(otp); nav('/admin'); } catch { setError(genericAccessDenied); } }}>{loading ? 'Verifying...' : 'Verify'}</button><button className="mt-2 w-full rounded-xl bg-white/5 px-4 py-2 text-xs text-muted" onClick={() => { setStep(1); setOtp(''); setMessage(''); setError(''); }}>Back</button></>}</motion.div></AnimatePresence>{message && <p className="mt-3 text-xs text-emerald-300">{message}</p>}{error && <p className="mt-3 text-xs text-rose-300">{error}</p>}</div></section>;
+}
+
+function AdminPage() {
+  const { session, isAdmin, logout } = useAuth();
+  const [topics, setTopics] = useState<TopicRecord[]>([]);
+  const [content, setContent] = useState<ContentRecord[]>([]);
+  const [selectedTopic, setSelectedTopic] = useState<TopicRecord | undefined>();
+  const [selectedContent, setSelectedContent] = useState<ContentRecord | undefined>();
+  const [saving, setSaving] = useState(false);
+  const token = session?.access_token || '';
+
+  const load = async () => {
+    if (!token && hasSupabaseCoreConfig) return;
+    const [t, c] = await Promise.all([listAdminTopics(token), listAdminContent(token)]);
+    setTopics(t); setContent(c);
+  };
+  useEffect(() => { load(); }, [token]);
+
+  if (!session) return <Navigate to="/login" replace />;
+  if (!isAdmin) return <div className="glass rounded-2xl p-6">Access could not be granted.</div>;
+
+  const published = content.filter((c) => c.status === 'published').length;
+  const drafts = content.filter((c) => c.status === 'draft').length;
+
+  return <section className="space-y-4"><div className="grid gap-3 md:grid-cols-4"><div className="glass rounded-xl p-3"><p className="text-xs text-muted">Published</p><p className="text-2xl font-semibold">{published}</p></div><div className="glass rounded-xl p-3"><p className="text-xs text-muted">Drafts</p><p className="text-2xl font-semibold">{drafts}</p></div><div className="glass rounded-xl p-3"><p className="text-xs text-muted">Topics</p><p className="text-2xl font-semibold">{topics.length}</p></div><div className="glass rounded-xl p-3"><button className="text-sm" onClick={async()=>logout()}>Logout</button></div></div><div className="grid gap-6 lg:grid-cols-[300px_1fr]"><aside className="glass rounded-2xl p-4"><p className="mb-2 text-xs text-muted">Topics</p><button className="mb-2 w-full rounded-xl bg-white/10 p-2 text-left" onClick={() => setSelectedTopic(undefined)}>+ New Topic</button><div className="space-y-1">{topics.map((t)=><div key={t.id} className="rounded-lg bg-white/5 p-2"><button className="text-left text-sm" onClick={()=>setSelectedTopic(t)}>{t.title}</button><button className="ml-2 text-xs text-rose-300" onClick={async()=>{await deleteTopic(t.id, token); await load();}}>delete</button></div>)}</div><p className="mb-2 mt-4 text-xs text-muted">Content</p><button className="mb-2 w-full rounded-xl bg-white/10 p-2 text-left" onClick={() => setSelectedContent(undefined)}>+ New Content</button><div className="space-y-1">{content.slice(0,14).map((c)=><div key={c.id} className="rounded-lg bg-white/5 p-2"><button className="text-left text-sm" onClick={()=>setSelectedContent(c)}>{c.title}</button><button className="ml-2 text-xs text-rose-300" onClick={async()=>{await deleteContent(c.id, token); await load();}}>delete</button></div>)}</div></aside><div className="space-y-6"><TopicEditor value={selectedTopic} saving={saving} onSave={async (payload)=>{setSaving(true); try{selectedTopic? await updateTopic(selectedTopic.id,payload,token):await createTopic(payload,token); await load(); setSelectedTopic(undefined);} finally{setSaving(false);}}} /><AdminEditor topics={topics} value={selectedContent} saving={saving} onUpload={(f)=>uploadMedia(f,token)} onSave={async (payload)=>{setSaving(true); try{selectedContent? await updateContent(selectedContent.id,payload,token):await createContent(payload,token); await load(); setSelectedContent(undefined);} finally{setSaving(false);}}} /></div></div></section>;
+}
+
+function NotFound() { return <section className="mx-auto max-w-xl py-24 text-center"><h1 className="text-4xl font-semibold">404</h1><Link to="/" className="mt-4 inline-block rounded-xl bg-white/10 px-4 py-2">Home</Link></section>; }
+
+function Shell() {
+  const [mode, setMode] = useState<ThemeMode>(() => initTheme());
+  const location = useLocation();
+  useEffect(() => { document.documentElement.classList.remove('theme-dark', 'theme-light', 'theme-purple', 'theme-rainbow'); document.documentElement.classList.add(themeMap[mode]); localStorage.setItem('theme', mode); }, [mode]);
+
+  return (
+    <div className="gradient-bg min-h-screen transition-colors duration-500">
+      <Navbar mode={mode} onTheme={setMode} />
+      <main className="mx-auto max-w-6xl p-4 md:p-8">
+        {!hasSupabaseCoreConfig && <div className="glass mb-4 rounded-xl p-3 text-xs text-amber-300">Configuration is incomplete. Some authenticated features may be unavailable.</div>}
+        <InsightBanner />
+        <AnimatePresence mode="wait">
+          <motion.div key={location.pathname} initial={{ opacity: 0, y: 10, filter: 'blur(6px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.25 }}>
+            <Routes>
+              <Route path="/" element={<Landing />} />
+              <Route path="/search" element={<SearchPage />} />
+              <Route path="/now" element={<NowPage />} />
+              <Route path="/professional" element={<ProfessionalHome />} />
+              <Route path="/professional/topic/:slug" element={<ProfessionalBook />} />
+              <Route path="/personal" element={<PersonalHub />} />
+              <Route path="/personal/post/:slug" element={<PersonalPost />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/admin" element={<AdminPage />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </motion.div>
+        </AnimatePresence>
+      </main>
+      <footer className="mx-auto mt-8 max-w-6xl border-t border-white/10 p-6 text-sm text-muted">© 2026 · Framework Academy + Personal Culture Hub</footer>
+    </div>
+  );
+}
+
+export default function App() {
+  return <ErrorBoundary><AuthProvider><Shell /></AuthProvider></ErrorBoundary>;
+}
