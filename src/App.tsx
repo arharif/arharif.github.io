@@ -7,6 +7,7 @@ import { X1Mark } from '@/components/branding/X1Mark';
 import { ArticleView } from '@/components/ArticleView';
 import { ContentCard, EntryCard } from '@/components/Cards';
 import { Navbar } from '@/components/Navbar';
+import { GamesHub } from '@/components/GamesHub';
 import { ProtectedRoute } from '@/routes/ProtectedRoute';
 import { AuthProvider, useAuth } from '@/hooks/useAuth';
 import { createContent, createTopic, deleteContent, deleteTopic, listAdminContent, listAdminTopics, listCollections, listPublishedContent, listPublishedTopics, updateContent, updateTopic, uploadMedia } from '@/lib/cms';
@@ -104,7 +105,7 @@ function PersonalHub() {
   useEffect(() => { Promise.all([listPublishedTopics(), listPublishedContent()]).then(([t, c]) => { setTopics(t.filter((x) => x.universe === 'personal')); setContent(c); }); }, []);
   const categories = ['Philosophy and Anime', 'Books', 'Hobbies'];
   const allTags = [...new Set(content.flatMap((c) => c.tags || []))].slice(0, 12);
-  return <section><h1 className="mb-2 text-3xl font-semibold">Personal Culture Hub</h1><p className="mb-4 text-muted">Distinct thematic identities across philosophy/anime, books, and hobbies.</p><div className="glass mb-6 rounded-2xl p-4"><input className="w-full bg-transparent outline-none" placeholder="Search themes and notes" value={query} onChange={(e) => setQuery(e.target.value)} /><div className="mt-3 flex flex-wrap gap-2">{allTags.map((t)=><button key={t} onClick={()=>setTag(t)} className={`rounded-full px-3 py-1 text-xs ${tag===t?'bg-white/30':'bg-white/10'}`}>#{t}</button>)}<button className="text-xs" onClick={()=>setTag('')}>clear</button></div></div>{categories.map((cat) => { const t = topics.filter((x) => x.category === cat); const posts = searchContent(content.filter((c) => t.some((tt) => tt.id === c.topicId) && (!tag || (c.tags||[]).includes(tag))), query); return <section key={cat} className="mb-8"><h2 className="mb-3 text-2xl font-semibold">{cat}</h2><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{posts.map((p) => <ContentCard key={p.id} item={p} onOpen={() => nav(`/personal/post/${p.slug}`)} />)}</div></section>; })}</section>;
+  return <section><h1 className="mb-2 text-3xl font-semibold">Personal Culture Hub</h1><p className="mb-4 text-muted">Distinct thematic identities across philosophy/anime, books, hobbies, and games.</p><div className="mb-6 grid gap-3 md:grid-cols-3"><button onClick={() => nav('/personal/games')} className="glass rounded-2xl p-4 text-left transition hover:-translate-y-0.5 hover:bg-white/15"><p className="text-xs text-muted">New</p><h3 className="mt-1 text-lg font-semibold">Games</h3><p className="mt-1 text-sm text-muted">Lightweight premium mini-games.</p></button></div><div className="glass mb-6 rounded-2xl p-4"><input className="w-full bg-transparent outline-none" placeholder="Search themes and notes" value={query} onChange={(e) => setQuery(e.target.value)} /><div className="mt-3 flex flex-wrap gap-2">{allTags.map((t)=><button key={t} onClick={()=>setTag(t)} className={`rounded-full px-3 py-1 text-xs ${tag===t?'bg-white/30':'bg-white/10'}`}>#{t}</button>)}<button className="text-xs" onClick={()=>setTag('')}>clear</button></div></div>{categories.map((cat) => { const t = topics.filter((x) => x.category === cat); const posts = searchContent(content.filter((c) => t.some((tt) => tt.id === c.topicId) && (!tag || (c.tags||[]).includes(tag))), query); return <section key={cat} className="mb-8"><h2 className="mb-3 text-2xl font-semibold">{cat}</h2><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{posts.map((p) => <ContentCard key={p.id} item={p} onOpen={() => nav(`/personal/post/${p.slug}`)} />)}</div></section>; })}</section>;
 }
 
 function PersonalPost() {
@@ -177,6 +178,7 @@ function Shell() {
               <Route path="/professional" element={<ProfessionalHome />} />
               <Route path="/professional/topic/:slug" element={<ProfessionalBook />} />
               <Route path="/personal" element={<PersonalHub />} />
+              <Route path="/personal/games" element={<GamesHub />} />
               <Route path="/personal/post/:slug" element={<PersonalPost />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
