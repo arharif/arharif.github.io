@@ -28,8 +28,8 @@ const normalizeContent = (r: Record<string, unknown>): ContentRecord => ({
   createdAt: String(r.created_at), updatedAt: String(r.updated_at), authorName: String(r.author_name ?? 'X1'),
 });
 
-const topicRow = (i: TopicInput) => ({ slug: i.slug, title: i.title, description: i.description, universe: i.universe, category: i.category, subcategory: i.subcategory ?? null, display_style: i.displayStyle, cover_image_url: i.coverImageUrl ?? null, palette: i.palette ?? null, mood: i.mood ?? null, icon: i.icon ?? null, order_index: i.orderIndex, featured: i.featured ?? false });
-const contentRow = (i: ContentInput) => ({ topic_id: i.topicId, slug: i.slug, title: i.title, excerpt: i.excerpt, body: i.body, content_type: i.contentType, cover_image_url: i.coverImageUrl ?? null, video_url: i.videoUrl ?? null, status: i.status, tags: i.tags ?? [], collection_ids: i.collectionIds ?? [], meta_title: i.metaTitle ?? null, meta_description: i.metaDescription ?? null, og_image_url: i.ogImageUrl ?? null, featured: i.featured ?? false, favorite: i.favorite ?? false, published_at: i.publishedAt ?? null, author_name: i.authorName });
+const topicRow = (i: TopicInput) => ({ slug: i.slug, title: i.title, description: i.description, universe: i.universe, category: i.category, subcategory: i.subcategory ?? null, display_style: i.displayStyle, cover_image_url: i.coverImageUrl ?? null, icon: i.icon ?? null, order_index: i.orderIndex });
+const contentRow = (i: ContentInput) => ({ topic_id: i.topicId, slug: i.slug, title: i.title, excerpt: i.excerpt, body: i.body, content_type: i.contentType, cover_image_url: i.coverImageUrl ?? null, video_url: i.videoUrl ?? null, status: i.status, published_at: i.publishedAt ?? null, author_name: i.authorName });
 
 const getLocalTopics = () => {
   const raw = localStorage.getItem(localTopicsKey);

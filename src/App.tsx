@@ -7,6 +7,7 @@ import { X1Mark } from '@/components/branding/X1Mark';
 import { ArticleView } from '@/components/ArticleView';
 import { ContentCard, EntryCard } from '@/components/Cards';
 import { Navbar } from '@/components/Navbar';
+import { ProtectedRoute } from '@/routes/ProtectedRoute';
 import { AuthProvider, useAuth } from '@/hooks/useAuth';
 import { createContent, createTopic, deleteContent, deleteTopic, listAdminContent, listAdminTopics, listCollections, listPublishedContent, listPublishedTopics, updateContent, updateTopic, uploadMedia } from '@/lib/cms';
 import { searchContent } from '@/lib/content';
@@ -178,7 +179,7 @@ function Shell() {
               <Route path="/personal" element={<PersonalHub />} />
               <Route path="/personal/post/:slug" element={<PersonalPost />} />
               <Route path="/login" element={<LoginPage />} />
-              <Route path="/admin" element={<AdminPage />} />
+              <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </motion.div>

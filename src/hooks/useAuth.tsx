@@ -50,6 +50,23 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   const isAdmin = Boolean(session?.user.email && config.adminEmail && session.user.email.toLowerCase() === config.adminEmail);
 
+  useEffect(() => {
+    if (!session?.access_token || !hasSupabaseCoreConfig) return;
+    getUser(session.access_token)
+      .then((user) => {
+        if (!user?.id) throw new Error('invalid-session');
+        const next = { ...session, user };
+        setSession(next);
+        localStorage.setItem(storageKey, JSON.stringify(next));
+      })
+      .catch(async () => {
+        if (session?.access_token) await supabaseLogout(session.access_token).catch(() => undefined);
+        setSession(null);
+        setChallengeEmail(null);
+        localStorage.removeItem(storageKey);
+      });
+  }, [session?.access_token]);
+
   const ensureAdmin = (next: AuthSession) => {
     const email = next.user.email?.toLowerCase();
     if (!email || !config.adminEmail || email !== config.adminEmail) {

@@ -112,3 +112,67 @@ iframe { border: 0; }
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
+
+
+.x1-mark__label { transition: opacity 220ms ease, transform 220ms ease; }
+
+.x1-mark__face {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transform: translateY(3px) scale(0.9);
+  transition: opacity 240ms ease, transform 240ms ease;
+}
+
+.x1-mark__eye {
+  position: absolute;
+  top: 34%;
+  width: 3px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 999px;
+  box-shadow: 0 0 6px rgba(255,255,255,0.45);
+}
+
+.x1-mark__eye--left { left: 34%; }
+.x1-mark__eye--right { right: 34%; }
+
+.x1-mark__mouth {
+  position: absolute;
+  left: 50%;
+  bottom: 30%;
+  width: 38%;
+  height: 20%;
+  transform: translateX(-50%);
+  border-bottom: 2px solid rgba(255,255,255,0.85);
+  border-radius: 0 0 12px 12px;
+}
+
+.x1-mark__cheek {
+  position: absolute;
+  bottom: 34%;
+  width: 7px;
+  height: 4px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(251,113,133,0.85), rgba(251,113,133,0.1));
+  filter: blur(0.4px);
+  opacity: 0;
+}
+
+.x1-mark__cheek--left { left: 22%; }
+.x1-mark__cheek--right { right: 22%; }
+
+.x1-mark:hover .x1-mark__label {
+  opacity: 0;
+  transform: translateY(-2px) scale(0.86);
+}
+
+.x1-mark:hover .x1-mark__face {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.x1-mark:hover .x1-mark__cheek {
+  opacity: 1;
+  box-shadow: 0 0 12px rgba(251,113,133,0.55);
+}
