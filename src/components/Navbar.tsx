@@ -9,12 +9,11 @@ export function Navbar({ mode, onTheme }: { mode: ThemeMode; onTheme: (m: ThemeM
   const [open, setOpen] = useState(false);
   const links = [
     { to: '/', label: 'Landing' },
-    { to: '/professional', label: 'Professional' },
-    { to: '/personal', label: 'Personal' },
+    { to: '/professional', label: 'Technology & Innovation' },
+    { to: '/personal', label: 'Curiosities & Philosophy' },
     { to: '/security-mindmap', label: 'Security Map' },
-    { to: '/search', label: 'Search' },
     { to: '/submitting', label: 'Submitting' },
-    { to: '/games', label: 'Games' },
+    { to: '/games#games-zone', label: 'Games' },
     { to: '/admin', label: 'Admin' },
   ];
 

@@ -8,7 +8,7 @@ export function SecurityMindmapPage() {
           <div>
             <h1 className="text-2xl font-semibold md:text-3xl">Security Map</h1>
             <p className="mt-1 max-w-3xl text-sm text-slate-200/90">
-              Explore categories first, then drill into focused subdomains and roles.
+              Explore each cybersecurity domain to understand what it covers, the core requirements, and the practical skills needed to grow in that area.
             </p>
           </div>
           <p className="mindmap-chip">Interactive overview</p>
