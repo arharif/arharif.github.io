@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { Github, Linkedin, Mail } from 'lucide-react';
-import { Component, ReactNode, useEffect, useState } from 'react';
+import { Component, ReactNode, useEffect, useRef, useState } from 'react';
 import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { AdminEditor } from '@/components/admin/AdminEditor';
 import { TopicEditor } from '@/components/admin/TopicEditor';
@@ -252,7 +252,7 @@ function LoginPage() {
 
   const sanitizedEmail = email.trim().toLowerCase();
   const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sanitizedEmail);
-  const sanitizedOtp = otp.replace(/\D/g, '').slice(0, 6);
+  const sanitizedOtp = otp.trim();
 
   const registerFailure = () => {
     setAttempts((prev) => {
@@ -299,10 +299,10 @@ function LoginPage() {
               </>
             ) : (
               <>
-                <input className="mt-3 w-full rounded-xl bg-white/10 p-2 tracking-[0.35em]" value={sanitizedOtp} onChange={(e) => setOtp(e.target.value)} placeholder="OTP code" inputMode="numeric" autoComplete="one-time-code" disabled={locked} />
+                <input className="mt-3 w-full rounded-xl bg-white/10 p-2" value={otp} onChange={(e) => setOtp(e.target.value.slice(0, 64))} placeholder="OTP code" autoComplete="one-time-code" disabled={locked} />
                 <button
                   className="mt-3 w-full rounded-xl bg-white/15 px-4 py-2"
-                  disabled={loading || locked || !hasSupabaseCoreConfig || sanitizedOtp.length < 6}
+                  disabled={loading || locked || !hasSupabaseCoreConfig || !sanitizedOtp}
                   onClick={async () => {
                     setError(''); setMessage('');
                     try {
@@ -518,6 +518,9 @@ function NotFound() { return <section className="mx-auto max-w-xl py-24 text-cen
 function Shell() {
   const [mode, setMode] = useState<ThemeMode>(() => initTheme());
   const location = useLocation();
+  const [navNotice, setNavNotice] = useState('');
+  const [noticeVisible, setNoticeVisible] = useState(false);
+  const previousTopPath = useRef<string>('');
   useEffect(() => { document.documentElement.classList.remove('theme-dark', 'theme-light', 'theme-purple', 'theme-rainbow'); document.documentElement.classList.add(themeMap[mode]); try { localStorage.setItem('theme', mode); } catch { /* storage may be unavailable */ } }, [mode]);
   useEffect(() => {
     const labels: Record<string, string> = {
@@ -526,9 +529,50 @@ function Shell() {
     const base = location.pathname.startsWith('/professional/topic/') ? 'Technology Topic'
       : location.pathname.startsWith('/personal/post/') ? 'Curiosity Post'
       : labels[location.pathname] || 'arharif';
-    document.title = `X1 · ${base}`;
+    document.title = base === 'arharif' ? 'arharif' : `${base} · arharif`; 
   }, [location.pathname]);
 
+
+
+  useEffect(() => {
+    const keyForPath = (path: string) => {
+      if (path === '/') return '/';
+      if (path.startsWith('/professional')) return '/professional';
+      if (path.startsWith('/personal')) return '/personal';
+      if (path.startsWith('/security-mindmap') || path.startsWith('/Security_Mindmap')) return '/security-mindmap';
+      if (path.startsWith('/games')) return '/games';
+      if (path.startsWith('/submitting')) return '/submitting';
+      if (path.startsWith('/admin') || path.startsWith('/login')) return '/admin';
+      return '';
+    };
+
+    const topKey = keyForPath(location.pathname);
+    if (!topKey) return;
+
+    if (!previousTopPath.current) {
+      previousTopPath.current = topKey;
+      return;
+    }
+
+    if (previousTopPath.current === topKey) return;
+    previousTopPath.current = topKey;
+
+    const messages: Record<string, string> = {
+      '/': 'How can I help you today? I can help you navigate the website.',
+      '/professional': 'Exploring Technology & Innovation. I can help you find topics quickly.',
+      '/personal': 'Welcome to Curiosities & Philosophy. I can guide you through articles and notes.',
+      '/security-mindmap': 'Security Map opened. I can help you explore requirements and skills by domain.',
+      '/games': 'Games zone ready. Pick a game and start playing.',
+      '/submitting': 'Submit an Article is open. I can guide you through the submission format.',
+      '/admin': 'Admin section opened.',
+    };
+
+    setNavNotice(messages[topKey] || 'How can I help you today? I can help you navigate the website.');
+    setNoticeVisible(true);
+
+    const timer = window.setTimeout(() => setNoticeVisible(false), 2800);
+    return () => window.clearTimeout(timer);
+  }, [location.pathname]);
   return (
     <div className="gradient-bg min-h-screen transition-colors duration-500">
       <Navbar mode={mode} onTheme={setMode} />
@@ -555,6 +599,7 @@ function Shell() {
         </AnimatePresence>
       </main>
       <SiteAssistantLauncher />
+      {noticeVisible && <div className="assistant-nav-toast" role="status" aria-live="polite">🤖 {navNotice}</div>}
       <footer className="mx-auto mt-8 flex max-w-6xl items-center border-t border-white/10 p-6 text-sm text-muted">
         <div className="footer-inline">
           <span className="footer-brand">arharif © 2026</span>
