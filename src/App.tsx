@@ -11,6 +11,7 @@ import { Navbar } from '@/components/Navbar';
 import { GamesHub } from '@/components/GamesHub';
 import { TopicFilterBar } from '@/components/TopicFilterBar';
 import { SecurityMindmapPage } from '@/pages/SecurityMindmapPage';
+import { SiteAssistantLauncher } from '@/components/site-assistant/SiteAssistantLauncher';
 import { ProtectedRoute } from '@/routes/ProtectedRoute';
 import { AuthProvider, useAuth } from '@/hooks/useAuth';
 import { createContent, createTopic, deleteContent, deleteTopic, listAdminContent, listAdminTopics, listCollections, listPublishedContent, listPublishedTopics, updateContent, updateTopic, uploadMedia } from '@/lib/cms';
@@ -407,6 +408,15 @@ function Shell() {
   const [mode, setMode] = useState<ThemeMode>(() => initTheme());
   const location = useLocation();
   useEffect(() => { document.documentElement.classList.remove('theme-dark', 'theme-light', 'theme-purple', 'theme-rainbow'); document.documentElement.classList.add(themeMap[mode]); localStorage.setItem('theme', mode); }, [mode]);
+  useEffect(() => {
+    const labels: Record<string, string> = {
+      '/': 'Landing', '/professional': 'Professional', '/personal': 'Personal', '/security-mindmap': 'Security Map', '/Security_Mindmap': 'Security Map', '/search': 'Search', '/games': 'Games', '/submitting': 'Submitting', '/admin': 'Admin', '/login': 'Login',
+    };
+    const base = location.pathname.startsWith('/professional/topic/') ? 'Professional Topic'
+      : location.pathname.startsWith('/personal/post/') ? 'Personal Post'
+      : labels[location.pathname] || 'arharif';
+    document.title = `X1 · ${base}`;
+  }, [location.pathname]);
 
   return (
     <div className="gradient-bg min-h-screen transition-colors duration-500">
@@ -433,7 +443,8 @@ function Shell() {
           </motion.div>
         </AnimatePresence>
       </main>
-      <footer className="mx-auto mt-8 flex max-w-6xl items-center justify-between border-t border-white/10 p-6 text-sm text-muted"><span>arharif © 2026</span><a href={config.linkedinUrl} target="_blank" rel="noreferrer" aria-label="LinkedIn" className="rounded-full bg-[#0A66C2] p-2 text-white transition hover:bg-[#0c5cad]"><Linkedin size={16} /></a></footer>
+      <SiteAssistantLauncher />
+      <footer className="mx-auto mt-8 flex max-w-6xl items-center justify-between border-t border-white/10 p-6 text-sm text-muted"><span>arharif © 2026</span><a href={config.linkedinUrl} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="rounded-full bg-[#0A66C2] p-2 text-white transition hover:bg-[#0c5cad]"><Linkedin size={16} /></a></footer>
     </div>
   );
 }

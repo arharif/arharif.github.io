@@ -1,47 +1,39 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { categoryColors, focusPresets, mindmapEdges, mindmapNodes } from '@/data/securityMindmap';
+import { approvedThemes, categoryColors, mindmapEdges, mindmapNodes, resolveNodeTheme } from '@/data/securityMindmap';
 import { GraphControls } from './GraphControls';
 import { NodeDetailPanel } from './NodeDetailPanel';
-import { FocusMode, MindmapNode } from './types';
+import { ApprovedTheme, MindmapNode } from './types';
 
-const viewWidth = 1700;
-const viewHeight = 1300;
-const focusStorageKey = 'security-mindmap-focus-mode';
-
+const viewWidth = 2100;
+const viewHeight = 1400;
+const themeStorageKey = 'security-map-theme';
 const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
 
 export function SecurityGraph() {
-  const [focus, setFocus] = useState<FocusMode>(() => (localStorage.getItem(focusStorageKey) as FocusMode) || 'full');
+  const [theme, setTheme] = useState<ApprovedTheme>(() => (localStorage.getItem(themeStorageKey) as ApprovedTheme) || 'all');
   const [search, setSearch] = useState('');
   const [activeId, setActiveId] = useState<string>('cybersecurity');
   const [hoverId, setHoverId] = useState<string | null>(null);
-  const [scale, setScale] = useState(0.62);
-  const [offset, setOffset] = useState({ x: -180, y: -80 });
+  const [scale, setScale] = useState(0.55);
+  const [offset, setOffset] = useState({ x: -140, y: -40 });
   const [dragging, setDragging] = useState(false);
   const dragRef = useRef<{ x: number; y: number } | null>(null);
   const pinchRef = useRef<{ distance: number; scale: number } | null>(null);
 
-  useEffect(() => { localStorage.setItem(focusStorageKey, focus); }, [focus]);
+  useEffect(() => { localStorage.setItem(themeStorageKey, theme); }, [theme]);
 
-  const preset = useMemo(() => focusPresets.find((p) => p.id === focus) || focusPresets[0], [focus]);
-
-  const visibleNodes = useMemo(() => {
+  const searchedNodes = useMemo(() => {
     const term = search.trim().toLowerCase();
+    if (!term) return mindmapNodes;
     return mindmapNodes.filter((node) => {
-      const byFocus = preset.includeCategories.includes(node.category) || Boolean(preset.includeNodeIds?.includes(node.id));
-      if (!byFocus) return false;
-      if (!term) return true;
       const hay = `${node.label} ${node.cluster} ${node.keywords.join(' ')}`.toLowerCase();
       return hay.includes(term);
     });
-  }, [preset, search]);
+  }, [search]);
 
-  const visibleSet = useMemo(() => new Set(visibleNodes.map((n) => n.id)), [visibleNodes]);
+  const visibleSet = useMemo(() => new Set(searchedNodes.map((n) => n.id)), [searchedNodes]);
 
-  const visibleEdges = useMemo(
-    () => mindmapEdges.filter((edge) => visibleSet.has(edge.source) && visibleSet.has(edge.target)),
-    [visibleSet],
-  );
+  const visibleEdges = useMemo(() => mindmapEdges.filter((edge) => visibleSet.has(edge.source) && visibleSet.has(edge.target)), [visibleSet]);
 
   const neighborSet = useMemo(() => {
     const target = hoverId || activeId;
@@ -61,36 +53,41 @@ export function SecurityGraph() {
   }, [activeNode]);
 
   const resetView = () => {
-    setScale(0.62);
-    setOffset({ x: -180, y: -80 });
+    setScale(0.55);
+    setOffset({ x: -140, y: -40 });
   };
 
   const fitView = () => {
-    const nodes = visibleNodes.length ? visibleNodes : mindmapNodes;
+    const nodes = searchedNodes.length ? searchedNodes : mindmapNodes;
     const minX = Math.min(...nodes.map((n) => n.x));
     const minY = Math.min(...nodes.map((n) => n.y));
     const maxX = Math.max(...nodes.map((n) => n.x));
     const maxY = Math.max(...nodes.map((n) => n.y));
-    const pad = 120;
+    const pad = 140;
     const width = maxX - minX + pad;
     const height = maxY - minY + pad;
-    const nextScale = clamp(Math.min(1000 / width, 650 / height), 0.45, 1.2);
+    const nextScale = clamp(Math.min(1200 / width, 680 / height), 0.35, 1.1);
     setScale(nextScale);
-    setOffset({ x: -(minX - pad / 2) + 60, y: -(minY - pad / 2) + 40 });
+    setOffset({ x: -(minX - pad / 2) + 80, y: -(minY - pad / 2) + 40 });
   };
 
   return (
     <div className="mindmap-shell">
       <GraphControls
-        focus={focus}
-        setFocus={setFocus}
+        theme={theme}
+        setTheme={setTheme}
+        options={approvedThemes}
         search={search}
         setSearch={setSearch}
-        onZoomIn={() => setScale((v) => clamp(v + 0.08, 0.35, 1.7))}
-        onZoomOut={() => setScale((v) => clamp(v - 0.08, 0.35, 1.7))}
+        onZoomIn={() => setScale((v) => clamp(v + 0.08, 0.3, 1.7))}
+        onZoomOut={() => setScale((v) => clamp(v - 0.08, 0.3, 1.7))}
         onFit={fitView}
         onReset={resetView}
       />
+
+      {searchedNodes.length === 0 && (
+        <div className="glass rounded-2xl p-4 text-sm text-muted">No nodes match this theme/search. Try “All Themes” or clear search.</div>
+      )}
 
       <div className="mindmap-layout">
         <div
@@ -129,25 +126,16 @@ export function SecurityGraph() {
               const [a, b] = [e.touches[0], e.touches[1]];
               const distance = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
               const ratio = distance / pinchRef.current.distance;
-              setScale(clamp(pinchRef.current.scale * ratio, 0.35, 1.7));
+              setScale(clamp(pinchRef.current.scale * ratio, 0.3, 1.7));
             }
           }}
-          onTouchEnd={() => {
-            if (!pinchRef.current) {
-              dragRef.current = null;
-              setDragging(false);
-              return;
-            }
-            pinchRef.current = null;
-            dragRef.current = null;
-            setDragging(false);
-          }}
+          onTouchEnd={() => { pinchRef.current = null; dragRef.current = null; setDragging(false); }}
           onWheel={(e) => {
             e.preventDefault();
-            setScale((prev) => clamp(prev + (e.deltaY < 0 ? 0.06 : -0.06), 0.35, 1.7));
+            setScale((prev) => clamp(prev + (e.deltaY < 0 ? 0.06 : -0.06), 0.3, 1.7));
           }}
           role="img"
-          aria-label="Interactive cybersecurity mindmap with pan and zoom"
+          aria-label="Interactive cybersecurity map with theme filters"
         >
           <svg viewBox={`0 0 ${viewWidth} ${viewHeight}`} className="mindmap-svg" preserveAspectRatio="xMinYMin meet">
             <defs>
@@ -168,6 +156,9 @@ export function SecurityGraph() {
                 const target = mindmapNodes.find((n) => n.id === edge.target);
                 if (!source || !target) return null;
                 const active = (hoverId || activeId) && (edge.source === (hoverId || activeId) || edge.target === (hoverId || activeId));
+                const sourceTheme = resolveNodeTheme(source);
+                const targetTheme = resolveNodeTheme(target);
+                const themeDim = theme !== 'all' && sourceTheme !== theme && targetTheme !== theme;
                 return (
                   <line
                     key={edge.id}
@@ -175,20 +166,20 @@ export function SecurityGraph() {
                     y1={source.y}
                     x2={target.x}
                     y2={target.y}
-                    stroke={active ? 'rgba(255,255,255,0.85)' : edge.kind === 'future' ? 'rgba(147,197,253,0.55)' : 'rgba(148,163,184,0.35)'}
-                    strokeWidth={active ? 2.6 : 1.2}
+                    stroke={active ? 'rgba(255,255,255,0.85)' : themeDim ? 'rgba(100,116,139,0.14)' : edge.kind === 'future' ? 'rgba(147,197,253,0.45)' : 'rgba(148,163,184,0.3)'}
+                    strokeWidth={active ? 2.6 : themeDim ? 0.8 : 1.2}
                     filter={active ? 'url(#mindmap-glow)' : undefined}
                   />
                 );
               })}
 
-              {visibleNodes.map((node) => {
+              {searchedNodes.map((node) => {
                 const color = categoryColors[node.colorKey];
                 const isActive = node.id === activeId;
                 const isHover = node.id === hoverId;
                 const isNeighbor = neighborSet.has(node.id);
-                const alpha = isActive || isHover ? 1 : isNeighbor ? 0.92 : 0.72;
-
+                const themeMatch = theme === 'all' || resolveNodeTheme(node) === theme;
+                const alpha = isActive || isHover ? 1 : isNeighbor ? 0.92 : themeMatch ? 0.78 : 0.2;
                 return (
                   <g
                     key={node.id}

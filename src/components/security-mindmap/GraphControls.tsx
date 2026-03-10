@@ -1,8 +1,9 @@
-import { FocusMode } from './types';
+import { ApprovedTheme, ApprovedThemeOption } from './types';
 
 export function GraphControls({
-  focus,
-  setFocus,
+  theme,
+  setTheme,
+  options,
   search,
   setSearch,
   onZoomIn,
@@ -10,8 +11,9 @@ export function GraphControls({
   onFit,
   onReset,
 }: {
-  focus: FocusMode;
-  setFocus: (v: FocusMode) => void;
+  theme: ApprovedTheme;
+  setTheme: (v: ApprovedTheme) => void;
+  options: ApprovedThemeOption[];
   search: string;
   setSearch: (v: string) => void;
   onZoomIn: () => void;
@@ -25,17 +27,12 @@ export function GraphControls({
       <input
         id="mindmap-search"
         className="mindmap-input"
-        placeholder="Search domains, standards, journey stages"
+        placeholder="Search cybersecurity domains"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
       />
-      <select aria-label="Focus mode" className="mindmap-input" value={focus} onChange={(e) => setFocus(e.target.value as FocusMode)}>
-        <option value="full">Full Map</option>
-        <option value="journey">My Journey</option>
-        <option value="technical">Technical Domains</option>
-        <option value="governance">Governance & Risk</option>
-        <option value="operations">Security Operations</option>
-        <option value="future">Future Vision</option>
+      <select aria-label="Security map theme" className="mindmap-input" value={theme} onChange={(e) => setTheme(e.target.value as ApprovedTheme)}>
+        {options.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
       </select>
       <div className="mindmap-btn-group" role="group" aria-label="Graph camera controls">
         <button className="mindmap-btn" onClick={onZoomIn}>+</button>

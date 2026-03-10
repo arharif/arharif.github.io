@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { listPublishedContent } from '@/lib/cms';
 import { ContentRecord } from '@/content/types';
 
-type GameKey = 'snake' | 'battleship' | 'tictactoe' | 'reaction' | 'rps' | 'math';
+type GameKey = 'snake' | 'battleship' | 'tictactoe' | 'reaction' | 'rps' | 'math' | 'geo';
 
 const gameMeta: Record<GameKey, { title: string; desc: string; color: string; icon: string }> = {
   snake: { title: 'Snake', desc: 'Precision movement with increasing pressure.', color: 'from-emerald-400/35 to-cyan-400/25', icon: '🐍' },
@@ -12,6 +12,7 @@ const gameMeta: Record<GameKey, { title: string; desc: string; color: string; ic
   reaction: { title: 'Reaction Time', desc: 'Measure and improve your response speed.', color: 'from-amber-400/35 to-orange-400/25', icon: '⚡' },
   rps: { title: 'Rock Paper Scissors', desc: 'Lightweight probability mind game.', color: 'from-violet-500/35 to-fuchsia-400/25', icon: '🪨' },
   math: { title: 'Quick Math', desc: 'Solve rapidly under a short timer.', color: 'from-rose-500/35 to-pink-400/25', icon: '➗' },
+  geo: { title: 'Country Locator', desc: 'Where is Spain? region-based world challenge.', color: 'from-cyan-500/35 to-sky-400/25', icon: '🌍' },
 };
 
 const readBest = (key: string) => Number(localStorage.getItem(key) || 0);
@@ -69,6 +70,7 @@ export function GamesHub() {
         {active === 'reaction' && <ReactionGame />}
         {active === 'rps' && <RPSGame />}
         {active === 'math' && <QuickMathGame />}
+        {active === 'geo' && <CountryLocatorGame />}
       </div>
     </section>
   );
@@ -227,4 +229,35 @@ function QuickMathGame() {
   const restart = () => { setScore(0); setTime(30); setValue(''); setRound(newRound()); };
 
   return <div><div className="mb-3 flex items-center justify-between text-sm text-muted"><p>Time: {time}s · Score: {score}</p><p>Best: {best}</p></div><p className="mb-2 text-lg">{round.a} + {round.b} = ?</p><div className="flex flex-wrap gap-2"><input className="rounded-lg bg-white/10 px-3 py-2" value={value} onChange={(e) => setValue(e.target.value.replace(/[^0-9-]/g, ''))} /><button onClick={submit} className="rounded-lg bg-white/10 px-3 py-2 hover:bg-white/15">Submit</button><button onClick={restart} className="rounded-lg bg-white/10 px-3 py-2 hover:bg-white/15">Restart</button></div>{time <= 0 && <p className="mt-2 text-amber-300">Time over — restart to play again.</p>}</div>;
+}
+
+
+function CountryLocatorGame() {
+  const rounds = [
+    { country: 'Spain', answer: 'Europe', options: ['Europe', 'Asia', 'Africa', 'South America'] },
+    { country: 'Japan', answer: 'Asia', options: ['North America', 'Asia', 'Africa', 'Europe'] },
+    { country: 'Brazil', answer: 'South America', options: ['South America', 'Europe', 'Oceania', 'Asia'] },
+    { country: 'Kenya', answer: 'Africa', options: ['Africa', 'Europe', 'North America', 'Asia'] },
+    { country: 'Canada', answer: 'North America', options: ['North America', 'Europe', 'Asia', 'Africa'] },
+    { country: 'Australia', answer: 'Oceania', options: ['Oceania', 'Europe', 'South America', 'Asia'] },
+  ];
+  const [index, setIndex] = useState(0);
+  const [score, setScore] = useState(0);
+  const [best, setBest] = useState(() => readBest('game-best-geo'));
+  const [note, setNote] = useState('Select the region.');
+  const current = rounds[index % rounds.length];
+
+  const choose = (option: string) => {
+    const ok = option === current.answer;
+    const nextScore = ok ? score + 1 : score;
+    setScore(nextScore);
+    if (nextScore > best) {
+      setBest(nextScore);
+      saveBest('game-best-geo', nextScore);
+    }
+    setNote(ok ? `Correct: ${current.country} is in ${current.answer}.` : `Not quite. ${current.country} is in ${current.answer}.`);
+    setIndex((v) => v + 1);
+  };
+
+  return <div><div className="mb-3 flex items-center justify-between text-sm text-muted"><p>{note}</p><p>Score: {score} · Best: {best}</p></div><p className="mb-3 text-lg">Where is <span className="font-semibold">{current.country}</span>?</p><div className="grid gap-2 sm:grid-cols-2">{current.options.map((o) => <button key={o} className="rounded-xl bg-white/10 px-4 py-2 text-left hover:bg-white/15" onClick={() => choose(o)}>{o}</button>)}</div><button className="mt-3 rounded-lg bg-white/10 px-3 py-1 text-xs hover:bg-white/15" onClick={() => { setIndex(0); setScore(0); setNote('Select the region.'); }}>Restart</button></div>;
 }

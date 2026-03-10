@@ -10,9 +10,22 @@ export type MindmapCategory =
   | 'frameworks'
   | 'resilience'
   | 'appsec'
-  | 'future';
+  | 'future'
+  | 'ai';
 
-export type FocusMode = 'full' | 'journey' | 'technical' | 'governance' | 'operations' | 'future';
+export type ApprovedTheme =
+  | 'all'
+  | 'security-architecture'
+  | 'application-security'
+  | 'risk-assessment'
+  | 'enterprise-risk-management'
+  | 'threat-intelligence'
+  | 'user-awareness'
+  | 'security-operations'
+  | 'frameworks-and-standards'
+  | 'physical-security'
+  | 'career-development'
+  | 'ai-security';
 
 export interface MindmapNode {
   id: string;
@@ -41,9 +54,7 @@ export interface MindmapEdge {
   kind?: 'journey' | 'domain' | 'future';
 }
 
-export interface FocusPreset {
-  id: FocusMode;
+export interface ApprovedThemeOption {
+  id: ApprovedTheme;
   label: string;
-  includeCategories: MindmapCategory[];
-  includeNodeIds?: string[];
 }

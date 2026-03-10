@@ -1,4 +1,4 @@
-import { FocusPreset, MindmapCategory, MindmapEdge, MindmapNode } from '@/components/security-mindmap/types';
+import { ApprovedTheme, ApprovedThemeOption, MindmapCategory, MindmapEdge, MindmapNode } from '@/components/security-mindmap/types';
 
 export const categoryColors: Record<MindmapCategory, { fill: string; glow: string; ring: string; text: string }> = {
   journey: { fill: '#7dd3fc', glow: 'rgba(125,211,252,0.45)', ring: '#bae6fd', text: '#e0f2fe' },
@@ -13,6 +13,7 @@ export const categoryColors: Record<MindmapCategory, { fill: string; glow: strin
   resilience: { fill: '#10b981', glow: 'rgba(16,185,129,0.35)', ring: '#6ee7b7', text: '#d1fae5' },
   appsec: { fill: '#fb7185', glow: 'rgba(251,113,133,0.34)', ring: '#fda4af', text: '#ffe4e6' },
   future: { fill: '#e2e8f0', glow: 'rgba(255,255,255,0.55)', ring: '#ffffff', text: '#f8fafc' },
+  ai: { fill: '#60a5fa', glow: 'rgba(96,165,250,0.58)', ring: '#bfdbfe', text: '#eff6ff' },
 };
 
 const j = (id: string) => id;
@@ -224,16 +225,67 @@ export const mindmapEdges: MindmapEdge[] = [
   edge('future-ai-security', 'resilience-future', 'future'),
   edge('resilience-future', 'fractional-leadership', 'future'),
   edge('fractional-leadership', 'ciso-service', 'future'),
+
+  edge('enterprise-risk', 'physical-security'),
+  edge('physical-security', 'facility-access'),
+  edge('physical-security', 'device-protection'),
+  edge('device-protection', 'hardware-safeguards'),
+  edge('facility-access', 'visitor-control'),
+  edge('visitor-control', 'site-security'),
+  edge('site-security', 'critical-infra-protection'),
+
+  edge('future-ai-security', 'ai-security-governance', 'future'),
+  edge('future-ai-security', 'model-security', 'future'),
+  edge('future-ai-security', 'prompt-security', 'future'),
+  edge('future-ai-security', 'adversarial-attacks', 'future'),
+  edge('future-ai-security', 'data-poisoning', 'future'),
+  edge('future-ai-security', 'model-theft', 'future'),
+  edge('future-ai-security', 'llm-security', 'future'),
+  edge('future-ai-security', 'ai-risk-management', 'future'),
+  edge('future-ai-security', 'secure-ai-development', 'future'),
+  edge('future-ai-security', 'ai-threat-detection', 'future'),
+  edge('future-ai-security', 'ai-sec-operations', 'future'),
+  edge('future-ai-security', 'responsible-ai', 'future'),
+  edge('future-ai-security', 'privacy-in-ai', 'future'),
+  edge('future-ai-security', 'ai-monitoring', 'future'),
+  edge('future-ai-security', 'ai-red-teaming', 'future'),
 ];
 
-export const focusPresets: FocusPreset[] = [
-  { id: 'full', label: 'Full Map', includeCategories: ['journey', 'architecture', 'identity', 'operations', 'governance', 'assurance', 'awareness', 'career', 'frameworks', 'resilience', 'appsec', 'future'] },
-  { id: 'journey', label: 'My Journey', includeCategories: ['journey', 'career', 'future'], includeNodeIds: ['ciso-service', 'advisory', 'fractional-leadership'] },
-  { id: 'technical', label: 'Technical Domains', includeCategories: ['architecture', 'identity', 'appsec', 'frameworks', 'assurance', 'journey'] },
-  { id: 'governance', label: 'Governance & Risk', includeCategories: ['governance', 'resilience', 'frameworks', 'journey', 'future'] },
-  { id: 'operations', label: 'Security Operations', includeCategories: ['operations', 'awareness', 'assurance', 'frameworks', 'journey'] },
-  { id: 'future', label: 'Future Vision', includeCategories: ['future', 'journey', 'governance', 'resilience'] },
+export const approvedThemes: ApprovedThemeOption[] = [
+  { id: 'all', label: 'All Themes' },
+  { id: 'security-architecture', label: 'Security Architecture' },
+  { id: 'application-security', label: 'Application Security' },
+  { id: 'risk-assessment', label: 'Risk Assessment' },
+  { id: 'enterprise-risk-management', label: 'Enterprise Risk Management' },
+  { id: 'threat-intelligence', label: 'Threat Intelligence' },
+  { id: 'user-awareness', label: 'User Awareness' },
+  { id: 'security-operations', label: 'Security Operations' },
+  { id: 'frameworks-and-standards', label: 'Frameworks and Standards' },
+  { id: 'physical-security', label: 'Physical Security' },
+  { id: 'career-development', label: 'Career Development' },
+  { id: 'ai-security', label: 'AI & Security' },
 ];
+
+const aiThemeIds = new Set([
+  'future-ai-security', 'ai-security-governance', 'model-security', 'prompt-security', 'adversarial-attacks',
+  'data-poisoning', 'model-theft', 'llm-security', 'ai-risk-management', 'secure-ai-development',
+  'ai-threat-detection', 'ai-sec-operations', 'responsible-ai', 'privacy-in-ai', 'ai-monitoring', 'ai-red-teaming',
+]);
+
+export function resolveNodeTheme(node: MindmapNode): ApprovedTheme {
+  if (aiThemeIds.has(node.id) || node.category === 'ai') return 'ai-security';
+  if (node.id === 'risk-assessment' || node.id === 'risk-monitoring' || node.id === 'risk-identification' || node.id === 'risk-analysis' || node.id === 'risk-prioritization' || node.id === 'risk-scoring' || node.id === 'control-evaluation' || node.id === 'gap-analysis') return 'risk-assessment';
+  if (node.id === 'enterprise-risk' || node.id === 'risk-register' || node.id === 'risk-treatment' || node.id === 'risk-appetite' || node.id === 'risk-acceptance' || node.id === 'bcp-dr' || node.id === 'crisis-management' || node.id === 'third-party-risk' || node.id === 'fourth-party-risk' || node.id === 'physical-security' || node.id === 'facility-access' || node.id === 'device-protection' || node.id === 'hardware-safeguards' || node.id === 'site-security' || node.id === 'visitor-control' || node.id === 'critical-infra-protection') return 'enterprise-risk-management';
+  if (['architecture'].includes(node.category)) return 'security-architecture';
+  if (['appsec'].includes(node.category)) return 'application-security';
+  if (['operations'].includes(node.category)) return 'security-operations';
+  if (['frameworks'].includes(node.category)) return 'frameworks-and-standards';
+  if (['awareness'].includes(node.category)) return node.id === 'threat-intelligence' || node.id === 'ioc-sharing' ? 'threat-intelligence' : 'user-awareness';
+  if (['career'].includes(node.category)) return 'career-development';
+  if (node.id === 'threat-intelligence' || node.id === 'ioc-sharing') return 'threat-intelligence';
+  if (node.id === 'physical-security') return 'physical-security';
+  return 'all';
+}
 
 export const legend = [
   { key: 'journey', label: 'Personal Journey' },

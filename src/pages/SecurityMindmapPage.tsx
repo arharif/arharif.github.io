@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { legend } from '@/data/securityMindmap';
+import { approvedThemes, legend } from '@/data/securityMindmap';
 import { SecurityGraph } from '@/components/security-mindmap/SecurityGraph';
 
 export function SecurityMindmapPage() {
@@ -10,13 +10,23 @@ export function SecurityMindmapPage() {
         <p className="text-xs uppercase tracking-[0.25em] text-cyan-200/90">Flagship Experience</p>
         <h1 className="mt-3 text-3xl font-semibold md:text-5xl">Security Map</h1>
         <p className="mt-3 max-w-3xl text-sm text-slate-200/90 md:text-base">
-          From curiosity to cyber leadership: a living map of architecture, operations, governance, resilience, and strategic direction toward CISO as a Service.
+          Explore the major cybersecurity domains through approved thematic branches, from architecture and operations to AI & Security and executive risk leadership.
         </p>
         <div className="mt-5 flex flex-wrap gap-2">
           <a href="#mindmap-graph" className="mindmap-cta">Explore the Map</a>
           <button className="mindmap-ghost">View My Journey</button>
           <button className="mindmap-ghost">Focus on Governance</button>
           <button className="mindmap-ghost">Focus on Security Operations</button>
+        </div>
+      </div>
+
+
+      <div className="glass rounded-2xl p-4">
+        <p className="text-xs uppercase tracking-[0.2em] text-muted">Approved Themes</p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {approvedThemes.filter((x) => x.id !== 'all').map((theme) => (
+            <span key={theme.id} className="mindmap-tag">{theme.label}</span>
+          ))}
         </div>
       </div>
 
