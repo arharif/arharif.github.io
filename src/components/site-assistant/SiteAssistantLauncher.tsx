@@ -1,15 +1,17 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { X1Mark } from '@/components/branding/X1Mark';
 import { SiteAssistantPanel } from './SiteAssistantPanel';
 import { resolveAssistantSection } from './assistantContext';
 
-const singletonKey = '__x1_single_launcher__';
-const seenKey = 'x1-assistant-seen-sections';
+const SINGLETON_KEY = '__x1_single_launcher__' as const;
+const SEEN_KEY = 'x1-assistant-seen-sections';
+
+type LauncherWindow = Window & { [SINGLETON_KEY]?: boolean };
 
 const readSeen = (): Record<string, boolean> => {
   try {
-    const raw = localStorage.getItem(seenKey);
+    const raw = localStorage.getItem(SEEN_KEY);
     if (!raw) return {};
     const parsed = JSON.parse(raw);
     return parsed && typeof parsed === 'object' ? parsed as Record<string, boolean> : {};
@@ -20,30 +22,31 @@ const readSeen = (): Record<string, boolean> => {
 
 const writeSeen = (value: Record<string, boolean>) => {
   try {
-    localStorage.setItem(seenKey, JSON.stringify(value));
+    localStorage.setItem(SEEN_KEY, JSON.stringify(value));
   } catch {
     /* ignore storage failures */
   }
 };
 
-const singletonKey = '__x1_single_launcher__';
-
 export function SiteAssistantLauncher() {
   const [open, setOpen] = useState(false);
   const [enabled, setEnabled] = useState(true);
   const [seenSections, setSeenSections] = useState<Record<string, boolean>>(() => readSeen());
+
+  const [navIndicator, setNavIndicator] = useState(false);
+  const prevRouteKeyRef = useRef<string>('');
   const location = useLocation();
   const routeKey = useMemo(() => resolveAssistantSection(location.pathname), [location.pathname]);
 
   useEffect(() => {
-    const w = window as Window & { [singletonKey]?: boolean };
-    if (w[singletonKey]) {
+    const w = window as LauncherWindow;
+    if (w[SINGLETON_KEY]) {
       setEnabled(false);
       return;
     }
-    w[singletonKey] = true;
+    w[SINGLETON_KEY] = true;
     return () => {
-      w[singletonKey] = false;
+      w[SINGLETON_KEY] = false;
     };
   }, []);
 
@@ -60,9 +63,24 @@ export function SiteAssistantLauncher() {
     if (open) markSeen(routeKey);
   }, [open, routeKey]);
 
+
+  useEffect(() => {
+    if (!prevRouteKeyRef.current) {
+      prevRouteKeyRef.current = routeKey;
+      return;
+    }
+    if (prevRouteKeyRef.current === routeKey) return;
+    prevRouteKeyRef.current = routeKey;
+    if (open) return;
+
+    setNavIndicator(true);
+    const timer = window.setTimeout(() => setNavIndicator(false), 2600);
+    return () => window.clearTimeout(timer);
+  }, [routeKey, open]);
+
   if (!enabled) return null;
 
-  const showBadge = !open && !seenSections[routeKey];
+  const showBadge = !open && (!seenSections[routeKey] || navIndicator);
 
   return (
     <>
@@ -71,7 +89,7 @@ export function SiteAssistantLauncher() {
         onClick={() => {
           setOpen((v) => {
             const next = !v;
-            if (next) markSeen(routeKey);
+            if (next) { markSeen(routeKey); setNavIndicator(false); }
             return next;
           });
         }}

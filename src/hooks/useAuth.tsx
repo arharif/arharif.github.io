@@ -14,16 +14,42 @@ interface AuthCtx {
 const Ctx = createContext<AuthCtx | undefined>(undefined);
 const storageKey = 'x1-auth-session';
 
+const readAuthStorage = () => {
+  try {
+    return sessionStorage.getItem(storageKey) ?? localStorage.getItem(storageKey);
+  } catch {
+    return null;
+  }
+};
+
+const writeAuthStorage = (value: string) => {
+  try {
+    sessionStorage.setItem(storageKey, value);
+  } catch {
+    /* ignore session storage issues */
+  }
+  try {
+    localStorage.removeItem(storageKey);
+  } catch {
+    /* ignore local storage issues */
+  }
+};
+
+const clearAuthStorage = () => {
+  try { sessionStorage.removeItem(storageKey); } catch { /* ignore */ }
+  try { localStorage.removeItem(storageKey); } catch { /* ignore */ }
+};
+
 export function AuthProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<AuthSession | null>(() => {
     try {
-      const raw = localStorage.getItem(storageKey);
+      const raw = readAuthStorage();
       if (!raw) return null;
       const parsed = JSON.parse(raw) as AuthSession;
       if (!parsed?.access_token || !parsed?.refresh_token || !parsed?.token_type || !parsed?.user?.id) return null;
       return parsed;
     } catch {
-      localStorage.removeItem(storageKey);
+      clearAuthStorage();
       return null;
     }
   });
@@ -41,7 +67,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         .then((user) => {
           const next: AuthSession = { access_token: token, refresh_token: refresh, token_type: type, expires_in: expires, user };
           setSession(next);
-          localStorage.setItem(storageKey, JSON.stringify(next));
+          writeAuthStorage(JSON.stringify(next));
           history.replaceState(null, '', window.location.pathname + window.location.search);
         })
         .catch(() => undefined);
@@ -57,13 +83,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
         if (!user?.id) throw new Error('invalid-session');
         const next = { ...session, user };
         setSession(next);
-        localStorage.setItem(storageKey, JSON.stringify(next));
+        writeAuthStorage(JSON.stringify(next));
       })
       .catch(async () => {
         if (session?.access_token) await supabaseLogout(session.access_token).catch(() => undefined);
         setSession(null);
         setChallengeEmail(null);
-        localStorage.removeItem(storageKey);
+        clearAuthStorage();
       });
   }, [session?.access_token]);
 
@@ -101,7 +127,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
           const next = await verifyOtp(challengeEmail, otp);
           ensureAdmin(next);
           setSession(next);
-          localStorage.setItem(storageKey, JSON.stringify(next));
+          writeAuthStorage(JSON.stringify(next));
           setChallengeEmail(null);
         } catch {
           throw new Error(genericAuthError);
@@ -113,7 +139,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         if (session?.access_token && hasSupabaseCoreConfig) await supabaseLogout(session.access_token).catch(() => undefined);
         setSession(null);
         setChallengeEmail(null);
-        localStorage.removeItem(storageKey);
+        clearAuthStorage();
       },
     }),
     [challengeEmail, isAdmin, loading, session],
