@@ -7,6 +7,23 @@ const localTopicsKey = 'arharif-local-topics';
 const localContentKey = 'arharif-local-content';
 const localCollectionsKey = 'arharif-local-collections';
 
+const readStorage = (key: string) => {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+};
+
+const writeStorage = (key: string, value: string) => {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    /* no-op: storage can be unavailable in privacy modes */
+  }
+};
+
+
 const normalizeTopic = (r: Record<string, unknown>): TopicRecord => ({
   id: String(r.id), slug: String(r.slug), title: String(r.title), description: String(r.description ?? ''),
   universe: String(r.universe) as TopicRecord['universe'], category: String(r.category ?? ''), subcategory: r.subcategory ? String(r.subcategory) : undefined,
@@ -33,20 +50,20 @@ const topicRow = (i: TopicInput) => ({ slug: i.slug, title: i.title, description
 const contentRow = (i: ContentInput) => ({ topic_id: i.topicId, slug: i.slug, title: i.title, excerpt: i.excerpt, body: i.body, content_type: i.contentType, cover_image_url: i.coverImageUrl ?? null, video_url: i.videoUrl ?? null, status: 'published', published_at: i.publishedAt ?? new Date().toISOString(), author_name: i.authorName });
 
 const getLocalTopics = () => {
-  const raw = localStorage.getItem(localTopicsKey);
+  const raw = readStorage(localTopicsKey);
   if (!raw) return seedTopics;
   try { return JSON.parse(raw) as TopicRecord[]; } catch { return seedTopics; }
 };
-const setLocalTopics = (v: TopicRecord[]) => localStorage.setItem(localTopicsKey, JSON.stringify(v));
+const setLocalTopics = (v: TopicRecord[]) => writeStorage(localTopicsKey, JSON.stringify(v));
 const getLocalContent = () => {
-  const raw = localStorage.getItem(localContentKey);
+  const raw = readStorage(localContentKey);
   if (!raw) return seedContent;
   try { return JSON.parse(raw) as ContentRecord[]; } catch { return seedContent; }
 };
-const setLocalContent = (v: ContentRecord[]) => localStorage.setItem(localContentKey, JSON.stringify(v));
+const setLocalContent = (v: ContentRecord[]) => writeStorage(localContentKey, JSON.stringify(v));
 
 const getLocalCollections = () => {
-  const raw = localStorage.getItem(localCollectionsKey);
+  const raw = readStorage(localCollectionsKey);
   if (!raw) return seedCollections;
   try { return JSON.parse(raw) as CollectionRecord[]; } catch { return seedCollections; }
 };
@@ -83,7 +100,7 @@ export async function updateTopic(id: string, input: TopicInput, accessToken: st
     setLocalTopics(getLocalTopics().map((t) => (t.id === id ? { ...t, ...input, status: 'published', updatedAt: new Date().toISOString() } : t)));
     return;
   }
-  await supabaseRest(`topics?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify(topicRow(input)) }, accessToken);
+  await supabaseRest(`topics?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(topicRow(input)) }, accessToken);
 }
 
 export async function deleteTopic(id: string, accessToken: string) {
@@ -92,7 +109,7 @@ export async function deleteTopic(id: string, accessToken: string) {
     setLocalContent(getLocalContent().filter((c) => c.topicId !== id));
     return;
   }
-  await supabaseRest(`topics?id=eq.${id}`, { method: 'DELETE' }, accessToken);
+  await supabaseRest(`topics?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' }, accessToken);
 }
 
 export async function listPublishedContent() {
@@ -121,7 +138,7 @@ export async function updateContent(id: string, input: ContentInput, accessToken
     setLocalContent(getLocalContent().map((c) => (c.id === id ? { ...c, ...input, status: 'published', publishedAt: input.publishedAt ?? c.publishedAt ?? new Date().toISOString(), updatedAt: new Date().toISOString() } : c)));
     return;
   }
-  await supabaseRest(`content?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify(contentRow(input)) }, accessToken);
+  await supabaseRest(`content?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(contentRow(input)) }, accessToken);
 }
 
 export async function deleteContent(id: string, accessToken: string) {
@@ -129,7 +146,7 @@ export async function deleteContent(id: string, accessToken: string) {
     setLocalContent(getLocalContent().filter((c) => c.id !== id));
     return;
   }
-  await supabaseRest(`content?id=eq.${id}`, { method: 'DELETE' }, accessToken);
+  await supabaseRest(`content?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' }, accessToken);
 }
 
 export async function uploadMedia(file: File, accessToken: string) {

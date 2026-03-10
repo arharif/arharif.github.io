@@ -407,7 +407,7 @@ function NotFound() { return <section className="mx-auto max-w-xl py-24 text-cen
 function Shell() {
   const [mode, setMode] = useState<ThemeMode>(() => initTheme());
   const location = useLocation();
-  useEffect(() => { document.documentElement.classList.remove('theme-dark', 'theme-light', 'theme-purple', 'theme-rainbow'); document.documentElement.classList.add(themeMap[mode]); localStorage.setItem('theme', mode); }, [mode]);
+  useEffect(() => { document.documentElement.classList.remove('theme-dark', 'theme-light', 'theme-purple', 'theme-rainbow'); document.documentElement.classList.add(themeMap[mode]); try { localStorage.setItem('theme', mode); } catch { /* storage may be unavailable */ } }, [mode]);
   useEffect(() => {
     const labels: Record<string, string> = {
       '/': 'Landing', '/professional': 'Professional', '/personal': 'Personal', '/security-mindmap': 'Security Map', '/Security_Mindmap': 'Security Map', '/search': 'Search', '/games': 'Games', '/submitting': 'Submitting', '/admin': 'Admin', '/login': 'Login',
