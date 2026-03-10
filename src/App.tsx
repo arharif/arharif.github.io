@@ -228,7 +228,7 @@ function CuriosityPost() {
 
 
 function LoginPage() {
-  const { verifyOtpCode, beginSecureLogin, loading, isAdmin, session } = useAuth();
+  const { verifyOtpCode, beginSecureLogin, requestOtpChallenge, loading, isAdmin, session } = useAuth();
   const nav = useNavigate();
   const [email, setEmail] = useState('');
   const [step, setStep] = useState<1 | 2>(1);
@@ -292,10 +292,9 @@ function LoginPage() {
                     setError(''); setMessage('');
                     try {
                       await beginSecureLogin(sanitizedEmail, password);
-                      setStep(2);
                       setPassword('');
                       setAttempts(0);
-                      setMessage('If the request can be completed, you will receive an email shortly.');
+                      nav('/admin', { replace: true });
                     } catch {
                       registerFailure();
                       if (!locked) setError(genericAuthError);
@@ -304,10 +303,28 @@ function LoginPage() {
                 >
                   {loading ? 'Processing...' : 'Continue'}
                 </button>
+                <button
+                  className="mt-2 w-full rounded-xl bg-white/5 px-4 py-2 text-xs text-muted"
+                  disabled={loading || locked || !hasSupabaseCoreConfig || !validEmail}
+                  onClick={async () => {
+                    setError(''); setMessage('');
+                    try {
+                      await requestOtpChallenge(sanitizedEmail);
+                      setStep(2);
+                      setAttempts(0);
+                      setMessage('If the request can be completed, you will receive a one-time code by email shortly.');
+                    } catch {
+                      registerFailure();
+                      if (!locked) setError(genericAuthError);
+                    }
+                  }}
+                >
+                  Use one-time code instead
+                </button>
               </>
             ) : (
               <>
-                <input className="mt-3 w-full rounded-xl bg-white/10 p-2" value={otp} onChange={(e) => setOtp(e.target.value.slice(0, 64))} placeholder="OTP code" autoComplete="one-time-code" disabled={locked} />
+                <input className="mt-3 w-full rounded-xl bg-white/10 p-2" value={otp} onChange={(e) => setOtp(e.target.value.slice(0, 64))} placeholder="One-time code" autoComplete="one-time-code" disabled={locked} />
                 <button
                   className="mt-3 w-full rounded-xl bg-white/15 px-4 py-2"
                   disabled={loading || locked || !hasSupabaseCoreConfig || !sanitizedOtp}

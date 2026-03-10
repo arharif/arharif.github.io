@@ -8,6 +8,7 @@ interface AuthCtx {
   isAdmin: boolean;
   loading: boolean;
   beginSecureLogin: (email: string, password: string) => Promise<void>;
+  requestOtpChallenge: (email: string) => Promise<void>;
   verifyOtpCode: (otp: string) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -97,7 +98,20 @@ export function AuthProvider({ children }: PropsWithChildren) {
         setLoading(true);
         try {
           const next = await signInWithPassword(email, password);
-          await supabaseLogout(next.access_token).catch(() => undefined);
+          ensureAdmin(next);
+          setSession(next);
+          writeAuthStorage(JSON.stringify(next));
+          setChallengeEmail(null);
+        } catch {
+          throw new Error(genericAuthError);
+        } finally {
+          setLoading(false);
+        }
+      },
+      requestOtpChallenge: async (email) => {
+        if (!hasSupabaseCoreConfig) throw new Error(genericAuthError);
+        setLoading(true);
+        try {
           await signInWithOtp(email);
           setChallengeEmail(email);
         } catch {
