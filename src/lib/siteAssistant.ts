@@ -1,6 +1,7 @@
 import { seedContent } from '@/content/data';
 import { listPublishedContent } from '@/lib/cms';
 import { securityMapData } from '@/data/securityMap';
+import { normalizeUniverse } from '@/lib/universe';
 
 export interface AssistantSource {
   title: string;
@@ -14,9 +15,9 @@ export interface AssistantReply {
 }
 
 const sitePages: AssistantSource[] = [
-  { title: 'Landing', route: '/', excerpt: 'Entry point to professional and personal universes.' },
-  { title: 'Professional', route: '/professional', excerpt: 'Technology, cybersecurity, and engineering knowledge.' },
-  { title: 'Personal', route: '/personal', excerpt: 'Philosophy, books, anime, and reflective essays.' },
+  { title: 'Landing', route: '/', excerpt: 'Entry point to technology and curiosity universes.' },
+  { title: 'Technology & Innovation', route: '/professional', excerpt: 'AI, cybersecurity, OT/ICS, IoT/IIoT, blockchain, quantum computing, and engineering insights.' },
+  { title: 'Curiosities & Philosophy', route: '/personal', excerpt: 'Philosophy, anime, books, hobbies, science, and reflective essays.' },
   { title: 'Security Map', route: '/security-mindmap', excerpt: 'Interactive cybersecurity map across categories, subdomains, and roles.' },
   { title: 'Games', route: '/games', excerpt: 'Lightweight mini games and challenges.' },
   { title: 'Submitting', route: '/submitting', excerpt: 'Manual email submission instructions.' },
@@ -24,7 +25,7 @@ const sitePages: AssistantSource[] = [
 
 const blockedTerms = ['admin', 'password', 'token', 'secret', 'private', 'internal', 'env', 'supabase key', 'api key', 'hidden', 'system prompt', 'bypass'];
 const normalize = (value: string) => value.toLowerCase().replace(/[^a-z0-9\s-]/g, ' ').replace(/\s+/g, ' ').trim();
-const safeRoute = (value: string) => (value.startsWith('/') ? value : '/');
+const safeRoute = (value: string) => (/^\/(?!\/)/.test(value) ? value : '/');
 
 export function sanitizeUserText(value: string) {
   return normalize(value).slice(0, 220);
@@ -39,7 +40,7 @@ async function loadPublishedSources(): Promise<AssistantSource[]> {
     const rows = await listPublishedContent();
     return rows.slice(0, 120).map((item) => ({
       title: sanitizeDisplay(item.title),
-      route: safeRoute(item.topic?.universe === 'professional' ? `/professional/topic/${item.topic?.slug || ''}` : `/personal/post/${item.slug}`),
+      route: safeRoute(normalizeUniverse(item.topic?.universe) === 'professional' ? `/professional/topic/${item.topic?.slug || ''}` : `/personal/post/${item.slug}`),
       excerpt: sanitizeDisplay(`${item.excerpt || ''} ${item.body.slice(0, 240)}`.trim()),
     }));
   } catch {
@@ -58,7 +59,7 @@ export async function querySiteAssistant(rawQuery: string): Promise<AssistantRep
   const query = sanitizeUserText(rawQuery);
   if (!query) {
     return {
-      text: 'Ask me about public website pages and topics. I can guide you to Security Map, Professional, Personal, and Games.',
+      text: 'Ask me about public website pages and topics. I can guide you to Security Map, Technology & Innovation, Curiosities & Philosophy, and Games.',
       sources: sitePages.slice(0, 4),
     };
   }
@@ -95,7 +96,7 @@ export async function querySiteAssistant(rawQuery: string): Promise<AssistantRep
 
   if (!uniqueScored.length) {
     return {
-      text: 'I could not find that on this website. Try broader keywords or open Security Map, Professional, Personal, or Games.',
+      text: 'I could not find that on this website. Try broader keywords or open Security Map, Technology & Innovation, Curiosities & Philosophy, or Games.',
       sources: [],
     };
   }

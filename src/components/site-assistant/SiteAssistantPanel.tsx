@@ -141,7 +141,7 @@ export function SiteAssistantPanel({ open, onClose }: { open: boolean; onClose: 
             />
             <button className="assistant-send" onClick={ask} disabled={loading || !input.trim()}>{loading ? '…' : 'Send'}</button>
           </div>
-          <p className="assistant-note">X1 only summarizes available public website information.</p>
+          <p className="assistant-note">X1 bot assists you in navigating the website.</p>
         </motion.section>
       )}
     </AnimatePresence>
