@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { listPublishedContent } from '@/lib/cms';
 import { ContentRecord } from '@/content/types';
+import { CyberAwarenessQuiz } from '@/components/games/CyberAwarenessQuiz';
+import { GeneralKnowledgeQuiz } from '@/components/games/GeneralKnowledgeQuiz';
 
-type GameKey = 'snake' | 'battleship' | 'tictactoe' | 'reaction' | 'rps' | 'math' | 'geo';
+type GameKey = 'snake' | 'battleship' | 'tictactoe' | 'reaction' | 'rps' | 'math' | 'geo' | 'cyber-awareness' | 'general-knowledge';
 
 const gameMeta: Record<GameKey, { title: string; desc: string; color: string; icon: string }> = {
   snake: { title: 'Snake', desc: 'Precision movement with increasing pressure.', color: 'from-emerald-400/35 to-cyan-400/25', icon: '🐍' },
@@ -13,10 +15,20 @@ const gameMeta: Record<GameKey, { title: string; desc: string; color: string; ic
   rps: { title: 'Rock Paper Scissors', desc: 'Lightweight probability mind game.', color: 'from-violet-500/35 to-fuchsia-400/25', icon: '🪨' },
   math: { title: 'Quick Math', desc: 'Solve rapidly under a short timer.', color: 'from-rose-500/35 to-pink-400/25', icon: '➗' },
   geo: { title: 'Country Locator', desc: 'Where is Spain? region-based world challenge.', color: 'from-cyan-500/35 to-sky-400/25', icon: '🌍' },
+  'cyber-awareness': { title: 'Cyber Culture Quiz', desc: 'Practice phishing awareness and secure habits.', color: 'from-emerald-500/35 to-teal-400/25', icon: '🛡️' },
+  'general-knowledge': { title: 'General Knowledge Quiz', desc: 'Quick mixed culture trivia in lightweight rounds.', color: 'from-indigo-500/35 to-sky-400/25', icon: '🧠' },
 };
 
-const readBest = (key: string) => Number(localStorage.getItem(key) || 0);
-const saveBest = (key: string, value: number) => localStorage.setItem(key, String(value));
+const readBest = (key: string) => {
+  if (typeof window === 'undefined') return 0;
+  const value = window.localStorage.getItem(key);
+  return Number(value || 0);
+};
+
+const saveBest = (key: string, value: number) => {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(key, String(value));
+};
 
 export function GamesHub() {
   const [active, setActive] = useState<GameKey>('snake');
@@ -31,10 +43,10 @@ export function GamesHub() {
       <header className="game-store rounded-3xl p-6">
         <p className="text-xs uppercase tracking-[0.25em] text-pink-200/80">Cyber Playground</p>
         <h1 className="mt-2 text-3xl font-semibold">Games</h1>
-        <p className="mt-2 text-sm text-pink-100/85">A curated set of lightweight games for focus, logic, and reaction speed.</p>
+        <p className="mt-2 text-sm text-pink-100/85">A curated set of lightweight games for focus, logic, awareness, and culture.</p>
       </header>
 
-      {games.length > 0 ? (
+      {games.length > 0 && (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {games.map((g) => (
             <article key={g.id} className="game-card rounded-2xl p-4">
@@ -44,8 +56,6 @@ export function GamesHub() {
             </article>
           ))}
         </div>
-      ) : (
-        <div className="glass rounded-2xl p-4 text-sm text-muted">No CMS game picks yet. Core lightweight games are available below.</div>
       )}
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -71,11 +81,12 @@ export function GamesHub() {
         {active === 'rps' && <RPSGame />}
         {active === 'math' && <QuickMathGame />}
         {active === 'geo' && <CountryLocatorGame />}
+        {active === 'cyber-awareness' && <CyberAwarenessQuiz />}
+        {active === 'general-knowledge' && <GeneralKnowledgeQuiz />}
       </div>
     </section>
   );
 }
-
 function SnakeGame() {
   const size = 12;
   const [snake, setSnake] = useState<number[]>([40, 39, 38]);

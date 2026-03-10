@@ -22,7 +22,7 @@ const sitePages: AssistantSource[] = [
   { title: 'Submitting', route: '/submitting', excerpt: 'Manual email submission instructions.' },
 ];
 
-const blockedTerms = ['admin', 'password', 'token', 'secret', 'private', 'internal', 'env', 'supabase key', 'api key'];
+const blockedTerms = ['admin', 'password', 'token', 'secret', 'private', 'internal', 'env', 'supabase key', 'api key', 'hidden'];
 const normalize = (value: string) => value.toLowerCase().replace(/[^a-z0-9\s-]/g, ' ').replace(/\s+/g, ' ').trim();
 const safeRoute = (value: string) => (value.startsWith('/') ? value : '/');
 
@@ -58,15 +58,15 @@ export async function querySiteAssistant(rawQuery: string): Promise<AssistantRep
   const query = sanitizeUserText(rawQuery);
   if (!query) {
     return {
-      text: 'I can summarize information available on this website. You can ask about Security Map, Professional, Personal, Games, or specific cybersecurity topics.',
+      text: 'Ask me about public website pages and topics. I can guide you to Security Map, Professional, Personal, and Games.',
       sources: sitePages.slice(0, 4),
     };
   }
 
   if (blockedTerms.some((term) => query.includes(term))) {
     return {
-      text: 'I cannot help with private, admin, or sensitive system information. I can only summarize public website content.',
-      sources: sitePages.slice(0, 2),
+      text: 'I cannot help with private, admin, or sensitive information. I only summarize public website content.',
+      sources: sitePages.slice(0, 3),
     };
   }
 
@@ -79,7 +79,7 @@ export async function querySiteAssistant(rawQuery: string): Promise<AssistantRep
   const contentSources = await loadPublishedSources();
   const sources = [...sitePages, ...contentSources, ...mapSources];
 
-  const terms = query.split(' ').filter((term) => term.length > 1);
+  const terms = query.split(' ').filter((term) => term.length > 1).slice(0, 8);
   const scored = sources
     .map((item) => {
       const hay = normalize(`${item.title} ${item.excerpt}`);
@@ -93,13 +93,13 @@ export async function querySiteAssistant(rawQuery: string): Promise<AssistantRep
 
   if (!scored.length) {
     return {
-      text: 'I could not find that information on this website. Please try a broader keyword or navigate to Security Map, Professional, or Personal.',
+      text: 'I could not find that on this website. Try broader keywords or open Security Map, Professional, Personal, or Games.',
       sources: [],
     };
   }
 
   const summary = scored
-    .map((s) => `• ${sanitizeDisplay(s.title)}: ${sanitizeDisplay(s.excerpt).slice(0, 150)}`)
+    .map((s) => `• ${sanitizeDisplay(s.title)}: ${sanitizeDisplay(s.excerpt).slice(0, 130)}`)
     .join('\n');
 
   return {

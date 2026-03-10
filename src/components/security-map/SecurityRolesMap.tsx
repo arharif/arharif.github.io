@@ -16,6 +16,7 @@ export function SecurityRolesMap() {
   const [hoverId, setHoverId] = useState<string | null>(null);
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [dragging, setDragging] = useState(false);
   const dragRef = useRef<{ x: number; y: number } | null>(null);
 
   const overview = category === 'all' && !search.trim();
@@ -61,9 +62,15 @@ export function SecurityRolesMap() {
       focusNodes.push({ ...node, x: 1330, y: 180 + idx * 30 });
     });
 
-    if (!term && !focusNodes.find((n) => n.id === activeId) && categoryNode) setActiveId(categoryNode.id);
     return focusNodes;
-  }, [overview, category, search, activeId]);
+  }, [overview, category, search]);
+
+  useEffect(() => {
+    if (!nodes.length) return;
+    if (!nodes.some((node) => node.id === activeId)) {
+      setActiveId(nodes[0].id);
+    }
+  }, [nodes, activeId]);
 
   const edges = useMemo(() => {
     const ids = new Set(nodes.map((n) => n.id));
@@ -122,8 +129,8 @@ export function SecurityRolesMap() {
 
       <div className="mindmap-layout">
         <div
-          className="mindmap-canvas"
-          onMouseDown={(e) => { dragRef.current = { x: e.clientX, y: e.clientY }; }}
+          className={`mindmap-canvas ${dragging ? 'is-dragging' : ''}`}
+          onMouseDown={(e) => { setDragging(true); dragRef.current = { x: e.clientX, y: e.clientY }; }}
           onMouseMove={(e) => {
             if (!dragRef.current) return;
             const dx = (e.clientX - dragRef.current.x) / scale;
@@ -131,8 +138,22 @@ export function SecurityRolesMap() {
             setOffset((o) => ({ x: o.x + dx, y: o.y + dy }));
             dragRef.current = { x: e.clientX, y: e.clientY };
           }}
-          onMouseUp={() => { dragRef.current = null; }}
-          onMouseLeave={() => { dragRef.current = null; }}
+          onMouseUp={() => { setDragging(false); dragRef.current = null; }}
+          onMouseLeave={() => { setDragging(false); dragRef.current = null; }}
+          onTouchStart={(e) => {
+            const touch = e.touches[0];
+            if (!touch) return;
+            dragRef.current = { x: touch.clientX, y: touch.clientY };
+          }}
+          onTouchMove={(e) => {
+            const touch = e.touches[0];
+            if (!touch || !dragRef.current) return;
+            const dx = (touch.clientX - dragRef.current.x) / scale;
+            const dy = (touch.clientY - dragRef.current.y) / scale;
+            setOffset((o) => ({ x: o.x + dx, y: o.y + dy }));
+            dragRef.current = { x: touch.clientX, y: touch.clientY };
+          }}
+          onTouchEnd={() => { dragRef.current = null; }}
           onWheel={(e) => { e.preventDefault(); setScale((v) => clamp(v + (e.deltaY < 0 ? 0.06 : -0.06), 0.45, 1.7)); }}
           role="img"
           aria-label="Cybersecurity roles map"
@@ -192,10 +213,10 @@ export function SecurityRolesMap() {
         </div>
 
         <div className="space-y-3">
-          <div className="glass rounded-xl p-2 flex gap-2 justify-end">
-            <button className="mindmap-btn" onClick={() => setScale((v) => clamp(v + 0.08, 0.45, 1.7))}>+</button>
-            <button className="mindmap-btn" onClick={() => setScale((v) => clamp(v - 0.08, 0.45, 1.7))}>−</button>
-            <button className="mindmap-btn" onClick={() => fitView(nodes)}>Fit</button>
+          <div className="glass rounded-xl p-2 flex gap-2 justify-end" role="toolbar" aria-label="Map zoom controls">
+            <button className="mindmap-btn" onClick={() => setScale((v) => clamp(v + 0.08, 0.45, 1.7))} aria-label="Zoom in">+</button>
+            <button className="mindmap-btn" onClick={() => setScale((v) => clamp(v - 0.08, 0.45, 1.7))} aria-label="Zoom out">−</button>
+            <button className="mindmap-btn" onClick={() => fitView(nodes)} aria-label="Fit graph to viewport">Fit</button>
           </div>
           <SecurityMapDetailPanel node={activeNode} />
         </div>

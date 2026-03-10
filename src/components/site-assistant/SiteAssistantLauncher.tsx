@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { X1Mark } from '@/components/branding/X1Mark';
 import { SiteAssistantPanel } from './SiteAssistantPanel';
 
 export function SiteAssistantLauncher() {
@@ -7,8 +6,15 @@ export function SiteAssistantLauncher() {
 
   return (
     <>
-      <button className="assistant-launcher" onClick={() => setOpen((v) => !v)} aria-label={open ? 'Close X1 Assistance' : 'Open X1 Assistance'} aria-expanded={open}>
-        <span className="assistant-logo-wrap"><X1Mark size="sm" /></span>
+      <button
+        className="assistant-launcher"
+        onClick={() => setOpen((v) => !v)}
+        aria-label={open ? 'Close X1 assistant' : 'Open X1 assistant'}
+        aria-expanded={open}
+        aria-controls="x1-assistant-panel"
+      >
+        <span className="assistant-launcher-title">X1</span>
+        <span className="assistant-launcher-text">Assistant</span>
       </button>
       <SiteAssistantPanel open={open} onClose={() => setOpen(false)} />
     </>

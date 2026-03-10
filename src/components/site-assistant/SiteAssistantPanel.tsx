@@ -9,12 +9,15 @@ interface Message {
   sources?: Array<{ title: string; route: string }>;
 }
 
+const initialMessage: Message = {
+  role: 'assistant',
+  text: 'I can summarize public content on this website and guide you to the right page.',
+};
+
 export function SiteAssistantPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', text: 'I can summarize the information available on this website.' },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([initialMessage]);
 
   const ask = async () => {
     const q = input.trim();
@@ -22,17 +25,21 @@ export function SiteAssistantPanel({ open, onClose }: { open: boolean; onClose: 
     setMessages((m) => [...m, { role: 'user', text: q }]);
     setInput('');
     setLoading(true);
-    const reply = await querySiteAssistant(q);
-    setMessages((m) => [...m, { role: 'assistant', text: reply.text, sources: reply.sources?.map((s) => ({ title: s.title, route: s.route })) }]);
-    setLoading(false);
+    try {
+      const reply = await querySiteAssistant(q);
+      setMessages((m) => [...m, { role: 'assistant', text: reply.text, sources: reply.sources?.map((s) => ({ title: s.title, route: s.route })) }]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <AnimatePresence>
       {open && (
         <motion.section
+          id="x1-assistant-panel"
           className="assistant-panel"
-          aria-label="X1 Assistance"
+          aria-label="X1 assistant"
           role="dialog"
           aria-modal="false"
           initial={{ opacity: 0, y: 12, scale: 0.98 }}
@@ -41,11 +48,10 @@ export function SiteAssistantPanel({ open, onClose }: { open: boolean; onClose: 
           transition={{ duration: 0.16 }}
         >
           <div className="assistant-head">
-            <p className="text-sm font-semibold">X1 Assistance</p>
-            <button className="assistant-icon-btn" onClick={onClose} aria-label="Close assistant">✕</button>
+            <p className="text-sm font-semibold">X1</p>
+            <button className="assistant-icon-btn" onClick={onClose} aria-label="Close X1 assistant">✕</button>
           </div>
           <div className="assistant-body">
-            {messages.length === 0 && <p className="text-xs text-muted">Ask about website pages, map categories, roles, and published posts.</p>}
             {messages.map((m, i) => (
               <div key={i} className={`assistant-msg ${m.role === 'user' ? 'is-user' : 'is-bot'}`}>
                 <p className="text-sm whitespace-pre-line">{m.text}</p>
@@ -58,10 +64,7 @@ export function SiteAssistantPanel({ open, onClose }: { open: boolean; onClose: 
                 )}
               </div>
             ))}
-            {!loading && messages[messages.length - 1]?.role === 'assistant' && messages[messages.length - 1]?.sources?.length === 0 && (
-              <p className="text-xs text-amber-200/90">I could not find that on this website. Try broader terms like “Security Map”, “Professional”, or “Personal”.</p>
-            )}
-            {loading && <p className="text-xs text-muted">Summarizing website content…</p>}
+            {loading && <p className="text-xs text-muted">X1 is checking website content…</p>}
           </div>
           <div className="assistant-foot">
             <input
@@ -70,11 +73,12 @@ export function SiteAssistantPanel({ open, onClose }: { open: boolean; onClose: 
               onChange={(e) => setInput(e.target.value.slice(0, 280))}
               placeholder="Ask about website content"
               onKeyDown={(e) => { if (e.key === 'Enter') ask(); }}
-              aria-label="Ask the site assistant"
+              aria-label="Ask X1 about this website"
+              autoComplete="off"
             />
-            <button className="assistant-send" onClick={ask} disabled={loading || !input.trim()}>Send</button>
+            <button className="assistant-send" onClick={ask} disabled={loading || !input.trim()}>{loading ? '…' : 'Send'}</button>
           </div>
-          <p className="assistant-note">I can help you find and summarize information available on this website.</p>
+          <p className="assistant-note">X1 only uses available public website information.</p>
         </motion.section>
       )}
     </AnimatePresence>

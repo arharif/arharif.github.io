@@ -224,8 +224,8 @@ iframe { border: 0; }
     linear-gradient(160deg, rgba(15, 23, 42, 0.78), rgba(2, 6, 23, 0.9));
   border: 1px solid rgba(255, 255, 255, 0.14);
 }
-.mindmap-shell { display: grid; gap: 0.9rem; }
-.mindmap-layout { display: grid; gap: 0.9rem; grid-template-columns: minmax(0, 1fr); }
+.mindmap-shell { display: grid; gap: 0.7rem; }
+.mindmap-layout { display: grid; gap: 0.75rem; grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 1024px) { .mindmap-layout { grid-template-columns: minmax(0, 1fr) 330px; } }
 .mindmap-controls { display: grid; gap: 0.5rem; grid-template-columns: 1fr; }
 @media (min-width: 860px) { .mindmap-controls { grid-template-columns: 1fr 220px auto; align-items: center; } }
@@ -251,7 +251,7 @@ iframe { border: 0; }
 }
 .mindmap-canvas {
   position: relative;
-  min-height: 66vh;
+  min-height: clamp(420px, 58vh, 640px);
   border-radius: 20px;
   border: 1px solid rgba(255,255,255,0.13);
   background:
@@ -262,7 +262,7 @@ iframe { border: 0; }
   cursor: grab;
 }
 .mindmap-canvas.is-dragging { cursor: grabbing; }
-.mindmap-svg { width: 100%; height: 100%; min-height: 66vh; }
+.mindmap-svg { width: 100%; height: 100%; min-height: clamp(420px, 58vh, 640px); }
 .mindmap-node { transition: transform 180ms ease; }
 .mindmap-node:hover { transform: scale(1.04); }
 .mindmap-label {
@@ -393,27 +393,27 @@ iframe { border: 0; }
 
 /* Security map toolbar */
 .roles-toolbar { display: grid; gap: 0.75rem; }
-.roles-toolbar-grid { display: grid; gap: 0.7rem; grid-template-columns: 1fr 1.4fr auto; align-items: end; }
+.roles-toolbar-grid { display: grid; gap: 0.7rem; grid-template-columns: 1fr 1.4fr; align-items: end; }
 .roles-field { display: grid; gap: 0.32rem; }
 .roles-field-label { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #94a3b8; }
 @media (max-width: 900px) {
   .roles-toolbar-grid { grid-template-columns: 1fr; }
 }
-/* Assistant overrides: circular compact launcher at bottom-right */
+/* Assistant launcher */
 .assistant-launcher {
   left: auto;
   right: 18px;
   bottom: 20px;
   border-radius: 999px;
-  width: 46px;
-  height: 46px;
-  display: grid;
-  place-items: center;
-  padding: 0;
-  background: linear-gradient(165deg, rgba(15,23,42,0.9), rgba(2,6,23,0.96));
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.7rem;
+  background: linear-gradient(165deg, rgba(15,23,42,0.92), rgba(2,6,23,0.98));
   box-shadow: 0 10px 30px rgba(2,6,23,0.44);
 }
-.assistant-logo-wrap { display: inline-grid; place-items: center; transform: scale(0.84); }
+.assistant-launcher-title { font-weight: 700; letter-spacing: 0.03em; }
+.assistant-launcher-text { font-size: 0.78rem; color: #cbd5e1; }
 .assistant-panel {
   left: auto;
   right: 18px;
@@ -432,3 +432,5 @@ iframe { border: 0; }
   .assistant-panel { right: 10px; left: 10px; width: auto; bottom: 74px; }
   .assistant-launcher { right: 10px; bottom: 14px; }
 }
+
+.game-card:focus-visible, .game-panel button:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(125,211,252,0.7); }
