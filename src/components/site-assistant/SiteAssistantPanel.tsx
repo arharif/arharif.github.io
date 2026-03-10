@@ -32,7 +32,7 @@ export function SiteAssistantPanel({ open, onClose }: { open: boolean; onClose: 
       {open && (
         <motion.section
           className="assistant-panel"
-          aria-label="Site assistant"
+          aria-label="X1 Assistance"
           role="dialog"
           aria-modal="false"
           initial={{ opacity: 0, y: 12, scale: 0.98 }}
@@ -41,7 +41,7 @@ export function SiteAssistantPanel({ open, onClose }: { open: boolean; onClose: 
           transition={{ duration: 0.16 }}
         >
           <div className="assistant-head">
-            <p className="text-sm font-semibold">Site Assistant</p>
+            <p className="text-sm font-semibold">X1 Assistance</p>
             <button className="assistant-icon-btn" onClick={onClose} aria-label="Close assistant">✕</button>
           </div>
           <div className="assistant-body">
@@ -59,7 +59,7 @@ export function SiteAssistantPanel({ open, onClose }: { open: boolean; onClose: 
               </div>
             ))}
             {!loading && messages[messages.length - 1]?.role === 'assistant' && messages[messages.length - 1]?.sources?.length === 0 && (
-              <p className="text-xs text-amber-200/90">No result found in website content. Try broader terms (e.g., “Security Map”, “AppSec”, “Professional”).</p>
+              <p className="text-xs text-amber-200/90">I could not find that on this website. Try broader terms like “Security Map”, “Professional”, or “Personal”.</p>
             )}
             {loading && <p className="text-xs text-muted">Summarizing website content…</p>}
           </div>
@@ -74,7 +74,7 @@ export function SiteAssistantPanel({ open, onClose }: { open: boolean; onClose: 
             />
             <button className="assistant-send" onClick={ask} disabled={loading || !input.trim()}>Send</button>
           </div>
-          <p className="assistant-note">Website-only assistant. No private/admin data. No external knowledge responses.</p>
+          <p className="assistant-note">I can help you find and summarize information available on this website.</p>
         </motion.section>
       )}
     </AnimatePresence>

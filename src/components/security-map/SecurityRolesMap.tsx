@@ -1,71 +1,124 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { securityMapData } from '@/data/securityMap';
-import { SecurityMapFilters } from './SecurityMapFilters';
-import { filterEdges, filterNodes, FilterState } from './filters';
 import { SecurityMapDetailPanel } from './SecurityMapDetailPanel';
+import { SecurityMapNode } from './types';
+import { SecurityMapToolbar } from './SecurityMapToolbar';
 
-const viewWidth = 2040;
-const viewHeight = 6800;
+const viewWidth = 1800;
+const viewHeight = 1200;
 const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
+const norm = (v: string) => v.toLowerCase().trim();
 
 export function SecurityRolesMap() {
-  const [filters, setFilters] = useState<FilterState>({ category: 'all', search: '', showRoles: true, showSubdomains: true, coreRolesOnly: false });
+  const [category, setCategory] = useState('all');
+  const [search, setSearch] = useState('');
   const [activeId, setActiveId] = useState<string>('category-executive-governance');
   const [hoverId, setHoverId] = useState<string | null>(null);
-  const [scale, setScale] = useState(0.33);
-  const [offset, setOffset] = useState({ x: 80, y: -120 });
+  const [scale, setScale] = useState(1);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
   const dragRef = useRef<{ x: number; y: number } | null>(null);
 
-  const visibleNodes = useMemo(() => filterNodes(securityMapData, filters), [filters]);
-  const visibleEdges = useMemo(() => filterEdges(visibleNodes, securityMapData.edges), [visibleNodes]);
-  const nodeMap = useMemo(() => new Map(visibleNodes.map((node) => [node.id, node])), [visibleNodes]);
+  const overview = category === 'all' && !search.trim();
 
-  const activeNode = nodeMap.get(activeId) || visibleNodes[0];
+  const nodes = useMemo(() => {
+    if (overview) {
+      const categoryNodes = securityMapData.nodes.filter((n) => n.type === 'category');
+      const cols = 4;
+      return categoryNodes.map((node, idx) => {
+        const col = idx % cols;
+        const row = Math.floor(idx / cols);
+        const x = 240 + col * 420;
+        const y = 170 + row * 190;
+        return { ...node, x, y };
+      });
+    }
+
+    const term = norm(search);
+    const filtered = securityMapData.nodes.filter((node) => {
+      if (category !== 'all' && node.categoryId !== category) return false;
+      if (!term) return true;
+      return norm(`${node.label} ${node.description} ${node.categoryId}`).includes(term);
+    });
+
+    const selectedCategoryId = category === 'all'
+      ? (filtered.find((n) => n.type === 'category')?.categoryId || securityMapData.categories[0].id)
+      : category;
+
+    const categoryNode = securityMapData.nodes.find((n) => n.id === `category-${selectedCategoryId}`);
+    const subdomains = securityMapData.nodes.filter((n) => n.categoryId === selectedCategoryId && n.type === 'subdomain');
+    const roles = securityMapData.nodes.filter((n) => n.categoryId === selectedCategoryId && n.type === 'role');
+
+    const focusNodes: SecurityMapNode[] = [];
+    if (categoryNode) focusNodes.push({ ...categoryNode, x: 900, y: 560 });
+
+    const visibleSub = term ? subdomains.filter((n) => filtered.some((f) => f.id === n.id || f.id === categoryNode?.id)) : subdomains;
+    const visibleRoles = term ? roles.filter((n) => filtered.some((f) => f.id === n.id || f.id === categoryNode?.id)) : roles;
+
+    visibleSub.forEach((node, idx) => {
+      focusNodes.push({ ...node, x: 460, y: 240 + idx * 42 });
+    });
+    visibleRoles.forEach((node, idx) => {
+      focusNodes.push({ ...node, x: 1330, y: 180 + idx * 30 });
+    });
+
+    if (!term && !focusNodes.find((n) => n.id === activeId) && categoryNode) setActiveId(categoryNode.id);
+    return focusNodes;
+  }, [overview, category, search, activeId]);
+
+  const edges = useMemo(() => {
+    const ids = new Set(nodes.map((n) => n.id));
+    return securityMapData.edges.filter((edge) => ids.has(edge.source) && ids.has(edge.target));
+  }, [nodes]);
+
+  const nodeMap = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes]);
+  const activeNode = nodeMap.get(activeId) || nodes[0];
 
   const connectedIds = useMemo(() => {
     const target = hoverId || activeNode?.id;
     if (!target) return new Set<string>();
     const set = new Set<string>();
-    visibleEdges.forEach((edge) => {
+    edges.forEach((edge) => {
       if (edge.source === target) set.add(edge.target);
       if (edge.target === target) set.add(edge.source);
     });
     return set;
-  }, [hoverId, activeNode?.id, visibleEdges]);
+  }, [hoverId, activeNode?.id, edges]);
 
-  const fitView = () => {
-    if (!visibleNodes.length) return;
-    const xs = visibleNodes.map((n) => n.x);
-    const ys = visibleNodes.map((n) => n.y);
-    const minX = Math.min(...xs) - 120;
+  const fitView = (sourceNodes = nodes) => {
+    if (!sourceNodes.length) return;
+    const xs = sourceNodes.map((n) => n.x);
+    const ys = sourceNodes.map((n) => n.y);
+    const minX = Math.min(...xs) - 180;
     const minY = Math.min(...ys) - 140;
-    const maxX = Math.max(...xs) + 120;
+    const maxX = Math.max(...xs) + 180;
     const maxY = Math.max(...ys) + 140;
-    const w = maxX - minX;
-    const h = maxY - minY;
-    const nextScale = clamp(Math.min(1220 / w, 680 / h), 0.24, 1.15);
+    const w = Math.max(1, maxX - minX);
+    const h = Math.max(1, maxY - minY);
+    const nextScale = clamp(Math.min(1280 / w, 760 / h), 0.5, 1.55);
     setScale(nextScale);
-    setOffset({ x: -minX + 80, y: -minY + 60 });
+    setOffset({ x: -minX + 60, y: -minY + 42 });
   };
 
-  const resetView = () => {
-    setScale(0.33);
-    setOffset({ x: 80, y: -120 });
+  useEffect(() => {
+    fitView(nodes);
+  }, [category, search]);
+
+  const resetAll = () => {
+    setCategory('all');
+    setSearch('');
+    setActiveId('category-executive-governance');
   };
 
   return (
     <div className="mindmap-shell">
-      <SecurityMapFilters
+      <SecurityMapToolbar
         categories={securityMapData.categories}
-        state={filters}
-        onChange={setFilters}
-        onZoomIn={() => setScale((v) => clamp(v + 0.08, 0.22, 1.2))}
-        onZoomOut={() => setScale((v) => clamp(v - 0.08, 0.22, 1.2))}
-        onFit={fitView}
-        onReset={resetView}
+        category={category}
+        search={search}
+        setCategory={setCategory}
+        setSearch={setSearch}
+        onReset={resetAll}
       />
-
-      {visibleNodes.length === 0 && <div className="glass rounded-2xl p-4 text-sm text-muted">No matching nodes. Clear search or broaden filters.</div>}
 
       <div className="mindmap-layout">
         <div
@@ -80,37 +133,33 @@ export function SecurityRolesMap() {
           }}
           onMouseUp={() => { dragRef.current = null; }}
           onMouseLeave={() => { dragRef.current = null; }}
-          onWheel={(e) => { e.preventDefault(); setScale((v) => clamp(v + (e.deltaY < 0 ? 0.05 : -0.05), 0.22, 1.2)); }}
+          onWheel={(e) => { e.preventDefault(); setScale((v) => clamp(v + (e.deltaY < 0 ? 0.06 : -0.06), 0.45, 1.7)); }}
           role="img"
           aria-label="Cybersecurity roles map"
         >
-          <svg viewBox={`0 0 ${viewWidth} ${viewHeight}`} className="mindmap-svg" preserveAspectRatio="xMinYMin meet">
+          <svg viewBox={`0 0 ${viewWidth} ${viewHeight}`} className="mindmap-svg" preserveAspectRatio="xMidYMid meet">
             <defs>
               <pattern id="roles-grid" width="50" height="50" patternUnits="userSpaceOnUse">
-                <path d="M 50 0 L 0 0 0 50" fill="none" stroke="rgba(255,255,255,0.045)" strokeWidth="0.8" />
+                <path d="M 50 0 L 0 0 0 50" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="0.8" />
               </pattern>
             </defs>
-            <rect width={viewWidth} height={viewHeight} fill="url(#roles-grid)" opacity="0.65" />
+            <rect width={viewWidth} height={viewHeight} fill="url(#roles-grid)" opacity="0.6" />
             <g transform={`translate(${offset.x}, ${offset.y}) scale(${scale})`}>
-              {visibleEdges.map((edge) => {
+              {edges.map((edge) => {
                 const s = nodeMap.get(edge.source);
                 const t = nodeMap.get(edge.target);
                 if (!s || !t) return null;
-                const category = securityMapData.categories.find((c) => c.id === edge.categoryId);
                 const active = (hoverId || activeNode?.id) && (edge.source === (hoverId || activeNode?.id) || edge.target === (hoverId || activeNode?.id));
-                const faded = filters.category !== 'all' && edge.categoryId !== filters.category;
-                return <line key={edge.id} x1={s.x} y1={s.y} x2={t.x} y2={t.y} stroke={active ? 'rgba(255,255,255,.88)' : faded ? 'rgba(100,116,139,.16)' : category?.color.edge || 'rgba(148,163,184,.26)'} strokeWidth={active ? 2.2 : 1.1} />;
+                return <line key={edge.id} x1={s.x} y1={s.y} x2={t.x} y2={t.y} stroke={active ? 'rgba(255,255,255,.8)' : 'rgba(125,211,252,.28)'} strokeWidth={active ? 2.2 : 1.2} />;
               })}
 
-              {visibleNodes.map((node) => {
-                const category = securityMapData.categories.find((c) => c.id === node.categoryId);
+              {nodes.map((node) => {
+                const categoryDef = securityMapData.categories.find((c) => c.id === node.categoryId);
                 const isActive = node.id === activeNode?.id;
                 const isHover = node.id === hoverId;
                 const connected = connectedIds.has(node.id);
-                const faded = filters.category !== 'all' && node.categoryId !== filters.category;
-                const opacity = isActive || isHover ? 1 : connected ? 0.95 : faded ? 0.18 : 0.75;
-                const radius = node.type === 'category' ? 18 : node.type === 'subdomain' ? 12 : node.coreRole ? 11 : 9;
-                const strokeDasharray = node.type === 'subdomain' ? '2 2' : undefined;
+                const opacity = isActive || isHover ? 1 : connected ? 0.92 : 0.72;
+                const radius = node.type === 'category' ? 20 : node.type === 'subdomain' ? 12 : node.coreRole ? 11 : 9;
 
                 return (
                   <g
@@ -119,14 +168,22 @@ export function SecurityRolesMap() {
                     className="mindmap-node"
                     onMouseEnter={() => setHoverId(node.id)}
                     onMouseLeave={() => setHoverId(null)}
-                    onClick={() => setActiveId(node.id)}
+                    onClick={() => {
+                      setActiveId(node.id);
+                      if (node.type === 'category') setCategory(node.categoryId);
+                    }}
                     tabIndex={0}
-                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setActiveId(node.id); }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        setActiveId(node.id);
+                        if (node.type === 'category') setCategory(node.categoryId);
+                      }
+                    }}
                     aria-label={`${node.type} ${node.label}`}
                   >
-                    <circle r={radius} fill={category?.color.fill || '#334155'} opacity={opacity} />
-                    <circle r={radius + 6} fill="transparent" stroke={category?.color.ring || '#cbd5e1'} strokeOpacity={isActive || isHover ? 0.9 : 0.3} strokeDasharray={strokeDasharray} />
-                    <text x={node.type === 'subdomain' ? -16 : 16} y={4} textAnchor={node.type === 'subdomain' ? 'end' : 'start'} className="mindmap-label" style={{ fill: category?.color.text || '#e2e8f0', opacity }}>{node.label}</text>
+                    <circle r={radius} fill={categoryDef?.color.fill || '#334155'} opacity={opacity} />
+                    <circle r={radius + 6} fill="transparent" stroke={categoryDef?.color.ring || '#cbd5e1'} strokeOpacity={isActive || isHover ? 0.9 : 0.28} />
+                    <text x={node.type === 'subdomain' ? -16 : 16} y={4} textAnchor={node.type === 'subdomain' ? 'end' : 'start'} className="mindmap-label" style={{ fill: categoryDef?.color.text || '#e2e8f0', opacity }}>{node.label}</text>
                   </g>
                 );
               })}
@@ -134,7 +191,14 @@ export function SecurityRolesMap() {
           </svg>
         </div>
 
-        <SecurityMapDetailPanel node={activeNode} />
+        <div className="space-y-3">
+          <div className="glass rounded-xl p-2 flex gap-2 justify-end">
+            <button className="mindmap-btn" onClick={() => setScale((v) => clamp(v + 0.08, 0.45, 1.7))}>+</button>
+            <button className="mindmap-btn" onClick={() => setScale((v) => clamp(v - 0.08, 0.45, 1.7))}>−</button>
+            <button className="mindmap-btn" onClick={() => fitView(nodes)}>Fit</button>
+          </div>
+          <SecurityMapDetailPanel node={activeNode} />
+        </div>
       </div>
     </div>
   );
