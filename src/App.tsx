@@ -518,6 +518,9 @@ function NotFound() { return <section className="mx-auto max-w-xl py-24 text-cen
 function Shell() {
   const [mode, setMode] = useState<ThemeMode>(() => initTheme());
   const location = useLocation();
+  const [navNotice, setNavNotice] = useState('');
+  const [noticeVisible, setNoticeVisible] = useState(false);
+  const previousTopPath = useRef<string>('');
   useEffect(() => { document.documentElement.classList.remove('theme-dark', 'theme-light', 'theme-purple', 'theme-rainbow'); document.documentElement.classList.add(themeMap[mode]); try { localStorage.setItem('theme', mode); } catch { /* storage may be unavailable */ } }, [mode]);
   useEffect(() => {
     const labels: Record<string, string> = {
