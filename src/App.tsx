@@ -9,6 +9,7 @@ import { ArticleView } from '@/components/ArticleView';
 import { ContentCard, EntryCard } from '@/components/Cards';
 import { Navbar } from '@/components/Navbar';
 import { GamesHub } from '@/components/GamesHub';
+import { SecurityMindmapPage } from '@/pages/SecurityMindmapPage';
 import { ProtectedRoute } from '@/routes/ProtectedRoute';
 import { AuthProvider, useAuth } from '@/hooks/useAuth';
 import { createContent, createTopic, deleteContent, deleteTopic, listAdminContent, listAdminTopics, listCollections, listPublishedContent, listPublishedTopics, updateContent, updateTopic, uploadMedia } from '@/lib/cms';
@@ -421,6 +422,8 @@ function Shell() {
               <Route path="/personal/post/:slug" element={<PersonalPost />} />
               <Route path="/submitting" element={<SubmittingPage />} />
               <Route path="/games" element={<GamesHub />} />
+              <Route path="/Security_Mindmap" element={<SecurityMindmapPage />} />
+              <Route path="/security-mindmap" element={<SecurityMindmapPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />

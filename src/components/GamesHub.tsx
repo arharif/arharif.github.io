@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { listPublishedContent } from '@/lib/cms';
 import { ContentRecord } from '@/content/types';
+import { Link } from 'react-router-dom';
 
 type GameKey = 'snake' | 'battleship' | 'chess' | 'samurai' | 'qsm';
 
@@ -53,6 +54,12 @@ export function GamesHub() {
             <p className="mt-1 text-sm text-pink-100/90">{meta.desc}</p>
           </button>
         ))}
+      </div>
+
+
+      <div className="glass rounded-2xl p-4">
+        <p className="text-sm text-muted">Looking for the strategic cybersecurity landscape?</p>
+        <Link to="/Security_Mindmap" className="mt-2 inline-block rounded-xl bg-white/15 px-4 py-2 text-sm hover:bg-white/25">Explore Security Mindmap</Link>
       </div>
 
       <div className="game-panel rounded-2xl p-4">
