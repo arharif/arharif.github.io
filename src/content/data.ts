@@ -9,7 +9,7 @@ export const seedTopics: TopicRecord[] = [
 
   { id: 't-pa1', slug: 'existentialism-in-anime', title: 'Existentialism in Anime', description: 'Identity, freedom, and morality through anime narratives.', universe: 'personal', category: 'Philosophy and Anime', subcategory: 'Existentialism', displayStyle: 'article', palette: 'purple', mood: 'mystic', orderIndex: 1, featured: true, createdAt: now, updatedAt: now },
   { id: 't-b1', slug: 'literary-notes', title: 'Literary Notes', description: 'Reflections and distilled frameworks from books.', universe: 'personal', category: 'Books', subcategory: 'Reflections', displayStyle: 'article', palette: 'slate', mood: 'literary', orderIndex: 2, createdAt: now, updatedAt: now },
-  { id: 't-h1', slug: 'creative-hobbies', title: 'Creative Hobbies', description: 'Personal craft, experiments, and routines.', universe: 'personal', category: 'Hobbies', subcategory: 'Learning Journeys', displayStyle: 'article', palette: 'amber', mood: 'warm', orderIndex: 3, createdAt: now, updatedAt: now },
+  { id: 't-h1', slug: 'creative-hobbies', title: 'Creative Hobbies', description: 'Creative craft, experiments, and routines.', universe: 'personal', category: 'Hobbies', subcategory: 'Learning Journeys', displayStyle: 'article', palette: 'amber', mood: 'warm', orderIndex: 3, createdAt: now, updatedAt: now },
 ];
 
 export const seedCollections: CollectionRecord[] = [

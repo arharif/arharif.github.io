@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Linkedin } from 'lucide-react';
+import { Github, Linkedin } from 'lucide-react';
 import { Component, ReactNode, useEffect, useState } from 'react';
 import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { AdminEditor } from '@/components/admin/AdminEditor';
@@ -16,18 +16,12 @@ import { ProtectedRoute } from '@/routes/ProtectedRoute';
 import { AuthProvider, useAuth } from '@/hooks/useAuth';
 import { createContent, createTopic, deleteContent, deleteTopic, listAdminContent, listAdminTopics, listCollections, listPublishedContent, listPublishedTopics, updateContent, updateTopic, uploadMedia } from '@/lib/cms';
 import { searchContent } from '@/lib/content';
-import { config, genericAccessDenied, genericAuthError, hasSupabaseCoreConfig } from '@/lib/config';
+import { genericAccessDenied, genericAuthError, hasSupabaseCoreConfig } from '@/lib/config';
 import { initTheme, ThemeMode, themeMap } from '@/lib/theme';
+import { normalizeUniverse, universeMeta } from '@/lib/universe';
 import { CollectionRecord, ContentRecord, TopicRecord } from './content/types';
 
-const normUniverse = (value?: string | null) => (value || '').toLowerCase().trim();
-
-const inferUniverseFromContentType = (contentType?: string | null) => {
-  const value = (contentType || '').toLowerCase().trim();
-  if (value.startsWith('professional')) return 'professional';
-  if (value.startsWith('personal')) return 'personal';
-  return '';
-};
+const inferUniverseFromContentType = (contentType?: string | null) => normalizeUniverse(contentType);
 
 async function loadPublishedGraph(): Promise<{ topics: TopicRecord[]; content: ContentRecord[] }> {
   const [topicsResult, contentResult] = await Promise.allSettled([listPublishedTopics(), listPublishedContent()]);
@@ -54,8 +48,8 @@ function Landing() {
   const nav = useNavigate();
   return (
     <section className="grid gap-6 py-10 md:grid-cols-2">
-      <EntryCard title="Professional" description="AI, Cybersecurity, IoT, systems architecture, and emerging technology knowledge." onClick={() => nav('/professional')} />
-      <EntryCard title="Personal" description="Philosophy, anime, books, hobbies, and thoughtful cultural reflections." onClick={() => nav('/personal')} />
+      <EntryCard title={universeMeta.professional.label} description={universeMeta.professional.description} onClick={() => nav('/professional')} />
+      <EntryCard title={universeMeta.personal.label} description={universeMeta.personal.description} onClick={() => nav('/personal')} />
     </section>
   );
 }
@@ -68,7 +62,7 @@ function SearchPage() {
   useEffect(() => { loadPublishedGraph().then(({ topics: t, content: c }) => { setTopics(t); setContent(c); }); }, []);
   const matchedTopics = topics.filter((t) => `${t.title} ${t.description} ${t.category}`.toLowerCase().includes(query.toLowerCase()));
   const matchedContent = searchContent(content, query);
-  return <section><h1 className="mb-4 text-3xl font-semibold">Search</h1><div className="glass mb-5 rounded-2xl p-3"><input className="w-full bg-transparent outline-none" placeholder="Search topics, articles, tags, collections" value={query} onChange={(e) => setQuery(e.target.value)} /></div><div className="grid gap-6 md:grid-cols-2"><div><h2 className="mb-2 text-xl font-semibold">Topics</h2>{matchedTopics.map((t)=><button key={t.id} onClick={()=>nav(normUniverse(t.universe)==='professional'?`/professional/topic/${t.slug}`:'/personal')} className="glass mb-2 block w-full rounded-xl p-3 text-left">{t.title}</button>)}</div><div><h2 className="mb-2 text-xl font-semibold">Content</h2>{matchedContent.map((c)=>{ const topic = topics.find((t)=>t.id===c.topicId); return <button key={c.id} onClick={()=>nav(topic && normUniverse(topic.universe)==='professional'?`/professional/topic/${topic.slug}`:`/personal/post/${c.slug}`)} className="glass mb-2 block w-full rounded-xl p-3 text-left">{c.title}</button>; })}</div></div></section>;
+  return <section><h1 className="mb-4 text-3xl font-semibold">Search</h1><div className="glass mb-5 rounded-2xl p-3"><input className="w-full bg-transparent outline-none" placeholder="Search topics, articles, tags, collections" value={query} onChange={(e) => setQuery(e.target.value)} /></div><div className="grid gap-6 md:grid-cols-2"><div><h2 className="mb-2 text-xl font-semibold">Topics</h2>{matchedTopics.map((t)=><button key={t.id} onClick={()=>nav(normalizeUniverse(t.universe)==='professional'?`/professional/topic/${t.slug}`:'/personal')} className="glass mb-2 block w-full rounded-xl p-3 text-left">{t.title}</button>)}</div><div><h2 className="mb-2 text-xl font-semibold">Content</h2>{matchedContent.map((c)=>{ const topic = topics.find((t)=>t.id===c.topicId); return <button key={c.id} onClick={()=>nav(topic && normalizeUniverse(topic.universe)==='professional'?`/professional/topic/${topic.slug}`:`/personal/post/${c.slug}`)} className="glass mb-2 block w-full rounded-xl p-3 text-left">{c.title}</button>; })}</div></div></section>;
 }
 
 function ProfessionalHome() {
@@ -80,11 +74,11 @@ function ProfessionalHome() {
 
   useEffect(() => {
     loadPublishedGraph().then(({ topics: t, content }) => {
-      const professionalTopics = t.filter((x) => normUniverse(x.universe) === 'professional');
+      const professionalTopics = t.filter((x) => normalizeUniverse(x.universe) === 'professional');
       const professionalTopicIds = new Set(professionalTopics.map((x) => x.id));
       const professionalPosts = content.filter((item) => {
         if (professionalTopicIds.size > 0) return professionalTopicIds.has(item.topicId);
-        const topicUniverse = normUniverse(item.topic?.universe);
+        const topicUniverse = normalizeUniverse(item.topic?.universe);
         return topicUniverse === 'professional' || inferUniverseFromContentType(item.contentType) === 'professional';
       });
       setTopics(professionalTopics);
@@ -92,7 +86,7 @@ function ProfessionalHome() {
     });
 
     listCollections()
-      .then((c) => setCollections(c.filter((x) => normUniverse(x.universe) === 'professional')))
+      .then((c) => setCollections(c.filter((x) => normalizeUniverse(x.universe) === 'professional')))
       .catch(() => setCollections([]));
   }, []);
 
@@ -102,48 +96,48 @@ function ProfessionalHome() {
 
   return (
     <section>
-      <h1 className="mb-2 text-3xl font-semibold">Professional</h1>
+      <h1 className="mb-2 text-3xl font-semibold">{universeMeta.professional.label}</h1>
       <p className="mb-5 text-muted">This universe is for everything related to the latest technology including AI, Cybersecurity, IoT, OT/ICS, Blockchain, and modern engineering insights.</p>
 
-      <TopicFilterBar label="Professional Topics" options={filterOptions} active={activeTopic} onChange={setActiveTopic} count={filteredPosts.length + filteredTopics.length} />
+      <TopicFilterBar label="Technology & Innovation Topics" options={filterOptions} active={activeTopic} onChange={setActiveTopic} count={filteredPosts.length + filteredTopics.length} />
 
       {filteredTopics.length > 0 ? (
         <div className="mb-6 mt-4 grid gap-4 md:grid-cols-3">
           {filteredTopics.map((t)=><motion.button whileHover={{y:-5}} key={t.id} onClick={()=>nav(`/professional/topic/${t.slug}`)} className="glass rounded-2xl p-5 text-left"><p className="text-xs text-muted">{t.category} · {t.displayStyle}</p><h3 className="mt-2 text-xl font-semibold">{t.title}</h3><p className="mt-2 text-sm text-muted">{t.description}</p></motion.button>)}
         </div>
       ) : filteredPosts.length > 0 ? null : (
-        <div className="glass mb-6 mt-4 rounded-2xl p-4 text-sm text-muted">No professional topics match this filter.</div>
+        <div className="glass mb-6 mt-4 rounded-2xl p-4 text-sm text-muted">No technology and innovation topics match this filter.</div>
       )}
 
       {filteredPosts.length > 0 ? (
         <>
-          <h2 className="mb-3 text-xl font-semibold">Latest Professional Posts</h2>
+          <h2 className="mb-3 text-xl font-semibold">Latest Technology & Innovation Posts</h2>
           <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filteredPosts.map((p) => { const topic = topics.find((t) => t.id === p.topicId); return <ContentCard key={p.id} item={p} onOpen={() => nav(topic ? `/professional/topic/${topic.slug}` : '/professional')} />; })}
           </div>
         </>
       ) : (
-        <div className="glass mb-6 rounded-2xl p-4 text-sm text-muted">No professional posts match this filter yet.</div>
+        <div className="glass mb-6 rounded-2xl p-4 text-sm text-muted">No technology and innovation posts match this filter yet.</div>
       )}
 
       <h2 className="mb-3 text-xl font-semibold">Curated Collections</h2>
       {collections.length > 0 ? (
         <div className="grid gap-3 md:grid-cols-2">{collections.map((c)=><div className="glass rounded-xl p-3" key={c.id}><p className="text-sm font-semibold">{c.title}</p><p className="text-xs text-muted">{c.description}</p></div>)}</div>
       ) : (
-        <div className="glass rounded-xl p-3 text-xs text-muted">Collections are optional. Professional topics are shown above.</div>
+        <div className="glass rounded-xl p-3 text-xs text-muted">Collections are optional. Technology & Innovation topics are shown above.</div>
       )}
     </section>
   );
 }
 
-function ProfessionalBook() {
+function TechnologyBook() {
   const { slug } = useParams();
   const [topic, setTopic] = useState<TopicRecord | null>(null);
   const [chapters, setChapters] = useState<ContentRecord[]>([]);
   const [progress, setProgress] = useState(0);
   useEffect(() => {
     loadPublishedGraph().then(({ topics, content }) => {
-      const t = topics.find((x) => x.slug === slug && normUniverse(x.universe) === 'professional') || null;
+      const t = topics.find((x) => x.slug === slug && normalizeUniverse(x.universe) === 'professional') || null;
       setTopic(t);
       setChapters(t ? content.filter((c) => c.topicId === t.id) : []);
     });
@@ -169,7 +163,7 @@ function ProfessionalBook() {
   );
 }
 
-function PersonalHub() {
+function CuriositiesHub() {
   const [topics, setTopics] = useState<TopicRecord[]>([]);
   const [content, setContent] = useState<ContentRecord[]>([]);
   const [query, setQuery] = useState('');
@@ -179,11 +173,11 @@ function PersonalHub() {
 
   useEffect(() => {
     loadPublishedGraph().then(({ topics: t, content: c }) => {
-      const personalTopics = t.filter((x) => normUniverse(x.universe) === 'personal');
+      const personalTopics = t.filter((x) => normalizeUniverse(x.universe) === 'personal');
       const personalTopicIds = new Set(personalTopics.map((x) => x.id));
       const personalContent = c.filter((item) => {
         if (personalTopicIds.size > 0) return personalTopicIds.has(item.topicId);
-        const topicUniverse = normUniverse(item.topic?.universe);
+        const topicUniverse = normalizeUniverse(item.topic?.universe);
         return topicUniverse === 'personal' || inferUniverseFromContentType(item.contentType) === 'personal';
       });
       setTopics(personalTopics);
@@ -199,10 +193,10 @@ function PersonalHub() {
 
   return (
     <section>
-      <h1 className="mb-2 text-3xl font-semibold">Personal</h1>
-      <p className="mb-4 text-muted">Philosophy, anime, books, hobbies, and reflective personal themes.</p>
+      <h1 className="mb-2 text-3xl font-semibold">{universeMeta.personal.label}</h1>
+      <p className="mb-4 text-muted">{universeMeta.personal.description}</p>
 
-      <TopicFilterBar label="Personal Topics" options={filterOptions} active={activeTopic} onChange={setActiveTopic} count={searched.length} />
+      <TopicFilterBar label="Curiosities & Philosophy Topics" options={filterOptions} active={activeTopic} onChange={setActiveTopic} count={searched.length} />
 
       <div className="glass mb-6 mt-4 rounded-2xl p-4">
         <input className="w-full bg-transparent outline-none" placeholder="Search themes and notes" value={query} onChange={(e) => setQuery(e.target.value)} />
@@ -217,13 +211,13 @@ function PersonalHub() {
           {searched.map((p) => <ContentCard key={p.id} item={p} onOpen={() => nav(`/personal/post/${p.slug}`)} />)}
         </div>
       ) : (
-        <div className="glass rounded-xl p-4 text-sm text-muted">No personal posts match your current filters.</div>
+        <div className="glass rounded-xl p-4 text-sm text-muted">No curiosities and philosophy posts match your current filters.</div>
       )}
     </section>
   );
 }
 
-function PersonalPost() {
+function CuriosityPost() {
   const { slug } = useParams();
   const [item, setItem] = useState<ContentRecord | null>(null);
   useEffect(() => { listPublishedContent().then((c) => setItem(c.find((x) => x.slug === slug) || null)).catch(() => setItem(null)); }, [slug]);
@@ -410,10 +404,10 @@ function Shell() {
   useEffect(() => { document.documentElement.classList.remove('theme-dark', 'theme-light', 'theme-purple', 'theme-rainbow'); document.documentElement.classList.add(themeMap[mode]); try { localStorage.setItem('theme', mode); } catch { /* storage may be unavailable */ } }, [mode]);
   useEffect(() => {
     const labels: Record<string, string> = {
-      '/': 'Landing', '/professional': 'Professional', '/personal': 'Personal', '/security-mindmap': 'Security Map', '/Security_Mindmap': 'Security Map', '/search': 'Search', '/games': 'Games', '/submitting': 'Submitting', '/admin': 'Admin', '/login': 'Login',
+      '/': 'Landing', '/professional': 'Technology & Innovation', '/personal': 'Curiosities & Philosophy', '/security-mindmap': 'Security Map', '/Security_Mindmap': 'Security Map', '/search': 'Search', '/games': 'Games', '/submitting': 'Submitting', '/admin': 'Admin', '/login': 'Login',
     };
-    const base = location.pathname.startsWith('/professional/topic/') ? 'Professional Topic'
-      : location.pathname.startsWith('/personal/post/') ? 'Personal Post'
+    const base = location.pathname.startsWith('/professional/topic/') ? 'Technology Topic'
+      : location.pathname.startsWith('/personal/post/') ? 'Curiosity Post'
       : labels[location.pathname] || 'arharif';
     document.title = `X1 · ${base}`;
   }, [location.pathname]);
@@ -429,9 +423,9 @@ function Shell() {
               <Route path="/" element={<Landing />} />
               <Route path="/search" element={<SearchPage />} />
               <Route path="/professional" element={<ProfessionalHome />} />
-              <Route path="/professional/topic/:slug" element={<ProfessionalBook />} />
-              <Route path="/personal" element={<PersonalHub />} />
-              <Route path="/personal/post/:slug" element={<PersonalPost />} />
+              <Route path="/professional/topic/:slug" element={<TechnologyBook />} />
+              <Route path="/personal" element={<CuriositiesHub />} />
+              <Route path="/personal/post/:slug" element={<CuriosityPost />} />
               <Route path="/submitting" element={<SubmittingPage />} />
               <Route path="/games" element={<GamesHub />} />
               <Route path="/Security_Mindmap" element={<SecurityMindmapPage />} />
@@ -444,7 +438,17 @@ function Shell() {
         </AnimatePresence>
       </main>
       <SiteAssistantLauncher />
-      <footer className="mx-auto mt-8 flex max-w-6xl items-center justify-between border-t border-white/10 p-6 text-sm text-muted"><span>arharif © 2026</span><a href={config.linkedinUrl} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="rounded-full bg-[#0A66C2] p-2 text-white transition hover:bg-[#0c5cad]"><Linkedin size={16} /></a></footer>
+      <footer className="mx-auto mt-8 flex max-w-6xl items-center border-t border-white/10 p-6 text-sm text-muted">
+        <div className="flex items-center gap-3">
+          <span>arharif © 2026</span>
+          <a href="https://www.linkedin.com/in/rharif-anass-/" target="_blank" rel="noopener noreferrer" aria-label="Open LinkedIn profile" title="LinkedIn" className="social-icon-link">
+            <Linkedin size={14} />
+          </a>
+          <a href="https://github.com/arharif" target="_blank" rel="noopener noreferrer" aria-label="Open GitHub profile" title="GitHub" className="social-icon-link">
+            <Github size={14} />
+          </a>
+        </div>
+      </footer>
     </div>
   );
 }

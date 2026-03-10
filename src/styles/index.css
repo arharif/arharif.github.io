@@ -487,3 +487,100 @@ iframe { border: 0; }
 @media (max-width: 900px) {
   .roles-toolbar-grid { grid-template-columns: 1fr; }
 }
+
+.social-icon-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.55rem;
+  height: 1.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.42);
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.05);
+  transition: all 180ms ease;
+}
+.social-icon-link:hover,
+.social-icon-link:focus-visible {
+  color: var(--text);
+  border-color: rgba(56, 189, 248, 0.65);
+  background: rgba(56, 189, 248, 0.14);
+  outline: none;
+}
+
+.theme-light .game-store {
+  background:
+    radial-gradient(circle at 8% 12%, rgba(59,130,246,0.14), transparent 40%),
+    radial-gradient(circle at 88% 10%, rgba(14,165,233,0.14), transparent 40%),
+    linear-gradient(160deg, rgba(255,255,255,0.95), rgba(241,245,249,0.95));
+  border: 1px solid rgba(148,163,184,0.35);
+}
+.theme-light .game-card {
+  background: linear-gradient(145deg, rgba(255,255,255,0.96), rgba(248,250,252,0.95));
+  border: 1px solid rgba(148,163,184,0.35);
+  color: #0f172a;
+}
+.theme-light .game-panel {
+  background: linear-gradient(160deg, rgba(255,255,255,0.96), rgba(248,250,252,0.96));
+  border: 1px solid rgba(148,163,184,0.36);
+}
+
+.theme-light .mindmap-hero {
+  background:
+    radial-gradient(circle at 18% 18%, rgba(59,130,246,0.14), transparent 45%),
+    radial-gradient(circle at 82% 12%, rgba(99,102,241,0.12), transparent 45%),
+    linear-gradient(165deg, rgba(255,255,255,0.96), rgba(241,245,249,0.96));
+  border: 1px solid rgba(148,163,184,0.35);
+}
+.theme-light .mindmap-chip { color: #334155; border-color: rgba(100,116,139,0.45); }
+.theme-light .mindmap-input {
+  background: #ffffff;
+  color: #0f172a;
+  border-color: rgba(148,163,184,0.55);
+}
+.theme-light .mindmap-btn {
+  background: #ffffff;
+  color: #0f172a;
+  border-color: rgba(148,163,184,0.55);
+}
+.theme-light .mindmap-canvas {
+  border-color: rgba(148,163,184,0.45);
+  background:
+    radial-gradient(circle at 20% 20%, rgba(14,165,233,0.09), transparent 40%),
+    radial-gradient(circle at 80% 10%, rgba(99,102,241,0.09), transparent 40%),
+    linear-gradient(170deg, rgba(241,245,249,1), rgba(226,232,240,0.98));
+}
+.theme-light .mindmap-label {
+  stroke: rgba(255,255,255,0.9);
+  stroke-width: 2.5px;
+}
+.theme-light .mindmap-panel {
+  border-color: rgba(148,163,184,0.4);
+  background: linear-gradient(165deg, rgba(255,255,255,0.97), rgba(248,250,252,0.97));
+}
+.theme-light .mindmap-tag {
+  border-color: rgba(148,163,184,0.45);
+  background: rgba(226,232,240,0.65);
+  color: #0f172a;
+}
+.theme-light .mindmap-ghost {
+  background: rgba(226,232,240,0.65);
+  border-color: rgba(148,163,184,0.45);
+  color: #0f172a;
+}
+.theme-light .mindmap-cta {
+  color: #0f172a;
+  background: linear-gradient(120deg, rgba(34,211,238,0.25), rgba(59,130,246,0.25));
+  border-color: rgba(14,165,233,0.45);
+}
+
+.theme-light .roles-toolbar .text-slate-300,
+.theme-light .roles-field-label {
+  color: #475569 !important;
+}
+.theme-light .mindmap-hero p,
+.theme-light .mindmap-panel .text-slate-200,
+.theme-light .mindmap-panel .text-muted,
+.theme-light .roles-toolbar .text-muted {
+  color: #475569;
+}
