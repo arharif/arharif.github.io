@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { approvedThemes, categoryColors, mindmapEdges, mindmapNodes, resolveNodeTheme } from '@/data/securityMindmap';
 import { GraphControls } from './GraphControls';
+import { safeStorage } from '@/lib/storage';
 import { NodeDetailPanel } from './NodeDetailPanel';
 import { ApprovedTheme, MindmapNode } from './types';
 
@@ -10,7 +11,7 @@ const themeStorageKey = 'security-map-theme';
 const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
 
 export function SecurityGraph() {
-  const [theme, setTheme] = useState<ApprovedTheme>(() => (localStorage.getItem(themeStorageKey) as ApprovedTheme) || 'all');
+  const [theme, setTheme] = useState<ApprovedTheme>(() => (safeStorage.get(themeStorageKey) as ApprovedTheme) || 'all');
   const [search, setSearch] = useState('');
   const [activeId, setActiveId] = useState<string>('cybersecurity');
   const [hoverId, setHoverId] = useState<string | null>(null);
@@ -20,7 +21,7 @@ export function SecurityGraph() {
   const dragRef = useRef<{ x: number; y: number } | null>(null);
   const pinchRef = useRef<{ distance: number; scale: number } | null>(null);
 
-  useEffect(() => { localStorage.setItem(themeStorageKey, theme); }, [theme]);
+  useEffect(() => { safeStorage.set(themeStorageKey, theme); }, [theme]);
 
   const searchedNodes = useMemo(() => {
     const term = search.trim().toLowerCase();

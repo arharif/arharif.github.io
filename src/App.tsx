@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Linkedin } from 'lucide-react';
+import { Github, Linkedin, Mail } from 'lucide-react';
 import { Component, ReactNode, useEffect, useState } from 'react';
 import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { AdminEditor } from '@/components/admin/AdminEditor';
@@ -16,18 +16,13 @@ import { ProtectedRoute } from '@/routes/ProtectedRoute';
 import { AuthProvider, useAuth } from '@/hooks/useAuth';
 import { createContent, createTopic, deleteContent, deleteTopic, listAdminContent, listAdminTopics, listCollections, listPublishedContent, listPublishedTopics, updateContent, updateTopic, uploadMedia } from '@/lib/cms';
 import { searchContent } from '@/lib/content';
-import { config, genericAccessDenied, genericAuthError, hasSupabaseCoreConfig } from '@/lib/config';
+import { genericAccessDenied, genericAuthError, hasSupabaseCoreConfig } from '@/lib/config';
 import { initTheme, ThemeMode, themeMap } from '@/lib/theme';
+import { normalizeUniverse, universeMeta } from '@/lib/universe';
+import { safeStorage } from '@/lib/storage';
 import { CollectionRecord, ContentRecord, TopicRecord } from './content/types';
 
-const normUniverse = (value?: string | null) => (value || '').toLowerCase().trim();
-
-const inferUniverseFromContentType = (contentType?: string | null) => {
-  const value = (contentType || '').toLowerCase().trim();
-  if (value.startsWith('professional')) return 'professional';
-  if (value.startsWith('personal')) return 'personal';
-  return '';
-};
+const inferUniverseFromContentType = (contentType?: string | null) => normalizeUniverse(contentType);
 
 async function loadPublishedGraph(): Promise<{ topics: TopicRecord[]; content: ContentRecord[] }> {
   const [topicsResult, contentResult] = await Promise.allSettled([listPublishedTopics(), listPublishedContent()]);
@@ -54,8 +49,8 @@ function Landing() {
   const nav = useNavigate();
   return (
     <section className="grid gap-6 py-10 md:grid-cols-2">
-      <EntryCard title="Professional" description="AI, Cybersecurity, IoT, systems architecture, and emerging technology knowledge." onClick={() => nav('/professional')} />
-      <EntryCard title="Personal" description="Philosophy, anime, books, hobbies, and thoughtful cultural reflections." onClick={() => nav('/personal')} />
+      <EntryCard title={universeMeta.professional.label} description={universeMeta.professional.description} onClick={() => nav('/professional')} />
+      <EntryCard title={universeMeta.personal.label} description={universeMeta.personal.description} onClick={() => nav('/personal')} />
     </section>
   );
 }
@@ -68,7 +63,7 @@ function SearchPage() {
   useEffect(() => { loadPublishedGraph().then(({ topics: t, content: c }) => { setTopics(t); setContent(c); }); }, []);
   const matchedTopics = topics.filter((t) => `${t.title} ${t.description} ${t.category}`.toLowerCase().includes(query.toLowerCase()));
   const matchedContent = searchContent(content, query);
-  return <section><h1 className="mb-4 text-3xl font-semibold">Search</h1><div className="glass mb-5 rounded-2xl p-3"><input className="w-full bg-transparent outline-none" placeholder="Search topics, articles, tags, collections" value={query} onChange={(e) => setQuery(e.target.value)} /></div><div className="grid gap-6 md:grid-cols-2"><div><h2 className="mb-2 text-xl font-semibold">Topics</h2>{matchedTopics.map((t)=><button key={t.id} onClick={()=>nav(normUniverse(t.universe)==='professional'?`/professional/topic/${t.slug}`:'/personal')} className="glass mb-2 block w-full rounded-xl p-3 text-left">{t.title}</button>)}</div><div><h2 className="mb-2 text-xl font-semibold">Content</h2>{matchedContent.map((c)=>{ const topic = topics.find((t)=>t.id===c.topicId); return <button key={c.id} onClick={()=>nav(topic && normUniverse(topic.universe)==='professional'?`/professional/topic/${topic.slug}`:`/personal/post/${c.slug}`)} className="glass mb-2 block w-full rounded-xl p-3 text-left">{c.title}</button>; })}</div></div></section>;
+  return <section><h1 className="mb-4 text-3xl font-semibold">Search</h1><div className="glass mb-5 rounded-2xl p-3"><input className="w-full bg-transparent outline-none" placeholder="Search topics, articles, tags, collections" value={query} onChange={(e) => setQuery(e.target.value)} /></div><div className="grid gap-6 md:grid-cols-2"><div><h2 className="mb-2 text-xl font-semibold">Topics</h2>{matchedTopics.map((t)=><button key={t.id} onClick={()=>nav(normalizeUniverse(t.universe)==='professional'?`/professional/topic/${t.slug}`:'/personal')} className="glass mb-2 block w-full rounded-xl p-3 text-left">{t.title}</button>)}</div><div><h2 className="mb-2 text-xl font-semibold">Content</h2>{matchedContent.map((c)=>{ const topic = topics.find((t)=>t.id===c.topicId); return <button key={c.id} onClick={()=>nav(topic && normalizeUniverse(topic.universe)==='professional'?`/professional/topic/${topic.slug}`:`/personal/post/${c.slug}`)} className="glass mb-2 block w-full rounded-xl p-3 text-left">{c.title}</button>; })}</div></div></section>;
 }
 
 function ProfessionalHome() {
@@ -80,11 +75,11 @@ function ProfessionalHome() {
 
   useEffect(() => {
     loadPublishedGraph().then(({ topics: t, content }) => {
-      const professionalTopics = t.filter((x) => normUniverse(x.universe) === 'professional');
+      const professionalTopics = t.filter((x) => normalizeUniverse(x.universe) === 'professional');
       const professionalTopicIds = new Set(professionalTopics.map((x) => x.id));
       const professionalPosts = content.filter((item) => {
         if (professionalTopicIds.size > 0) return professionalTopicIds.has(item.topicId);
-        const topicUniverse = normUniverse(item.topic?.universe);
+        const topicUniverse = normalizeUniverse(item.topic?.universe);
         return topicUniverse === 'professional' || inferUniverseFromContentType(item.contentType) === 'professional';
       });
       setTopics(professionalTopics);
@@ -92,7 +87,7 @@ function ProfessionalHome() {
     });
 
     listCollections()
-      .then((c) => setCollections(c.filter((x) => normUniverse(x.universe) === 'professional')))
+      .then((c) => setCollections(c.filter((x) => normalizeUniverse(x.universe) === 'professional')))
       .catch(() => setCollections([]));
   }, []);
 
@@ -102,48 +97,48 @@ function ProfessionalHome() {
 
   return (
     <section>
-      <h1 className="mb-2 text-3xl font-semibold">Professional</h1>
+      <h1 className="mb-2 text-3xl font-semibold">{universeMeta.professional.label}</h1>
       <p className="mb-5 text-muted">This universe is for everything related to the latest technology including AI, Cybersecurity, IoT, OT/ICS, Blockchain, and modern engineering insights.</p>
 
-      <TopicFilterBar label="Professional Topics" options={filterOptions} active={activeTopic} onChange={setActiveTopic} count={filteredPosts.length + filteredTopics.length} />
+      <TopicFilterBar label="Technology & Innovation Topics" options={filterOptions} active={activeTopic} onChange={setActiveTopic} count={filteredPosts.length + filteredTopics.length} />
 
       {filteredTopics.length > 0 ? (
         <div className="mb-6 mt-4 grid gap-4 md:grid-cols-3">
           {filteredTopics.map((t)=><motion.button whileHover={{y:-5}} key={t.id} onClick={()=>nav(`/professional/topic/${t.slug}`)} className="glass rounded-2xl p-5 text-left"><p className="text-xs text-muted">{t.category} · {t.displayStyle}</p><h3 className="mt-2 text-xl font-semibold">{t.title}</h3><p className="mt-2 text-sm text-muted">{t.description}</p></motion.button>)}
         </div>
       ) : filteredPosts.length > 0 ? null : (
-        <div className="glass mb-6 mt-4 rounded-2xl p-4 text-sm text-muted">No professional topics match this filter.</div>
+        <div className="glass mb-6 mt-4 rounded-2xl p-4 text-sm text-muted">No technology and innovation topics match this filter.</div>
       )}
 
       {filteredPosts.length > 0 ? (
         <>
-          <h2 className="mb-3 text-xl font-semibold">Latest Professional Posts</h2>
+          <h2 className="mb-3 text-xl font-semibold">Latest Technology & Innovation Posts</h2>
           <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filteredPosts.map((p) => { const topic = topics.find((t) => t.id === p.topicId); return <ContentCard key={p.id} item={p} onOpen={() => nav(topic ? `/professional/topic/${topic.slug}` : '/professional')} />; })}
           </div>
         </>
       ) : (
-        <div className="glass mb-6 rounded-2xl p-4 text-sm text-muted">No professional posts match this filter yet.</div>
+        <div className="glass mb-6 rounded-2xl p-4 text-sm text-muted">No technology and innovation posts match this filter yet.</div>
       )}
 
       <h2 className="mb-3 text-xl font-semibold">Curated Collections</h2>
       {collections.length > 0 ? (
         <div className="grid gap-3 md:grid-cols-2">{collections.map((c)=><div className="glass rounded-xl p-3" key={c.id}><p className="text-sm font-semibold">{c.title}</p><p className="text-xs text-muted">{c.description}</p></div>)}</div>
       ) : (
-        <div className="glass rounded-xl p-3 text-xs text-muted">Collections are optional. Professional topics are shown above.</div>
+        <div className="glass rounded-xl p-3 text-xs text-muted">Collections are optional. Technology & Innovation topics are shown above.</div>
       )}
     </section>
   );
 }
 
-function ProfessionalBook() {
+function TechnologyBook() {
   const { slug } = useParams();
   const [topic, setTopic] = useState<TopicRecord | null>(null);
   const [chapters, setChapters] = useState<ContentRecord[]>([]);
   const [progress, setProgress] = useState(0);
   useEffect(() => {
     loadPublishedGraph().then(({ topics, content }) => {
-      const t = topics.find((x) => x.slug === slug && normUniverse(x.universe) === 'professional') || null;
+      const t = topics.find((x) => x.slug === slug && normalizeUniverse(x.universe) === 'professional') || null;
       setTopic(t);
       setChapters(t ? content.filter((c) => c.topicId === t.id) : []);
     });
@@ -169,7 +164,7 @@ function ProfessionalBook() {
   );
 }
 
-function PersonalHub() {
+function CuriositiesHub() {
   const [topics, setTopics] = useState<TopicRecord[]>([]);
   const [content, setContent] = useState<ContentRecord[]>([]);
   const [query, setQuery] = useState('');
@@ -179,11 +174,11 @@ function PersonalHub() {
 
   useEffect(() => {
     loadPublishedGraph().then(({ topics: t, content: c }) => {
-      const personalTopics = t.filter((x) => normUniverse(x.universe) === 'personal');
+      const personalTopics = t.filter((x) => normalizeUniverse(x.universe) === 'personal');
       const personalTopicIds = new Set(personalTopics.map((x) => x.id));
       const personalContent = c.filter((item) => {
         if (personalTopicIds.size > 0) return personalTopicIds.has(item.topicId);
-        const topicUniverse = normUniverse(item.topic?.universe);
+        const topicUniverse = normalizeUniverse(item.topic?.universe);
         return topicUniverse === 'personal' || inferUniverseFromContentType(item.contentType) === 'personal';
       });
       setTopics(personalTopics);
@@ -199,10 +194,10 @@ function PersonalHub() {
 
   return (
     <section>
-      <h1 className="mb-2 text-3xl font-semibold">Personal</h1>
-      <p className="mb-4 text-muted">Philosophy, anime, books, hobbies, and reflective personal themes.</p>
+      <h1 className="mb-2 text-3xl font-semibold">{universeMeta.personal.label}</h1>
+      <p className="mb-4 text-muted">{universeMeta.personal.description}</p>
 
-      <TopicFilterBar label="Personal Topics" options={filterOptions} active={activeTopic} onChange={setActiveTopic} count={searched.length} />
+      <TopicFilterBar label="Curiosities & Philosophy Topics" options={filterOptions} active={activeTopic} onChange={setActiveTopic} count={searched.length} />
 
       <div className="glass mb-6 mt-4 rounded-2xl p-4">
         <input className="w-full bg-transparent outline-none" placeholder="Search themes and notes" value={query} onChange={(e) => setQuery(e.target.value)} />
@@ -217,13 +212,13 @@ function PersonalHub() {
           {searched.map((p) => <ContentCard key={p.id} item={p} onOpen={() => nav(`/personal/post/${p.slug}`)} />)}
         </div>
       ) : (
-        <div className="glass rounded-xl p-4 text-sm text-muted">No personal posts match your current filters.</div>
+        <div className="glass rounded-xl p-4 text-sm text-muted">No curiosities and philosophy posts match your current filters.</div>
       )}
     </section>
   );
 }
 
-function PersonalPost() {
+function CuriosityPost() {
   const { slug } = useParams();
   const [item, setItem] = useState<ContentRecord | null>(null);
   useEffect(() => { listPublishedContent().then((c) => setItem(c.find((x) => x.slug === slug) || null)).catch(() => setItem(null)); }, [slug]);
@@ -233,21 +228,134 @@ function PersonalPost() {
 
 
 function LoginPage() {
-  const { verifyOtpCode, beginSecureLogin, loading, isAdmin, session } = useAuth();
+  const { verifyOtpCode, beginSecureLogin, resendOtpChallenge, pendingMfa, cancelPendingLogin, loading, isAdmin, session } = useAuth();
   const nav = useNavigate();
   const [email, setEmail] = useState('');
-  const [step, setStep] = useState<1 | 2>(1);
   const [password, setPassword] = useState('');
   const [otp, setOtp] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [attempts, setAttempts] = useState(0);
+  const [lockUntil, setLockUntil] = useState<number | null>(null);
+  const [now, setNow] = useState(() => Date.now());
 
-  useEffect(() => { if (session && isAdmin) nav('/admin'); }, [isAdmin, nav, session]);
+  useEffect(() => { if (session && isAdmin) nav('/admin', { replace: true }); }, [isAdmin, nav, session]);
 
-  return <section className="mx-auto max-w-md py-20"><div className="glass rounded-2xl p-6"><div className="flex items-center gap-3"><X1Mark size="md" /><h1 className="text-2xl font-semibold">Sign in</h1></div><AnimatePresence mode="wait"><motion.div key={step} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.2 }}><input className="mt-4 w-full rounded-xl bg-white/10 p-2" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" disabled={step === 2} autoComplete="email" />{step === 1 ? <><input className="mt-3 w-full rounded-xl bg-white/10 p-2" type="password" value={password} onChange={(e)=>setPassword(e.target.value)} placeholder="Password" autoComplete="current-password" /><button className="mt-3 w-full rounded-xl bg-white/15 px-4 py-2" disabled={loading || !hasSupabaseCoreConfig || !email.trim() || !password} onClick={async()=>{ setError(''); setMessage(''); try { await beginSecureLogin(email.trim(), password); setStep(2); setMessage('If the request can be completed, you will receive an email shortly.'); } catch { setError(genericAuthError); } }}>{loading ? 'Processing...' : 'Continue'}</button></> : <><input className="mt-3 w-full rounded-xl bg-white/10 p-2 tracking-[0.35em]" value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="OTP code" inputMode="numeric" /><button className="mt-3 w-full rounded-xl bg-white/15 px-4 py-2" disabled={loading || !hasSupabaseCoreConfig || otp.trim().length < 6} onClick={async () => { setError(''); setMessage(''); try { await verifyOtpCode(otp.trim()); nav('/admin'); } catch { setError(genericAccessDenied); } }}>{loading ? 'Verifying...' : 'Verify'}</button><button className="mt-2 w-full rounded-xl bg-white/5 px-4 py-2 text-xs text-muted" onClick={() => { setStep(1); setOtp(''); setMessage(''); setError(''); }}>Back</button></>}</motion.div></AnimatePresence>{message && <p className="mt-3 text-xs text-emerald-300">{message}</p>}{error && <p className="mt-3 text-xs text-rose-300">{error}</p>}{!hasSupabaseCoreConfig && <p className="mt-3 text-xs text-amber-300">Authentication could not be completed.</p>}</div></section>;
+  useEffect(() => {
+    if (!lockUntil) return;
+    const t = window.setInterval(() => {
+      const tick = Date.now();
+      setNow(tick);
+      if (tick >= lockUntil) {
+        setLockUntil(null);
+        setAttempts(0);
+      }
+    }, 1000);
+    return () => window.clearInterval(t);
+  }, [lockUntil]);
+
+  const lockSeconds = lockUntil ? Math.max(0, Math.ceil((lockUntil - now) / 1000)) : 0;
+  const locked = lockSeconds > 0;
+
+  const sanitizedEmail = email.trim().toLowerCase();
+  const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sanitizedEmail);
+  const sanitizedOtp = otp.trim();
+  const otpLike = /^[A-Za-z0-9-]{4,12}$/.test(sanitizedOtp);
+  const inOtpStep = Boolean(pendingMfa);
+
+  const registerFailure = () => {
+    setAttempts((prev) => {
+      const next = prev + 1;
+      if (next >= 3) {
+        const until = Date.now() + 30_000;
+        setLockUntil(until);
+        setError('Too many attempts. Please wait 30 seconds before trying again.');
+        return 0;
+      }
+      return next;
+    });
+  };
+
+  return (
+    <section className="mx-auto max-w-md py-20">
+      <div className="glass rounded-2xl p-6">
+        <div className="flex items-center gap-3"><X1Mark size="md" /><h1 className="text-2xl font-semibold">Admin sign in</h1></div>
+        <AnimatePresence mode="wait">
+          <motion.div key={inOtpStep ? 'otp' : 'credentials'} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.2 }}>
+            {!inOtpStep ? (
+              <>
+                <input className="mt-4 w-full rounded-xl bg-white/10 p-2" value={email} onChange={(e) => setEmail(e.target.value.slice(0, 120))} placeholder="Email" disabled={locked} autoComplete="email" />
+                <input className="mt-3 w-full rounded-xl bg-white/10 p-2" type="password" value={password} onChange={(e)=>setPassword(e.target.value.slice(0, 128))} placeholder="Password" autoComplete="current-password" disabled={locked} />
+                <button
+                  className="mt-3 w-full rounded-xl bg-white/15 px-4 py-2"
+                  disabled={loading || locked || !hasSupabaseCoreConfig || !validEmail || password.length < 8}
+                  onClick={async()=>{
+                    setError(''); setMessage('');
+                    try {
+                      await beginSecureLogin(sanitizedEmail, password);
+                      setPassword('');
+                      setOtp('');
+                      setAttempts(0);
+                      setMessage('Verification code sent. Enter the one-time code to continue.');
+                    } catch {
+                      registerFailure();
+                      if (!locked) setError(genericAuthError);
+                    }
+                  }}
+                >
+                  {loading ? 'Processing...' : 'Continue'}
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="mt-4 text-xs text-muted">Enter the one-time code to finish authentication.</p>
+                <input className="mt-3 w-full rounded-xl bg-white/10 p-2" value={otp} onChange={(e) => setOtp(e.target.value.slice(0, 64))} placeholder="One-time code" autoComplete="one-time-code" disabled={locked} aria-label="One-time code" />
+                <button
+                  className="mt-3 w-full rounded-xl bg-white/15 px-4 py-2"
+                  disabled={loading || locked || !hasSupabaseCoreConfig || !otpLike}
+                  onClick={async () => {
+                    setError(''); setMessage('');
+                    try {
+                      await verifyOtpCode(sanitizedOtp);
+                      setAttempts(0);
+                      nav('/admin', { replace: true });
+                    } catch {
+                      registerFailure();
+                      if (!locked) setError(genericAuthError);
+                    }
+                  }}
+                >
+                  {loading ? 'Verifying...' : 'Verify'}
+                </button>
+                <button
+                  className="mt-2 w-full rounded-xl bg-white/5 px-4 py-2 text-xs text-muted"
+                  disabled={loading || locked || !hasSupabaseCoreConfig}
+                  onClick={async () => {
+                    setError(''); setMessage('');
+                    try {
+                      await resendOtpChallenge();
+                      setMessage('A new verification code was sent if the request can be completed.');
+                    } catch {
+                      registerFailure();
+                      if (!locked) setError(genericAuthError);
+                    }
+                  }}
+                >
+                  Resend code
+                </button>
+                <button className="mt-2 w-full rounded-xl bg-white/5 px-4 py-2 text-xs text-muted" onClick={() => { cancelPendingLogin(); setOtp(''); setMessage(''); setError(''); }} disabled={loading || locked}>Back</button>
+              </>
+            )}
+          </motion.div>
+        </AnimatePresence>
+        {message && <p className="mt-3 text-xs text-emerald-300">{message}</p>}
+        {error && <p className="mt-3 text-xs text-rose-300">{error}</p>}
+        {locked && <p className="mt-3 text-xs text-amber-300">Temporary lock active. Try again in {lockSeconds}s.</p>}
+        {!hasSupabaseCoreConfig && <p className="mt-3 text-xs text-amber-300">Authentication could not be completed.</p>}
+      </div>
+    </section>
+  );
 }
-
-
 function AdminPage() {
   const { session, isAdmin, logout } = useAuth();
   const [topics, setTopics] = useState<TopicRecord[]>([]);
@@ -260,7 +368,6 @@ function AdminPage() {
   const token = session?.access_token || '';
 
   const friendly = (err: unknown) => {
-    if (import.meta.env.DEV) console.error('Admin request failed:', err);
     const message = err instanceof Error ? err.message.toLowerCase() : '';
     if (message.includes('row-level security') || message.includes('permission') || message.includes('not allowed')) return genericAccessDenied;
     return 'Unable to complete request. Please try again.';
@@ -281,7 +388,7 @@ function AdminPage() {
   useEffect(() => { load(); }, [token]);
 
   if (!session) return <Navigate to="/login" replace />;
-  if (!isAdmin) return <div className="glass rounded-2xl p-6">Access could not be granted.</div>;
+  if (!isAdmin) return <Navigate to="/login" replace />;
 
   const published = content.filter((c) => c.status === 'published').length;
   const recentPublished = content.filter((c) => c.status === 'published').slice(0, 5);
@@ -377,27 +484,56 @@ function AdminPage() {
 function SubmittingPage() {
   return (
     <section className="mx-auto max-w-3xl space-y-4 py-8">
-      <h1 className="text-3xl font-semibold">Submitting</h1>
-      <p className="text-muted">To submit a blog/article, send a manual email. This page is instructions-only and does not include an online form.</p>
-      <div className="glass rounded-2xl p-5 text-sm leading-7 text-muted">
-        <p className="font-medium text-white">Send to: <a className="underline underline-offset-4" href="mailto:rharifanass@gmail.com?subject=X1%20Submitting%3A%20%5BTopic%20Title%5D">rharifanass@gmail.com</a></p>
-        <ul className="mt-3 list-disc space-y-1 pl-5">
-          <li>Send the submission by email manually.</li>
-          <li>Email must contain text content only.</li>
-          <li>Do not include attachments, links, or external files.</li>
-          <li>Submissions that do not follow this format may be ignored.</li>
-        </ul>
+      <div className="glass rounded-3xl p-6 md:p-7">
+        <p className="text-xs uppercase tracking-[0.18em] text-muted">Contribute</p>
+        <h1 className="mt-2 text-3xl font-semibold">Submit an Article</h1>
+        <p className="mt-3 text-sm text-muted leading-7">
+          Want to share an idea, insight, or experience? You are welcome to submit a blog post or article for review and possible publication on this platform.
+        </p>
+        <p className="mt-2 text-sm text-muted">At the moment, submissions are handled by email only.</p>
       </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="glass rounded-2xl p-5">
+          <p className="text-xs uppercase tracking-[0.16em] text-muted">Where to send</p>
+          <a
+            className="mt-2 inline-block rounded-xl bg-white/10 px-3 py-2 font-medium underline decoration-cyan-300/60 underline-offset-4"
+            href="mailto:rharifanass@gmail.com?subject=X1%20Article%20Submission%3A%20%5BTopic%20Title%5D"
+          >
+            rharifanass@gmail.com
+          </a>
+          <p className="mt-3 text-xs text-muted">Please use a clear subject line to help review routing.</p>
+        </div>
+
+        <div className="glass rounded-2xl p-5">
+          <p className="text-xs uppercase tracking-[0.16em] text-muted">Submission guidelines</p>
+          <ul className="mt-2 list-disc space-y-1.5 pl-5 text-sm text-muted">
+            <li>Write your submission directly in the email body.</li>
+            <li>Use text only.</li>
+            <li>Avoid attachments.</li>
+            <li>Avoid external links or files.</li>
+            <li>Send a complete version ready for review.</li>
+          </ul>
+        </div>
+      </div>
+
       <div className="glass rounded-2xl p-5">
-        <p className="mb-2 text-sm text-muted">Use this exact template:</p>
+        <p className="mb-2 text-xs uppercase tracking-[0.16em] text-muted">Use this format</p>
         <pre className="overflow-x-auto rounded-xl bg-black/30 p-4 text-xs leading-6 text-slate-100">{`Full Name: [full name]
 Email: [email address]
 Topic Title: [topic title]
 Category: [category]
-Blogs/Article Content:
+
+Blog/Article Content:
 [body content]`}</pre>
       </div>
-      <a href="mailto:rharifanass@gmail.com?subject=X1%20Submitting%3A%20%5BTopic%20Title%5D" className="inline-block rounded-xl bg-white/15 px-4 py-2 text-sm hover:bg-white/25">Send by Email</a>
+
+      <div className="glass rounded-2xl p-5 text-sm text-muted leading-7">
+        <p className="text-white font-medium">Note</p>
+        <p className="mt-2">All submissions are reviewed before publication.</p>
+        <p>Some articles may be edited slightly for clarity, grammar, formatting, and consistency.</p>
+        <p className="mt-3 text-white">Thank you for contributing.</p>
+      </div>
     </section>
   );
 }
@@ -407,16 +543,17 @@ function NotFound() { return <section className="mx-auto max-w-xl py-24 text-cen
 function Shell() {
   const [mode, setMode] = useState<ThemeMode>(() => initTheme());
   const location = useLocation();
-  useEffect(() => { document.documentElement.classList.remove('theme-dark', 'theme-light', 'theme-purple', 'theme-rainbow'); document.documentElement.classList.add(themeMap[mode]); try { localStorage.setItem('theme', mode); } catch { /* storage may be unavailable */ } }, [mode]);
+  useEffect(() => { document.documentElement.classList.remove('theme-dark', 'theme-light', 'theme-purple', 'theme-rainbow'); document.documentElement.classList.add(themeMap[mode]); safeStorage.set('theme', mode); }, [mode]);
   useEffect(() => {
     const labels: Record<string, string> = {
-      '/': 'Landing', '/professional': 'Professional', '/personal': 'Personal', '/security-mindmap': 'Security Map', '/Security_Mindmap': 'Security Map', '/search': 'Search', '/games': 'Games', '/submitting': 'Submitting', '/admin': 'Admin', '/login': 'Login',
+      '/': 'Landing', '/professional': 'Technology & Innovation', '/personal': 'Curiosities & Philosophy', '/security-mindmap': 'Security Map', '/Security_Mindmap': 'Security Map', '/search': 'Search', '/games': 'Games', '/submitting': 'Submitting', '/admin': 'Admin', '/login': 'Login',
     };
-    const base = location.pathname.startsWith('/professional/topic/') ? 'Professional Topic'
-      : location.pathname.startsWith('/personal/post/') ? 'Personal Post'
+    const base = location.pathname.startsWith('/professional/topic/') ? 'Technology Topic'
+      : location.pathname.startsWith('/personal/post/') ? 'Curiosity Post'
       : labels[location.pathname] || 'arharif';
-    document.title = `X1 · ${base}`;
+    document.title = base === 'arharif' ? 'arharif' : `${base} · arharif`; 
   }, [location.pathname]);
+
 
   return (
     <div className="gradient-bg min-h-screen transition-colors duration-500">
@@ -429,9 +566,9 @@ function Shell() {
               <Route path="/" element={<Landing />} />
               <Route path="/search" element={<SearchPage />} />
               <Route path="/professional" element={<ProfessionalHome />} />
-              <Route path="/professional/topic/:slug" element={<ProfessionalBook />} />
-              <Route path="/personal" element={<PersonalHub />} />
-              <Route path="/personal/post/:slug" element={<PersonalPost />} />
+              <Route path="/professional/topic/:slug" element={<TechnologyBook />} />
+              <Route path="/personal" element={<CuriositiesHub />} />
+              <Route path="/personal/post/:slug" element={<CuriosityPost />} />
               <Route path="/submitting" element={<SubmittingPage />} />
               <Route path="/games" element={<GamesHub />} />
               <Route path="/Security_Mindmap" element={<SecurityMindmapPage />} />
@@ -444,7 +581,23 @@ function Shell() {
         </AnimatePresence>
       </main>
       <SiteAssistantLauncher />
-      <footer className="mx-auto mt-8 flex max-w-6xl items-center justify-between border-t border-white/10 p-6 text-sm text-muted"><span>arharif © 2026</span><a href={config.linkedinUrl} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="rounded-full bg-[#0A66C2] p-2 text-white transition hover:bg-[#0c5cad]"><Linkedin size={16} /></a></footer>
+      <footer className="mx-auto mt-8 flex max-w-6xl items-center border-t border-white/10 p-6 text-sm text-muted">
+        <div className="footer-inline">
+          <span className="footer-brand">arharif © 2026</span>
+          <span className="footer-separator" aria-hidden="true">|</span>
+          <div className="footer-icons" aria-label="Social links">
+            <a href="https://www.linkedin.com/in/rharif-anass-/" target="_blank" rel="noopener noreferrer" aria-label="Open LinkedIn profile" title="LinkedIn" className="social-icon-link">
+              <Linkedin size={12} strokeWidth={2.15} />
+            </a>
+            <a href="https://github.com/arharif" target="_blank" rel="noopener noreferrer" aria-label="Open GitHub profile" title="GitHub" className="social-icon-link">
+              <Github size={12} strokeWidth={2.15} />
+            </a>
+            <a href="mailto:rharifanass@gmail.com" aria-label="Send email to rharifanass@gmail.com" title="Email" className="social-icon-link">
+              <Mail size={12} strokeWidth={2.15} />
+            </a>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

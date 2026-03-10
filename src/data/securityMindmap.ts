@@ -288,7 +288,7 @@ export function resolveNodeTheme(node: MindmapNode): ApprovedTheme {
 }
 
 export const legend = [
-  { key: 'journey', label: 'Personal Journey' },
+  { key: 'journey', label: 'Learning Journey' },
   { key: 'architecture', label: 'Architecture & Engineering' },
   { key: 'operations', label: 'Security Operations' },
   { key: 'governance', label: 'Governance & Risk' },

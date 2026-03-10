@@ -2,6 +2,7 @@ import { seedCollections, seedContent, seedTopics } from '@/content/data';
 import { CollectionRecord, ContentInput, ContentRecord, ContentStatus, TopicInput, TopicRecord } from '@/content/types';
 import { isSupabaseConfigured } from './env';
 import { supabaseRest, supabaseUpload } from './supabase';
+import { normalizeUniverse } from './universe';
 
 const localTopicsKey = 'arharif-local-topics';
 const localContentKey = 'arharif-local-content';
@@ -26,7 +27,7 @@ const writeStorage = (key: string, value: string) => {
 
 const normalizeTopic = (r: Record<string, unknown>): TopicRecord => ({
   id: String(r.id), slug: String(r.slug), title: String(r.title), description: String(r.description ?? ''),
-  universe: String(r.universe) as TopicRecord['universe'], category: String(r.category ?? ''), subcategory: r.subcategory ? String(r.subcategory) : undefined,
+  universe: (normalizeUniverse(String(r.universe)) || 'professional') as TopicRecord['universe'], category: String(r.category ?? ''), subcategory: r.subcategory ? String(r.subcategory) : undefined,
   displayStyle: String(r.display_style) as TopicRecord['displayStyle'], coverImageUrl: r.cover_image_url ? String(r.cover_image_url) : undefined,
   palette: r.palette ? String(r.palette) : undefined, mood: r.mood ? String(r.mood) : undefined,
   icon: r.icon ? String(r.icon) : undefined, orderIndex: Number(r.order_index ?? 0), featured: Boolean(r.featured), status: String(r.status ?? 'published') as TopicRecord['status'], createdAt: String(r.created_at), updatedAt: String(r.updated_at),
@@ -71,7 +72,7 @@ const getLocalCollections = () => {
 export async function listCollections(): Promise<CollectionRecord[]> {
   if (!isSupabaseConfigured) return getLocalCollections();
   const rows = await supabaseRest<Record<string, unknown>[]>('collections?select=*');
-  return rows.map((r) => ({ id: String(r.id), slug: String(r.slug), title: String(r.title), description: String(r.description ?? ''), universe: String(r.universe) as CollectionRecord['universe'], category: String(r.category ?? ''), coverImageUrl: r.cover_image_url ? String(r.cover_image_url) : undefined, featured: Boolean(r.featured) }));
+  return rows.map((r) => ({ id: String(r.id), slug: String(r.slug), title: String(r.title), description: String(r.description ?? ''), universe: (normalizeUniverse(String(r.universe)) || 'professional') as CollectionRecord['universe'], category: String(r.category ?? ''), coverImageUrl: r.cover_image_url ? String(r.cover_image_url) : undefined, featured: Boolean(r.featured) }));
 }
 
 export async function listPublishedTopics() {
