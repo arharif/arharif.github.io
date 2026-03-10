@@ -1,0 +1,28 @@
+name: keepalive
+
+on:
+  schedule:
+    - cron: "0 3 */5 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping public health endpoint (best effort)
+        run: |
+          curl -fsS --retry 2 --max-time 20 https://arharif.github.io/healthz.json > /dev/null || true
+
+      - name: Best-effort Supabase ping
+        if: ${{ secrets.VITE_SUPABASE_URL != '' && secrets.VITE_SUPABASE_ANON_KEY != '' }}
+        env:
+          SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          curl -fsS --retry 2 --max-time 20 \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+            "${SUPABASE_URL}/rest/v1/content_entries?select=id&limit=1" > /dev/null || true
