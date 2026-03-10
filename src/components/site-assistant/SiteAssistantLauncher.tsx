@@ -26,6 +26,8 @@ const writeSeen = (value: Record<string, boolean>) => {
   }
 };
 
+const singletonKey = '__x1_single_launcher__';
+
 export function SiteAssistantLauncher() {
   const [open, setOpen] = useState(false);
   const [enabled, setEnabled] = useState(true);
