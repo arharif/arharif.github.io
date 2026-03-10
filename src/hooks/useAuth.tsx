@@ -1,12 +1,14 @@
 import { createContext, PropsWithChildren, useContext, useEffect, useMemo, useState } from 'react';
 import { config, genericAccessDenied, genericAuthError, hasSupabaseCoreConfig } from '@/lib/config';
 import { AuthSession, getUser, signInWithOtp, signInWithPassword, supabaseLogout, verifyOtp } from '@/lib/supabase';
+import { safeStorage } from '@/lib/storage';
 
 interface AuthCtx {
   session: AuthSession | null;
   isAdmin: boolean;
   loading: boolean;
   beginSecureLogin: (email: string, password: string) => Promise<void>;
+  requestOtpChallenge: (email: string) => Promise<void>;
   verifyOtpCode: (otp: string) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -14,16 +16,25 @@ interface AuthCtx {
 const Ctx = createContext<AuthCtx | undefined>(undefined);
 const storageKey = 'x1-auth-session';
 
+const readAuthStorage = () => safeStorage.get(storageKey, 'session') ?? safeStorage.get(storageKey, 'local');
+
+const writeAuthStorage = (value: string) => {
+  safeStorage.set(storageKey, value, 'session');
+  safeStorage.remove(storageKey, 'local');
+};
+
+const clearAuthStorage = () => safeStorage.remove(storageKey, 'both');
+
 export function AuthProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<AuthSession | null>(() => {
     try {
-      const raw = localStorage.getItem(storageKey);
+      const raw = readAuthStorage();
       if (!raw) return null;
       const parsed = JSON.parse(raw) as AuthSession;
       if (!parsed?.access_token || !parsed?.refresh_token || !parsed?.token_type || !parsed?.user?.id) return null;
       return parsed;
     } catch {
-      localStorage.removeItem(storageKey);
+      clearAuthStorage();
       return null;
     }
   });
@@ -41,35 +52,38 @@ export function AuthProvider({ children }: PropsWithChildren) {
         .then((user) => {
           const next: AuthSession = { access_token: token, refresh_token: refresh, token_type: type, expires_in: expires, user };
           setSession(next);
-          localStorage.setItem(storageKey, JSON.stringify(next));
+          writeAuthStorage(JSON.stringify(next));
           history.replaceState(null, '', window.location.pathname + window.location.search);
         })
         .catch(() => undefined);
     }
   }, []);
 
-  const isAdmin = Boolean(session?.user.email && config.adminEmail && session.user.email.toLowerCase() === config.adminEmail);
+  const normalizedAdminEmail = config.adminEmail?.toLowerCase() ?? '';
+  const isAdmin = Boolean(session?.user.email && normalizedAdminEmail && session.user.email.toLowerCase() === normalizedAdminEmail);
 
   useEffect(() => {
     if (!session?.access_token || !hasSupabaseCoreConfig) return;
     getUser(session.access_token)
       .then((user) => {
         if (!user?.id) throw new Error('invalid-session');
+        const email = user.email?.toLowerCase();
+        if (!email || !normalizedAdminEmail || email !== normalizedAdminEmail) throw new Error(genericAccessDenied);
         const next = { ...session, user };
         setSession(next);
-        localStorage.setItem(storageKey, JSON.stringify(next));
+        writeAuthStorage(JSON.stringify(next));
       })
       .catch(async () => {
         if (session?.access_token) await supabaseLogout(session.access_token).catch(() => undefined);
         setSession(null);
         setChallengeEmail(null);
-        localStorage.removeItem(storageKey);
+        clearAuthStorage();
       });
-  }, [session?.access_token]);
+  }, [normalizedAdminEmail, session?.access_token]);
 
   const ensureAdmin = (next: AuthSession) => {
     const email = next.user.email?.toLowerCase();
-    if (!email || !config.adminEmail || email !== config.adminEmail) {
+    if (!email || !normalizedAdminEmail || email !== normalizedAdminEmail) {
       throw new Error(genericAccessDenied);
     }
   };
@@ -84,7 +98,20 @@ export function AuthProvider({ children }: PropsWithChildren) {
         setLoading(true);
         try {
           const next = await signInWithPassword(email, password);
-          await supabaseLogout(next.access_token).catch(() => undefined);
+          ensureAdmin(next);
+          setSession(next);
+          writeAuthStorage(JSON.stringify(next));
+          setChallengeEmail(null);
+        } catch {
+          throw new Error(genericAuthError);
+        } finally {
+          setLoading(false);
+        }
+      },
+      requestOtpChallenge: async (email) => {
+        if (!hasSupabaseCoreConfig) throw new Error(genericAuthError);
+        setLoading(true);
+        try {
           await signInWithOtp(email);
           setChallengeEmail(email);
         } catch {
@@ -101,7 +128,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
           const next = await verifyOtp(challengeEmail, otp);
           ensureAdmin(next);
           setSession(next);
-          localStorage.setItem(storageKey, JSON.stringify(next));
+          writeAuthStorage(JSON.stringify(next));
           setChallengeEmail(null);
         } catch {
           throw new Error(genericAuthError);
@@ -113,7 +140,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         if (session?.access_token && hasSupabaseCoreConfig) await supabaseLogout(session.access_token).catch(() => undefined);
         setSession(null);
         setChallengeEmail(null);
-        localStorage.removeItem(storageKey);
+        clearAuthStorage();
       },
     }),
     [challengeEmail, isAdmin, loading, session],

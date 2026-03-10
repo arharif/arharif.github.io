@@ -52,7 +52,7 @@ export function TopicEditor({ value, onSave, saving }: { value?: TopicRecord; on
         <input className="rounded-xl bg-white/10 p-2" placeholder="Topic title" value={topic.title} onChange={(e) => { const title = e.target.value; set('title', title); if (!value) set('slug', title.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-')); }} />
         <input className="rounded-xl bg-white/10 p-2" placeholder="Topic slug" value={topic.slug} onChange={(e) => set('slug', e.target.value.toLowerCase().replace(/\s+/g, '-'))} />
         <select className="rounded-xl bg-white/10 p-2" value={topic.universe} onChange={(e) => set('universe', e.target.value as ThemeUniverse)}>
-          <option value="professional">professional</option><option value="personal">personal</option>
+          <option value="professional">Technology &amp; Innovation</option><option value="personal">Curiosities &amp; Philosophy</option>
         </select>
         <select className="rounded-xl bg-white/10 p-2" value={topic.displayStyle} onChange={(e) => set('displayStyle', e.target.value as TopicDisplayStyle)}>
           <option value="book">book</option><option value="slides">slides</option><option value="article">article</option>

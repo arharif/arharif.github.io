@@ -17,9 +17,21 @@ export function SecurityRolesMap() {
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
+  const [isLightTheme, setIsLightTheme] = useState(false);
   const dragRef = useRef<{ x: number; y: number } | null>(null);
 
   const overview = category === 'all' && !search.trim();
+
+
+  useEffect(() => {
+    const readTheme = () => {
+      setIsLightTheme(document.documentElement.classList.contains('theme-light'));
+    };
+    readTheme();
+    const observer = new MutationObserver(readTheme);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
 
   const nodes = useMemo(() => {
     if (overview) {
@@ -161,17 +173,17 @@ export function SecurityRolesMap() {
           <svg viewBox={`0 0 ${viewWidth} ${viewHeight}`} className="mindmap-svg" preserveAspectRatio="xMidYMid meet">
             <defs>
               <pattern id="roles-grid" width="50" height="50" patternUnits="userSpaceOnUse">
-                <path d="M 50 0 L 0 0 0 50" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="0.8" />
+                <path d="M 50 0 L 0 0 0 50" fill="none" stroke={isLightTheme ? 'rgba(15,23,42,0.06)' : 'rgba(255,255,255,0.04)'} strokeWidth="0.8" />
               </pattern>
             </defs>
-            <rect width={viewWidth} height={viewHeight} fill="url(#roles-grid)" opacity="0.6" />
+            <rect width={viewWidth} height={viewHeight} fill="url(#roles-grid)" opacity={isLightTheme ? 0.85 : 0.6} />
             <g transform={`translate(${offset.x}, ${offset.y}) scale(${scale})`}>
               {edges.map((edge) => {
                 const s = nodeMap.get(edge.source);
                 const t = nodeMap.get(edge.target);
                 if (!s || !t) return null;
                 const active = (hoverId || activeNode?.id) && (edge.source === (hoverId || activeNode?.id) || edge.target === (hoverId || activeNode?.id));
-                return <line key={edge.id} x1={s.x} y1={s.y} x2={t.x} y2={t.y} stroke={active ? 'rgba(255,255,255,.8)' : 'rgba(125,211,252,.28)'} strokeWidth={active ? 2.2 : 1.2} />;
+                return <line key={edge.id} x1={s.x} y1={s.y} x2={t.x} y2={t.y} stroke={active ? (isLightTheme ? 'rgba(15,23,42,0.6)' : 'rgba(255,255,255,.8)') : (isLightTheme ? 'rgba(71,85,105,0.35)' : 'rgba(125,211,252,.28)')} strokeWidth={active ? 2.2 : 1.2} />;
               })}
 
               {nodes.map((node) => {
@@ -202,9 +214,9 @@ export function SecurityRolesMap() {
                     }}
                     aria-label={`${node.type} ${node.label}`}
                   >
-                    <circle r={radius} fill={categoryDef?.color.fill || '#334155'} opacity={opacity} />
-                    <circle r={radius + 6} fill="transparent" stroke={categoryDef?.color.ring || '#cbd5e1'} strokeOpacity={isActive || isHover ? 0.9 : 0.28} />
-                    <text x={node.type === 'subdomain' ? -16 : 16} y={4} textAnchor={node.type === 'subdomain' ? 'end' : 'start'} className="mindmap-label" style={{ fill: categoryDef?.color.text || '#e2e8f0', opacity }}>{node.label}</text>
+                    <circle r={radius} fill={isLightTheme ? 'rgba(37,99,235,0.18)' : (categoryDef?.color.fill || '#334155')} opacity={opacity} />
+                    <circle r={radius + 6} fill="transparent" stroke={isLightTheme ? 'rgba(71,85,105,0.45)' : (categoryDef?.color.ring || '#cbd5e1')} strokeOpacity={isActive || isHover ? 0.9 : 0.28} />
+                    <text x={node.type === 'subdomain' ? -16 : 16} y={4} textAnchor={node.type === 'subdomain' ? 'end' : 'start'} className="mindmap-label" style={{ fill: isLightTheme ? '#0f172a' : (categoryDef?.color.text || '#e2e8f0'), opacity }}>{node.label}</text>
                   </g>
                 );
               })}
