@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { listPublishedContent } from '@/lib/cms';
 import { ContentRecord } from '@/content/types';
-import { CardSheddingGame } from '@/components/games/CardSheddingGame';
 import { MemoryPuzzleGame } from '@/components/games/MemoryPuzzleGame';
 import { safeStorage } from '@/lib/storage';
 import { MCQQuizEngine } from '@/components/games/MCQQuizEngine';
@@ -14,7 +13,7 @@ import { GamesZoneCategory } from '@/types/games';
 type GameKey =
   | 'full-ciso-qsa-pack' | 'security-awareness-qsm' | 'ai-topic-qsm' | 'otaku-general-culture-quiz' | 'fc-barcelona-hardcore-fan-quiz'
   | 'snake' | 'tictactoe' | 'reaction' | 'rps' | 'pacman' | 'retro-car-racing'
-  | 'card-shedding' | 'memory';
+  | 'memory';
 
 type GameEntry = {
   key: GameKey;
@@ -30,7 +29,6 @@ type GameEntry = {
 };
 
 const staticGames: GameEntry[] = [
-  { key: 'card-shedding', title: 'Card Shedding Duel', desc: 'A mature shedding-card strategy round against computer AI.', color: 'from-indigo-500/35 to-blue-500/25', icon: '🂡', category: 'Entertainment', typeLabel: 'Card Game', sortOrder: 20 },
   { key: 'memory', title: 'Memory Puzzle', desc: 'Pattern recall challenge with calm pacing.', color: 'from-cyan-500/35 to-sky-500/25', icon: '🧠', category: 'Entertainment', typeLabel: 'Puzzle', sortOrder: 23 },
   { key: 'rps', title: 'Rock Paper Scissors', desc: 'Classic duel versus computer.', color: 'from-violet-500/35 to-fuchsia-400/25', icon: '🪨', category: 'Entertainment', typeLabel: 'Classic', sortOrder: 24 },
   { key: 'snake', title: 'Snake', desc: 'Precision movement with increasing pressure.', color: 'from-emerald-400/35 to-cyan-400/25', icon: '🐍', category: 'Entertainment', typeLabel: 'Arcade', sortOrder: 25 },
@@ -160,7 +158,6 @@ export function GamesHub() {
         {active === 'snake' && <SnakeGame />}
         {active === 'tictactoe' && <TicTacToeGame />}
         {active === 'reaction' && <ReactionGame />}
-        {active === 'card-shedding' && <CardSheddingGame />}
         {active === 'memory' && <MemoryPuzzleGame />}
         {active === 'rps' && <RPSGame />}
         {active === 'pacman' && <PacmanGame />}
@@ -229,20 +226,6 @@ function SnakeGame() {
   );
 }
 
-function BattleshipGame() {
-  const size = 6;
-  const [ships] = useState(() => new Set([3, 9, 18, 29, 31]));
-  const [hits, setHits] = useState<Set<number>>(new Set());
-  const [misses, setMisses] = useState<Set<number>>(new Set());
-  const won = hits.size === ships.size;
-  const shoot = (i: number) => {
-    if (won || hits.has(i) || misses.has(i)) return;
-    if (ships.has(i)) setHits(new Set([...hits, i]));
-    else setMisses(new Set([...misses, i]));
-  };
-  return <div><p className="mb-3 text-sm text-muted">Hit all hidden ships. Hits: {hits.size}/{ships.size}</p><div className="grid grid-cols-6 gap-2">{Array.from({ length: size * size }).map((_, i) => <button key={i} onClick={() => shoot(i)} className={`h-10 rounded ${hits.has(i) ? 'bg-emerald-300' : misses.has(i) ? 'bg-rose-300/70' : 'bg-white/8 hover:bg-white/15'}`} />)}</div>{won && <p className="mt-3 text-sm text-emerald-300">Mission complete.</p>}</div>;
-}
-
 function TicTacToeGame() {
   const [cells, setCells] = useState<Array<'X' | 'O' | null>>(Array(9).fill(null));
   const [xTurn, setXTurn] = useState(true);
@@ -278,79 +261,78 @@ function ReactionGame() {
 
 function RPSGame() {
   const options = ['Rock', 'Paper', 'Scissors'] as const;
-  const [msg, setMsg] = useState('Pick your move.');
+  const [phase, setPhase] = useState<'idle' | 'shake' | 'reveal'>('idle');
+  const [playerChoice, setPlayerChoice] = useState<typeof options[number] | null>(null);
+  const [cpuChoice, setCpuChoice] = useState<typeof options[number] | null>(null);
+  const [result, setResult] = useState('Choose your move to start.');
   const [score, setScore] = useState({ you: 0, cpu: 0 });
+  const [pulse, setPulse] = useState<'you' | 'cpu' | null>(null);
+
   const play = (choice: typeof options[number]) => {
+    if (phase === 'shake') return;
     const cpu = options[Math.floor(Math.random() * options.length)];
-    if (cpu === choice) { setMsg(`Draw · both chose ${choice}`); return; }
-    const win = (choice === 'Rock' && cpu === 'Scissors') || (choice === 'Paper' && cpu === 'Rock') || (choice === 'Scissors' && cpu === 'Paper');
-    if (win) { setScore((s) => ({ ...s, you: s.you + 1 })); setMsg(`You win · ${choice} beats ${cpu}`); }
-    else { setScore((s) => ({ ...s, cpu: s.cpu + 1 })); setMsg(`CPU wins · ${cpu} beats ${choice}`); }
-  };
-  return <div><div className="mb-3 flex items-center justify-between text-sm text-muted"><p>{msg}</p><p>You {score.you} · CPU {score.cpu}</p></div><div className="flex flex-wrap gap-2">{options.map((o) => <button key={o} onClick={() => play(o)} className="rounded-xl bg-white/10 px-4 py-2 hover:bg-white/15">{o}</button>)}</div></div>;
-}
+    setPlayerChoice(choice);
+    setCpuChoice(null);
+    setResult('Ready…');
+    setPhase('shake');
 
-function QuickMathGame() {
-  const newRound = () => {
-    const a = Math.floor(Math.random() * 20) + 1;
-    const b = Math.floor(Math.random() * 20) + 1;
-    return { a, b, answer: a + b };
-  };
-  const [round, setRound] = useState(newRound);
-  const [value, setValue] = useState('');
-  const [score, setScore] = useState(0);
-  const [best, setBest] = useState(() => readBest('game-best-math'));
-  const [time, setTime] = useState(30);
+    window.setTimeout(() => {
+      setCpuChoice(cpu);
+      setPhase('reveal');
+      if (cpu === choice) {
+        setResult(`Draw · both chose ${choice}`);
+        setPulse(null);
+        return;
+      }
+      const win = (choice === 'Rock' && cpu === 'Scissors') || (choice === 'Paper' && cpu === 'Rock') || (choice === 'Scissors' && cpu === 'Paper');
+      if (win) {
+        setScore((prev) => ({ ...prev, you: prev.you + 1 }));
+        setResult(`You win · ${choice} beats ${cpu}`);
+        setPulse('you');
+      } else {
+        setScore((prev) => ({ ...prev, cpu: prev.cpu + 1 }));
+        setResult(`CPU wins · ${cpu} beats ${choice}`);
+        setPulse('cpu');
+      }
 
-  useEffect(() => {
-    if (time <= 0) return;
-    const t = setTimeout(() => setTime((v) => v - 1), 1000);
-    return () => clearTimeout(t);
-  }, [time]);
-
-  const submit = () => {
-    if (time <= 0) return;
-    if (Number(value) === round.answer) {
-      const next = score + 1;
-      setScore(next);
-      if (next > best) { setBest(next); saveBest('game-best-math', next); }
-    }
-    setValue('');
-    setRound(newRound());
+      window.setTimeout(() => setPhase('idle'), 380);
+      window.setTimeout(() => setPulse(null), 550);
+    }, 420);
   };
 
-  const restart = () => { setScore(0); setTime(30); setValue(''); setRound(newRound()); };
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between text-sm">
+        <p className={`rounded-lg px-3 py-1 transition ${phase === 'reveal' ? 'bg-white/10' : ''}`}>{result}</p>
+        <p className="text-muted">
+          You <span className={`inline-block transition ${pulse === 'you' ? 'scale-125 text-cyan-200' : ''}`}>{score.you}</span>
+          {' · '}CPU <span className={`inline-block transition ${pulse === 'cpu' ? 'scale-125 text-rose-200' : ''}`}>{score.cpu}</span>
+        </p>
+      </div>
 
-  return <div><div className="mb-3 flex items-center justify-between text-sm text-muted"><p>Time: {time}s · Score: {score}</p><p>Best: {best}</p></div><p className="mb-2 text-lg">{round.a} + {round.b} = ?</p><div className="flex flex-wrap gap-2"><input className="rounded-lg bg-white/10 px-3 py-2" value={value} onChange={(e) => setValue(e.target.value.replace(/[^0-9-]/g, ''))} /><button onClick={submit} className="rounded-lg bg-white/10 px-3 py-2 hover:bg-white/15">Submit</button><button onClick={restart} className="rounded-lg bg-white/10 px-3 py-2 hover:bg-white/15">Restart</button></div>{time <= 0 && <p className="mt-2 text-amber-300">Time over — restart to play again.</p>}</div>;
-}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className={`rounded-xl border border-white/10 bg-white/5 p-4 text-center transition ${phase === 'shake' ? 'animate-pulse' : ''}`}>
+          <p className="text-xs uppercase tracking-[0.12em] text-muted">You</p>
+          <p className="mt-2 text-xl font-semibold">{playerChoice || '—'}</p>
+        </div>
+        <div className={`rounded-xl border border-white/10 bg-white/5 p-4 text-center transition ${phase === 'shake' ? 'animate-pulse' : ''}`}>
+          <p className="text-xs uppercase tracking-[0.12em] text-muted">CPU</p>
+          <p className="mt-2 text-xl font-semibold">{cpuChoice || (phase === 'shake' ? '…' : '—')}</p>
+        </div>
+      </div>
 
-
-function CountryLocatorGame() {
-  const rounds = [
-    { country: 'Spain', answer: 'Europe', options: ['Europe', 'Asia', 'Africa', 'South America'] },
-    { country: 'Japan', answer: 'Asia', options: ['North America', 'Asia', 'Africa', 'Europe'] },
-    { country: 'Brazil', answer: 'South America', options: ['South America', 'Europe', 'Oceania', 'Asia'] },
-    { country: 'Kenya', answer: 'Africa', options: ['Africa', 'Europe', 'North America', 'Asia'] },
-    { country: 'Canada', answer: 'North America', options: ['North America', 'Europe', 'Asia', 'Africa'] },
-    { country: 'Australia', answer: 'Oceania', options: ['Oceania', 'Europe', 'South America', 'Asia'] },
-  ];
-  const [index, setIndex] = useState(0);
-  const [score, setScore] = useState(0);
-  const [best, setBest] = useState(() => readBest('game-best-geo'));
-  const [note, setNote] = useState('Select the region.');
-  const current = rounds[index % rounds.length];
-
-  const choose = (option: string) => {
-    const ok = option === current.answer;
-    const nextScore = ok ? score + 1 : score;
-    setScore(nextScore);
-    if (nextScore > best) {
-      setBest(nextScore);
-      saveBest('game-best-geo', nextScore);
-    }
-    setNote(ok ? `Correct: ${current.country} is in ${current.answer}.` : `Not quite. ${current.country} is in ${current.answer}.`);
-    setIndex((v) => v + 1);
-  };
-
-  return <div><div className="mb-3 flex items-center justify-between text-sm text-muted"><p>{note}</p><p>Score: {score} · Best: {best}</p></div><p className="mb-3 text-lg">Where is <span className="font-semibold">{current.country}</span>?</p><div className="grid gap-2 sm:grid-cols-2">{current.options.map((o) => <button key={o} className="rounded-xl bg-white/10 px-4 py-2 text-left hover:bg-white/15" onClick={() => choose(o)}>{o}</button>)}</div><button className="mt-3 rounded-lg bg-white/10 px-3 py-1 text-xs hover:bg-white/15" onClick={() => { setIndex(0); setScore(0); setNote('Select the region.'); }}>Restart</button></div>;
+      <div className="flex flex-wrap gap-2">
+        {options.map((option) => (
+          <button
+            key={option}
+            onClick={() => play(option)}
+            disabled={phase === 'shake'}
+            className="rounded-xl border border-white/15 bg-white/10 px-4 py-2 transition duration-150 hover:-translate-y-0.5 hover:bg-white/20 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {option}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 }

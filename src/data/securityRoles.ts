@@ -1,4 +1,5 @@
 import { SecurityRole } from '@/types/securityRoles';
+import { getCertificationPath } from '@/data/certificationPaths';
 
 const toDomains = (value: string) => value.split(';').map((item) => item.trim()).filter(Boolean);
 
@@ -111,6 +112,7 @@ export const securityRoles: SecurityRole[] = rolesSeed.map((role, idx) => ({
   shortDescription: role.mainResponsibilities,
   mainResponsibilities: role.mainResponsibilities,
   mustHaveDomains: toDomains(role.mustHaveDomains),
+  certification: getCertificationPath(role.title),
   careerPath: role.careerPath,
 }));
 

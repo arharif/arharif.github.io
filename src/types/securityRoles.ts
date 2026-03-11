@@ -14,6 +14,7 @@ export interface SecurityRole {
   shortDescription: string;
   mainResponsibilities: string;
   mustHaveDomains: string[];
+  certification: string;
   careerPath: CareerPath;
 }
 

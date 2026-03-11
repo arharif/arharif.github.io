@@ -1096,7 +1096,7 @@ export const gamesZoneQuizzes: QuizGameData[] = [
     id: 'fc-barcelona-hardcore-fan-quiz',
     slug: 'fc-barcelona-hardcore-fan-quiz',
     title: 'FC Barcelona Hardcore Fan Quiz',
-    category: 'Entertainment',
+    category: 'Culture',
     shortDescription: '10 questions for dedicated Barça fans about identity, history, and culture.',
     longDescription: 'A focused FC Barcelona trivia challenge for hardcore fans covering symbols, region, culture, and history.',
     questionCount: 10,
