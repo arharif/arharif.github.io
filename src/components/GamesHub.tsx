@@ -1,71 +1,124 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { listPublishedContent } from '@/lib/cms';
 import { ContentRecord } from '@/content/types';
 import { CyberAwarenessQuiz } from '@/components/games/CyberAwarenessQuiz';
 import { GeneralKnowledgeQuiz } from '@/components/games/GeneralKnowledgeQuiz';
+import { CardSheddingGame } from '@/components/games/CardSheddingGame';
+import { Puzzle2048Game } from '@/components/games/Puzzle2048Game';
+import { SudokuMiniGame } from '@/components/games/SudokuMiniGame';
+import { MemoryPuzzleGame } from '@/components/games/MemoryPuzzleGame';
+import { safeStorage } from '@/lib/storage';
 
-type GameKey = 'snake' | 'battleship' | 'tictactoe' | 'reaction' | 'rps' | 'math' | 'geo' | 'cyber-awareness' | 'general-knowledge';
+type GameCategory = 'Card Games' | 'Puzzle Games' | 'Classic Games' | 'Arcade & Skills' | 'Knowledge';
+type GameKey =
+  | 'snake' | 'battleship' | 'tictactoe' | 'reaction' | 'rps' | 'math' | 'geo'
+  | 'cyber-awareness' | 'general-knowledge'
+  | 'card-shedding' | 'puzzle-2048' | 'sudoku' | 'memory';
 
-const gameMeta: Record<GameKey, { title: string; desc: string; color: string; icon: string }> = {
-  snake: { title: 'Snake', desc: 'Precision movement with increasing pressure.', color: 'from-emerald-400/35 to-cyan-400/25', icon: '🐍' },
-  battleship: { title: 'Battleship Lite', desc: 'Tactical grid targeting in compact rounds.', color: 'from-blue-500/35 to-cyan-400/25', icon: '🚢' },
-  tictactoe: { title: 'Tic Tac Toe', desc: 'Fast strategic duels.', color: 'from-slate-400/35 to-indigo-400/25', icon: '✖️' },
-  reaction: { title: 'Reaction Time', desc: 'Measure and improve your response speed.', color: 'from-amber-400/35 to-orange-400/25', icon: '⚡' },
-  rps: { title: 'Rock Paper Scissors', desc: 'Lightweight probability mind game.', color: 'from-violet-500/35 to-fuchsia-400/25', icon: '🪨' },
-  math: { title: 'Quick Math', desc: 'Solve rapidly under a short timer.', color: 'from-rose-500/35 to-pink-400/25', icon: '➗' },
-  geo: { title: 'Country Locator', desc: 'Where is Spain? region-based world challenge.', color: 'from-cyan-500/35 to-sky-400/25', icon: '🌍' },
-  'cyber-awareness': { title: 'Cyber Culture Quiz', desc: 'Practice phishing awareness and secure habits.', color: 'from-emerald-500/35 to-teal-400/25', icon: '🛡️' },
-  'general-knowledge': { title: 'General Knowledge Quiz', desc: 'Quick mixed culture trivia in lightweight rounds.', color: 'from-indigo-500/35 to-sky-400/25', icon: '🧠' },
+const gameMeta: Record<GameKey, { title: string; desc: string; color: string; icon: string; category: GameCategory }> = {
+  'card-shedding': { title: 'Card Shedding Duel', desc: 'A mature shedding-card strategy round against computer AI.', color: 'from-indigo-500/35 to-blue-500/25', icon: '🂡', category: 'Card Games' },
+  'puzzle-2048': { title: '2048', desc: 'Merge tiles and plan your board progression.', color: 'from-amber-500/35 to-orange-500/25', icon: '🔢', category: 'Puzzle Games' },
+  sudoku: { title: 'Sudoku', desc: 'Compact logic grid challenge focused on deduction.', color: 'from-slate-500/35 to-slate-400/25', icon: '🧩', category: 'Puzzle Games' },
+  memory: { title: 'Memory Puzzle', desc: 'Pattern recall challenge with calm pacing.', color: 'from-cyan-500/35 to-sky-500/25', icon: '🧠', category: 'Puzzle Games' },
+  rps: { title: 'Rock Paper Scissors', desc: 'Classic duel versus computer.', color: 'from-violet-500/35 to-fuchsia-400/25', icon: '🪨', category: 'Classic Games' },
+  snake: { title: 'Snake', desc: 'Precision movement with increasing pressure.', color: 'from-emerald-400/35 to-cyan-400/25', icon: '🐍', category: 'Arcade & Skills' },
+  battleship: { title: 'Battleship Lite', desc: 'Tactical grid targeting in compact rounds.', color: 'from-blue-500/35 to-cyan-400/25', icon: '🚢', category: 'Arcade & Skills' },
+  tictactoe: { title: 'Tic Tac Toe', desc: 'Fast strategic duels.', color: 'from-slate-400/35 to-indigo-400/25', icon: '✖️', category: 'Classic Games' },
+  reaction: { title: 'Reaction Time', desc: 'Measure and improve your response speed.', color: 'from-amber-400/35 to-orange-400/25', icon: '⚡', category: 'Arcade & Skills' },
+  math: { title: 'Quick Math', desc: 'Solve rapidly under a short timer.', color: 'from-rose-500/35 to-pink-400/25', icon: '➗', category: 'Arcade & Skills' },
+  geo: { title: 'Country Locator', desc: 'Region-based world challenge.', color: 'from-cyan-500/35 to-sky-400/25', icon: '🌍', category: 'Knowledge' },
+  'cyber-awareness': { title: 'Cyber Culture Quiz', desc: 'Practice phishing awareness and secure habits.', color: 'from-emerald-500/35 to-teal-400/25', icon: '🛡️', category: 'Knowledge' },
+  'general-knowledge': { title: 'General Knowledge Quiz', desc: 'Quick mixed culture trivia in lightweight rounds.', color: 'from-indigo-500/35 to-sky-400/25', icon: '📚', category: 'Knowledge' },
 };
 
 const readBest = (key: string) => {
-  if (typeof window === 'undefined') return 0;
-  const value = window.localStorage.getItem(key);
-  return Number(value || 0);
+  const value = safeStorage.get(key);
+  const num = Number(value || 0);
+  return Number.isFinite(num) ? num : 0;
 };
 
-const saveBest = (key: string, value: number) => {
-  if (typeof window === 'undefined') return;
-  window.localStorage.setItem(key, String(value));
-};
+const saveBest = (key: string, value: number) => safeStorage.set(key, String(value));
 
 export function GamesHub() {
-  const [active, setActive] = useState<GameKey>('snake');
+  const [active, setActive] = useState<GameKey>('card-shedding');
   const [games, setGames] = useState<ContentRecord[]>([]);
+  const location = useLocation();
+  const gamesZoneRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     listPublishedContent().then((rows) => setGames(rows.filter((r) => r.contentType === 'game'))).catch(() => setGames([]));
   }, []);
 
+  useEffect(() => {
+    if (location.pathname !== '/games') return;
+    const shouldScroll = !location.hash || location.hash === '#games-zone';
+    if (!shouldScroll) return;
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const frame = window.requestAnimationFrame(() => {
+      gamesZoneRef.current?.scrollIntoView({ behavior: prefersReduced ? 'auto' : 'smooth', block: 'start' });
+      gamesZoneRef.current?.focus({ preventScroll: true });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [location.pathname, location.hash]);
+
+  const categories: GameCategory[] = ['Card Games', 'Puzzle Games', 'Classic Games', 'Arcade & Skills', 'Knowledge'];
+
+  const scrollToGamesZone = () => {
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    gamesZoneRef.current?.scrollIntoView({ behavior: prefersReduced ? 'auto' : 'smooth', block: 'start' });
+    gamesZoneRef.current?.focus({ preventScroll: true });
+  };
+
+  const selectGame = (key: GameKey) => {
+    setActive(key);
+    window.requestAnimationFrame(scrollToGamesZone);
+  };
+
   return (
     <section className="space-y-5">
       <header className="game-store rounded-3xl p-6">
-        <p className="text-xs uppercase tracking-[0.25em] text-pink-200/80">Cyber Playground</p>
+        <p className="text-xs uppercase tracking-[0.25em] text-muted">Game Studio</p>
         <h1 className="mt-2 text-3xl font-semibold">Games</h1>
-        <p className="mt-2 text-sm text-pink-100/85">A curated set of lightweight games for focus, logic, awareness, and culture.</p>
+        <p className="mt-2 text-sm text-muted">A curated collection of strategy, puzzle, classic, and learning games designed for thoughtful play.</p>
       </header>
 
       {games.length > 0 && (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {games.map((g) => (
             <article key={g.id} className="game-card rounded-2xl p-4">
-              <p className="text-xs text-pink-100/80">CMS Pick</p>
+              <p className="text-xs text-muted">CMS Pick</p>
               <h3 className="mt-1 text-lg font-semibold">{g.title}</h3>
-              <p className="mt-1 text-sm text-pink-100/85">{g.excerpt || 'No description yet.'}</p>
+              <p className="mt-1 text-sm text-muted">{g.excerpt || 'No description yet.'}</p>
             </article>
           ))}
         </div>
       )}
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {Object.entries(gameMeta).map(([k, meta]) => (
-          <button key={k} onClick={() => setActive(k as GameKey)} className={`game-card rounded-2xl bg-gradient-to-br ${meta.color} p-5 text-left transition duration-200 hover:-translate-y-1 hover:shadow-2xl ${active === k ? 'ring-2 ring-pink-200/70' : ''}`}>
-            <p className="text-xl">{meta.icon}</p>
-            <h3 className="text-lg font-semibold">{meta.title}</h3>
-            <p className="mt-1 text-sm text-pink-100/90">{meta.desc}</p>
-          </button>
-        ))}
+      <div className="space-y-4">
+        {categories.map((category) => {
+          const entries = Object.entries(gameMeta).filter(([, meta]) => meta.category === category);
+          if (!entries.length) return null;
+          return (
+            <section key={category}>
+              <h2 className="mb-2 text-sm font-semibold uppercase tracking-[0.16em] text-muted">{category}</h2>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {entries.map(([k, meta]) => (
+                  <button
+                    key={k}
+                    onClick={() => selectGame(k as GameKey)}
+                    className={`game-card rounded-2xl bg-gradient-to-br ${meta.color} p-5 text-left transition duration-200 hover:-translate-y-0.5 ${active === k ? 'ring-2 ring-cyan-300/60' : ''}`}
+                    aria-pressed={active === k}
+                  >
+                    <p className="text-xl">{meta.icon}</p>
+                    <h3 className="text-lg font-semibold">{meta.title}</h3>
+                    <p className="mt-1 text-sm text-muted">{meta.desc}</p>
+                  </button>
+                ))}
+              </div>
+            </section>
+          );
+        })}
       </div>
 
       <div className="glass rounded-2xl p-4">
@@ -73,17 +126,21 @@ export function GamesHub() {
         <Link to="/Security_Mindmap" className="mt-2 inline-block rounded-xl bg-white/15 px-4 py-2 text-sm hover:bg-white/25">Explore Security Map</Link>
       </div>
 
-      <div className="game-panel rounded-2xl p-4">
+      <section id="games-zone" ref={gamesZoneRef} tabIndex={-1} className="game-panel rounded-2xl p-4" aria-label="Interactive games zone">
         {active === 'snake' && <SnakeGame />}
         {active === 'battleship' && <BattleshipGame />}
         {active === 'tictactoe' && <TicTacToeGame />}
         {active === 'reaction' && <ReactionGame />}
+        {active === 'card-shedding' && <CardSheddingGame />}
+        {active === 'puzzle-2048' && <Puzzle2048Game />}
+        {active === 'sudoku' && <SudokuMiniGame />}
+        {active === 'memory' && <MemoryPuzzleGame />}
         {active === 'rps' && <RPSGame />}
         {active === 'math' && <QuickMathGame />}
         {active === 'geo' && <CountryLocatorGame />}
         {active === 'cyber-awareness' && <CyberAwarenessQuiz />}
         {active === 'general-knowledge' && <GeneralKnowledgeQuiz />}
-      </div>
+      </section>
     </section>
   );
 }

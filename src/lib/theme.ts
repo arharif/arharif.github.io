@@ -1,3 +1,5 @@
+import { safeStorage } from '@/lib/storage';
+
 export type ThemeMode = 'dark' | 'light' | 'purple' | 'rainbow';
 
 export const themeMap: Record<ThemeMode, string> = {
@@ -8,10 +10,6 @@ export const themeMap: Record<ThemeMode, string> = {
 };
 
 export const initTheme = (): ThemeMode => {
-  try {
-    const stored = localStorage.getItem('theme') as ThemeMode | null;
-    return stored && stored in themeMap ? stored : 'dark';
-  } catch {
-    return 'dark';
-  }
+  const stored = safeStorage.get('theme') as ThemeMode | null;
+  return stored && stored in themeMap ? stored : 'dark';
 };
