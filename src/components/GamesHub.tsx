@@ -1,36 +1,62 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { listPublishedContent } from '@/lib/cms';
 import { ContentRecord } from '@/content/types';
-import { CyberAwarenessQuiz } from '@/components/games/CyberAwarenessQuiz';
-import { GeneralKnowledgeQuiz } from '@/components/games/GeneralKnowledgeQuiz';
 import { CardSheddingGame } from '@/components/games/CardSheddingGame';
 import { Puzzle2048Game } from '@/components/games/Puzzle2048Game';
 import { SudokuMiniGame } from '@/components/games/SudokuMiniGame';
 import { MemoryPuzzleGame } from '@/components/games/MemoryPuzzleGame';
 import { safeStorage } from '@/lib/storage';
+import { MCQQuizEngine } from '@/components/games/MCQQuizEngine';
+import { gamesZoneQuizzes } from '@/data/gamesZoneData';
+import { GamesZoneCategory } from '@/types/games';
 
-type GameCategory = 'Card Games' | 'Puzzle Games' | 'Classic Games' | 'Arcade & Skills' | 'Knowledge';
 type GameKey =
+  | 'full-ciso-qsa-pack' | 'security-awareness-qsm' | 'otaku-general-culture-quiz'
   | 'snake' | 'battleship' | 'tictactoe' | 'reaction' | 'rps' | 'math' | 'geo'
-  | 'cyber-awareness' | 'general-knowledge'
   | 'card-shedding' | 'puzzle-2048' | 'sudoku' | 'memory';
 
-const gameMeta: Record<GameKey, { title: string; desc: string; color: string; icon: string; category: GameCategory }> = {
-  'card-shedding': { title: 'Card Shedding Duel', desc: 'A mature shedding-card strategy round against computer AI.', color: 'from-indigo-500/35 to-blue-500/25', icon: '🂡', category: 'Card Games' },
-  'puzzle-2048': { title: '2048', desc: 'Merge tiles and plan your board progression.', color: 'from-amber-500/35 to-orange-500/25', icon: '🔢', category: 'Puzzle Games' },
-  sudoku: { title: 'Sudoku', desc: 'Compact logic grid challenge focused on deduction.', color: 'from-slate-500/35 to-slate-400/25', icon: '🧩', category: 'Puzzle Games' },
-  memory: { title: 'Memory Puzzle', desc: 'Pattern recall challenge with calm pacing.', color: 'from-cyan-500/35 to-sky-500/25', icon: '🧠', category: 'Puzzle Games' },
-  rps: { title: 'Rock Paper Scissors', desc: 'Classic duel versus computer.', color: 'from-violet-500/35 to-fuchsia-400/25', icon: '🪨', category: 'Classic Games' },
-  snake: { title: 'Snake', desc: 'Precision movement with increasing pressure.', color: 'from-emerald-400/35 to-cyan-400/25', icon: '🐍', category: 'Arcade & Skills' },
-  battleship: { title: 'Battleship Lite', desc: 'Tactical grid targeting in compact rounds.', color: 'from-blue-500/35 to-cyan-400/25', icon: '🚢', category: 'Arcade & Skills' },
-  tictactoe: { title: 'Tic Tac Toe', desc: 'Fast strategic duels.', color: 'from-slate-400/35 to-indigo-400/25', icon: '✖️', category: 'Classic Games' },
-  reaction: { title: 'Reaction Time', desc: 'Measure and improve your response speed.', color: 'from-amber-400/35 to-orange-400/25', icon: '⚡', category: 'Arcade & Skills' },
-  math: { title: 'Quick Math', desc: 'Solve rapidly under a short timer.', color: 'from-rose-500/35 to-pink-400/25', icon: '➗', category: 'Arcade & Skills' },
-  geo: { title: 'Country Locator', desc: 'Region-based world challenge.', color: 'from-cyan-500/35 to-sky-400/25', icon: '🌍', category: 'Knowledge' },
-  'cyber-awareness': { title: 'Cyber Culture Quiz', desc: 'Practice phishing awareness and secure habits.', color: 'from-emerald-500/35 to-teal-400/25', icon: '🛡️', category: 'Knowledge' },
-  'general-knowledge': { title: 'General Knowledge Quiz', desc: 'Quick mixed culture trivia in lightweight rounds.', color: 'from-indigo-500/35 to-sky-400/25', icon: '📚', category: 'Knowledge' },
+type GameEntry = {
+  key: GameKey;
+  title: string;
+  desc: string;
+  color: string;
+  icon: string;
+  category: GamesZoneCategory;
+  typeLabel: string;
+  questionCount?: number;
+  difficulty?: string;
+  sortOrder: number;
 };
+
+const staticGames: GameEntry[] = [
+  { key: 'card-shedding', title: 'Card Shedding Duel', desc: 'A mature shedding-card strategy round against computer AI.', color: 'from-indigo-500/35 to-blue-500/25', icon: '🂡', category: 'Entertainment', typeLabel: 'Card Game', sortOrder: 20 },
+  { key: 'puzzle-2048', title: '2048', desc: 'Merge tiles and plan your board progression.', color: 'from-amber-500/35 to-orange-500/25', icon: '🔢', category: 'Entertainment', typeLabel: 'Puzzle', sortOrder: 21 },
+  { key: 'sudoku', title: 'Sudoku', desc: 'Compact logic grid challenge focused on deduction.', color: 'from-slate-500/35 to-slate-400/25', icon: '🧩', category: 'Entertainment', typeLabel: 'Puzzle', sortOrder: 22 },
+  { key: 'memory', title: 'Memory Puzzle', desc: 'Pattern recall challenge with calm pacing.', color: 'from-cyan-500/35 to-sky-500/25', icon: '🧠', category: 'Entertainment', typeLabel: 'Puzzle', sortOrder: 23 },
+  { key: 'rps', title: 'Rock Paper Scissors', desc: 'Classic duel versus computer.', color: 'from-violet-500/35 to-fuchsia-400/25', icon: '🪨', category: 'Entertainment', typeLabel: 'Classic', sortOrder: 24 },
+  { key: 'snake', title: 'Snake', desc: 'Precision movement with increasing pressure.', color: 'from-emerald-400/35 to-cyan-400/25', icon: '🐍', category: 'Entertainment', typeLabel: 'Arcade', sortOrder: 25 },
+  { key: 'battleship', title: 'Battleship Lite', desc: 'Tactical grid targeting in compact rounds.', color: 'from-blue-500/35 to-cyan-400/25', icon: '🚢', category: 'Entertainment', typeLabel: 'Arcade', sortOrder: 26 },
+  { key: 'tictactoe', title: 'Tic Tac Toe', desc: 'Fast strategic duels.', color: 'from-slate-400/35 to-indigo-400/25', icon: '✖️', category: 'Entertainment', typeLabel: 'Classic', sortOrder: 27 },
+  { key: 'reaction', title: 'Reaction Time', desc: 'Measure and improve your response speed.', color: 'from-amber-400/35 to-orange-400/25', icon: '⚡', category: 'Entertainment', typeLabel: 'Arcade', sortOrder: 28 },
+  { key: 'math', title: 'Quick Math', desc: 'Solve rapidly under a short timer.', color: 'from-rose-500/35 to-pink-400/25', icon: '➗', category: 'Entertainment', typeLabel: 'Arcade', sortOrder: 29 },
+  { key: 'geo', title: 'Country Locator', desc: 'Region-based world challenge.', color: 'from-cyan-500/35 to-sky-400/25', icon: '🌍', category: 'Culture', typeLabel: 'Quiz', sortOrder: 30 },
+];
+
+const quizEntries: GameEntry[] = gamesZoneQuizzes.map((quiz) => ({
+  key: quiz.slug as GameKey,
+  title: quiz.title,
+  desc: quiz.shortDescription,
+  color: quiz.category === 'Security' ? 'from-emerald-500/40 to-teal-500/25' : 'from-indigo-500/35 to-sky-400/25',
+  icon: quiz.category === 'Security' ? '🛡️' : '🎌',
+  category: quiz.category,
+  typeLabel: quiz.type,
+  questionCount: quiz.questionCount,
+  difficulty: quiz.difficulty,
+  sortOrder: quiz.sortOrder,
+}));
+
+const catalog: GameEntry[] = [...quizEntries, ...staticGames].sort((a, b) => a.sortOrder - b.sortOrder);
 
 const readBest = (key: string) => {
   const value = safeStorage.get(key);
@@ -41,8 +67,10 @@ const readBest = (key: string) => {
 const saveBest = (key: string, value: number) => safeStorage.set(key, String(value));
 
 export function GamesHub() {
-  const [active, setActive] = useState<GameKey>('card-shedding');
+  const [active, setActive] = useState<GameKey>('full-ciso-qsa-pack');
   const [games, setGames] = useState<ContentRecord[]>([]);
+  const [category, setCategory] = useState<'All' | GamesZoneCategory>('All');
+  const [search, setSearch] = useState('');
   const location = useLocation();
   const gamesZoneRef = useRef<HTMLElement | null>(null);
 
@@ -62,25 +90,27 @@ export function GamesHub() {
     return () => window.cancelAnimationFrame(frame);
   }, [location.pathname, location.hash]);
 
-  const categories: GameCategory[] = ['Card Games', 'Puzzle Games', 'Classic Games', 'Arcade & Skills', 'Knowledge'];
-
-  const scrollToGamesZone = () => {
-    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    gamesZoneRef.current?.scrollIntoView({ behavior: prefersReduced ? 'auto' : 'smooth', block: 'start' });
-    gamesZoneRef.current?.focus({ preventScroll: true });
-  };
+  const filteredCatalog = useMemo(() => {
+    return catalog.filter((game) => {
+      const categoryMatch = category === 'All' || game.category === category;
+      const searchMatch = game.title.toLowerCase().includes(search.toLowerCase());
+      return categoryMatch && searchMatch;
+    });
+  }, [category, search]);
 
   const selectGame = (key: GameKey) => {
     setActive(key);
-    window.requestAnimationFrame(scrollToGamesZone);
+    window.requestAnimationFrame(() => gamesZoneRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   };
+
+  const activeQuiz = gamesZoneQuizzes.find((game) => game.slug === active);
 
   return (
     <section className="space-y-5">
       <header className="game-store rounded-3xl p-6">
-        <p className="text-xs uppercase tracking-[0.25em] text-muted">Game Studio</p>
+        <p className="text-xs uppercase tracking-[0.25em] text-muted">Games Zone</p>
         <h1 className="mt-2 text-3xl font-semibold">Games</h1>
-        <p className="mt-2 text-sm text-muted">A curated collection of strategy, puzzle, classic, and learning games designed for thoughtful play.</p>
+        <p className="mt-2 text-sm text-muted">Explore professional security practice packs and fun culture or entertainment quizzes with polished filtering and discovery.</p>
       </header>
 
       {games.length > 0 && (
@@ -95,30 +125,32 @@ export function GamesHub() {
         </div>
       )}
 
-      <div className="space-y-4">
-        {categories.map((category) => {
-          const entries = Object.entries(gameMeta).filter(([, meta]) => meta.category === category);
-          if (!entries.length) return null;
-          return (
-            <section key={category}>
-              <h2 className="mb-2 text-sm font-semibold uppercase tracking-[0.16em] text-muted">{category}</h2>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {entries.map(([k, meta]) => (
-                  <button
-                    key={k}
-                    onClick={() => selectGame(k as GameKey)}
-                    className={`game-card rounded-2xl bg-gradient-to-br ${meta.color} p-5 text-left transition duration-200 hover:-translate-y-0.5 ${active === k ? 'ring-2 ring-cyan-300/60' : ''}`}
-                    aria-pressed={active === k}
-                  >
-                    <p className="text-xl">{meta.icon}</p>
-                    <h3 className="text-lg font-semibold">{meta.title}</h3>
-                    <p className="mt-1 text-sm text-muted">{meta.desc}</p>
-                  </button>
-                ))}
-              </div>
-            </section>
-          );
-        })}
+      <div className="flex flex-wrap gap-2">
+        {(['All', 'Security', 'Culture', 'Entertainment'] as const).map((chip) => (
+          <button key={chip} onClick={() => setCategory(chip)} className={`rounded-full px-4 py-2 text-sm ${category === chip ? 'bg-cyan-500/25 ring-1 ring-cyan-300/60' : 'bg-white/5 hover:bg-white/10'}`}>
+            {chip}
+          </button>
+        ))}
+        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search games" className="ml-auto rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm" />
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {filteredCatalog.map((game) => (
+          <button key={game.key} onClick={() => selectGame(game.key)} aria-pressed={active === game.key} className={`game-card rounded-2xl bg-gradient-to-br ${game.color} p-5 text-left transition hover:-translate-y-0.5 ${active === game.key ? 'ring-2 ring-cyan-300/60' : ''}`}>
+            <div className="flex items-center justify-between">
+              <p className="text-xl">{game.icon}</p>
+              <span className="rounded-full bg-black/20 px-2 py-1 text-[11px] uppercase tracking-wide">{game.category}</span>
+            </div>
+            <h3 className="mt-2 text-lg font-semibold">{game.title}</h3>
+            <p className="mt-1 text-sm text-muted">{game.desc}</p>
+            <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted">
+              <span>{game.typeLabel}</span>
+              {game.questionCount && <span>{game.questionCount} questions</span>}
+              {game.difficulty && <span>{game.difficulty}</span>}
+            </div>
+            <span className="mt-3 inline-block rounded-lg bg-white/15 px-3 py-1 text-xs">Open Quiz</span>
+          </button>
+        ))}
       </div>
 
       <div className="glass rounded-2xl p-4">
@@ -127,6 +159,7 @@ export function GamesHub() {
       </div>
 
       <section id="games-zone" ref={gamesZoneRef} tabIndex={-1} className="game-panel rounded-2xl p-4" aria-label="Interactive games zone">
+        {activeQuiz && <MCQQuizEngine game={activeQuiz} />}
         {active === 'snake' && <SnakeGame />}
         {active === 'battleship' && <BattleshipGame />}
         {active === 'tictactoe' && <TicTacToeGame />}
@@ -138,8 +171,6 @@ export function GamesHub() {
         {active === 'rps' && <RPSGame />}
         {active === 'math' && <QuickMathGame />}
         {active === 'geo' && <CountryLocatorGame />}
-        {active === 'cyber-awareness' && <CyberAwarenessQuiz />}
-        {active === 'general-knowledge' && <GeneralKnowledgeQuiz />}
       </section>
     </section>
   );
