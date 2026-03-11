@@ -21,7 +21,6 @@ type GameEntry = {
   desc: string;
   color: string;
   icon: string;
-  logoSrc?: string;
   category: GamesZoneCategory;
   typeLabel: string;
   questionCount?: number;
@@ -44,13 +43,14 @@ const quizEntries: GameEntry[] = gamesZoneQuizzes.map((quiz) => ({
   title: quiz.title,
   desc: quiz.shortDescription,
   color: quiz.category === 'Security' ? 'from-emerald-500/40 to-teal-500/25' : 'from-indigo-500/35 to-sky-400/25',
-  icon: quiz.slug === 'countries-capitals-locations-quiz' ? '🗺️' : quiz.category === 'Security' ? '🛡️' : '🎌',
-  logoSrc:
-    quiz.slug === 'fc-barcelona-hardcore-fan-quiz'
-      ? '/fc-barcelona-logo.svg'
-      : quiz.slug === 'countries-capitals-locations-quiz'
-        ? '/countries-quiz-logo.svg'
-        : undefined,
+  icon:
+    quiz.slug === 'countries-capitals-locations-quiz'
+      ? '🧭'
+      : quiz.slug === 'fc-barcelona-hardcore-fan-quiz'
+        ? '⚽'
+        : quiz.category === 'Security'
+          ? '🛡️'
+          : '🎌',
   category: quiz.category,
   typeLabel: quiz.type,
   questionCount: quiz.questionCount,
@@ -140,11 +140,7 @@ export function GamesHub() {
         {filteredCatalog.map((game) => (
           <button key={game.key} onClick={() => selectGame(game.key)} aria-pressed={active === game.key} className={`game-card rounded-2xl bg-gradient-to-br ${game.color} p-5 text-left transition hover:-translate-y-0.5 ${active === game.key ? 'ring-2 ring-cyan-300/60' : ''}`}>
             <div className="flex items-center justify-between">
-              {game.logoSrc ? (
-                <img src={game.logoSrc} alt={`${game.title} logo`} className="h-8 w-8 rounded-md object-contain" loading="lazy" />
-              ) : (
-                <p className="text-xl">{game.icon}</p>
-              )}
+              <p className="text-xl">{game.icon}</p>
               <span className="rounded-full bg-black/20 px-2 py-1 text-[11px] uppercase tracking-wide">{game.category}</span>
             </div>
             <h3 className="mt-2 text-lg font-semibold">{game.title}</h3>

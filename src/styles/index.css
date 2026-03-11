@@ -549,10 +549,56 @@ iframe { border: 0; }
 .game-card:focus-visible, .game-panel button:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(125,211,252,0.7); }
 
 /* Security map toolbar */
-.roles-toolbar { display: grid; gap: 0.75rem; }
-.roles-toolbar-grid { display: grid; gap: 0.7rem; grid-template-columns: 1fr 1.4fr; align-items: end; }
+.roles-toolbar {
+  display: grid;
+  gap: 0.75rem;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: linear-gradient(160deg, rgba(14, 23, 44, 0.58), rgba(8, 12, 28, 0.52));
+}
+.roles-toolbar-grid { display: grid; gap: 0.7rem; grid-template-columns: 1fr 1fr; align-items: end; }
+.roles-toolbar-grid--mindmap { align-items: stretch; }
 .roles-field { display: grid; gap: 0.32rem; }
 .roles-field-label { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #94a3b8; }
+.roles-results {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  max-height: 10.75rem;
+  overflow: auto;
+  border-radius: 0.9rem;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(6, 10, 24, 0.45);
+  padding: 0.65rem;
+}
+.roles-result-chip {
+  border-radius: 999px;
+  border: 1px solid rgba(148,163,184,0.35);
+  background: rgba(15,23,42,0.36);
+  color: #dbe7f7;
+  padding: 0.36rem 0.72rem;
+  font-size: 0.72rem;
+  line-height: 1.25;
+  max-width: min(100%, 17rem);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 150ms ease, border-color 150ms ease, transform 150ms ease;
+}
+.roles-result-chip:hover { transform: translateY(-1px); background: rgba(30,41,59,0.55); }
+.roles-result-chip:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(125, 211, 252, 0.45); }
+
+.mindmap-tree-toggle {
+  border: 1px solid rgba(255,255,255,0.16);
+  background: rgba(255,255,255,0.06);
+  color: #e2e8f0;
+}
+.mindmap-tree-toggle:hover { background: rgba(255,255,255,0.12); }
+.mindmap-tree-node {
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  color: #e2e8f0;
+}
+.mindmap-tree-branch { border-left: 1px solid rgba(255,255,255,0.1); }
 @media (max-width: 900px) {
   .roles-toolbar-grid { grid-template-columns: 1fr; }
 }
@@ -665,12 +711,44 @@ iframe { border: 0; }
 .theme-light .roles-field-label {
   color: #475569 !important;
 }
+.theme-light .roles-toolbar {
+  border-color: rgba(148,163,184,0.35);
+  background: linear-gradient(165deg, rgba(255,255,255,0.96), rgba(241,245,249,0.95));
+}
+.theme-light .roles-results {
+  border-color: rgba(148,163,184,0.38);
+  background: rgba(255,255,255,0.88);
+}
+.theme-light .roles-result-chip {
+  background: rgba(241,245,249,0.95);
+  border-color: rgba(148,163,184,0.42);
+  color: #1e293b;
+}
+.theme-light .roles-result-chip:hover { background: rgba(226,232,240,0.95); }
 .theme-light .mindmap-hero p,
 .theme-light .mindmap-panel .text-slate-200,
 .theme-light .mindmap-panel .text-muted,
 .theme-light .roles-toolbar .text-muted {
   color: #475569;
 }
+.theme-light .mindmap-panel .text-slate-100,
+.theme-light .mindmap-panel .text-slate-400,
+.theme-light .mindmap-panel h2,
+.theme-light .mindmap-panel p:not(.text-muted) {
+  color: #0f172a;
+}
+.theme-light .mindmap-tree-toggle {
+  border-color: rgba(148,163,184,0.45);
+  background: rgba(248,250,252,0.95);
+  color: #0f172a;
+}
+.theme-light .mindmap-tree-toggle:hover { background: rgba(226,232,240,0.85); }
+.theme-light .mindmap-tree-node {
+  border-color: rgba(148,163,184,0.36);
+  background: rgba(255,255,255,0.92);
+  color: #0f172a;
+}
+.theme-light .mindmap-tree-branch { border-left-color: rgba(148,163,184,0.35); }
 
 
 .footer-inline {

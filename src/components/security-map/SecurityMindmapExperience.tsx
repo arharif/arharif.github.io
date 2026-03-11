@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { cyberOperatingModelSections } from '@/data/cyberOperatingModel';
 import { roleFamilies, securityRoles } from '@/data/securityRoles';
 import { OrgNode, SecurityRole } from '@/types/securityRoles';
@@ -41,18 +41,18 @@ function OrgBranch({ node, path, expanded, onToggle }: { node: OrgNode; path: st
             onClick={() => onToggle(path)}
             aria-label={`${isOpen ? 'Collapse' : 'Expand'} ${node.title}`}
             aria-expanded={isOpen}
-            className="h-6 w-6 rounded-md border border-white/15 bg-white/5 text-xs transition hover:bg-white/10"
+            className="mindmap-tree-toggle h-6 w-6 rounded-md text-xs transition"
           >
             {isOpen ? '⌄' : '›'}
           </button>
         ) : (
           <span className="h-6 w-6" aria-hidden />
         )}
-        <div className="flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-100">{node.title}</div>
+        <div className="mindmap-tree-node flex-1 rounded-lg px-3 py-2 text-sm">{node.title}</div>
       </div>
 
       {hasChildren && isOpen && (
-        <ul className="mt-2 space-y-2 border-l border-white/10 pl-3">
+        <ul className="mindmap-tree-branch mt-2 space-y-2 pl-3">
           {node.children?.map((child, index) => (
             <OrgBranch key={`${path}-${child.title}`} node={child} path={`${path}.${index}`} expanded={expanded} onToggle={onToggle} />
           ))}
@@ -69,6 +69,8 @@ export function SecurityMindmapExperience() {
   const [activeId, setActiveId] = useState(securityRoles[0]?.id ?? '');
   const [zoom, setZoom] = useState(1);
   const [expandedTree, setExpandedTree] = useState<Set<string>>(() => new Set(['0-root', '1-root']));
+  const mapViewportRef = useRef<HTMLDivElement | null>(null);
+  const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
 
   const filteredRoles = useMemo(() => {
     const term = query.trim().toLowerCase();
@@ -85,6 +87,48 @@ export function SecurityMindmapExperience() {
   }, [filteredRoles, activeId]);
 
   const radialSkills = useMemo(() => (activeRole ? buildRadialSkills(activeRole) : []), [activeRole]);
+
+  useLayoutEffect(() => {
+    const element = mapViewportRef.current;
+    if (!element) return;
+
+    const observer = new ResizeObserver((entries) => {
+      const next = entries[0]?.contentRect;
+      if (!next) return;
+      setViewportSize({ width: next.width, height: next.height });
+    });
+
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
+  const graphBounds = useMemo(() => {
+    const skillWidth = 208;
+    const skillHeight = 64;
+    const centerWidth = 384;
+    const centerHeight = 136;
+
+    const minX = Math.min(-centerWidth / 2, ...radialSkills.map((node) => node.x - skillWidth / 2));
+    const maxX = Math.max(centerWidth / 2, ...radialSkills.map((node) => node.x + skillWidth / 2));
+    const minY = Math.min(-centerHeight / 2, ...radialSkills.map((node) => node.y - skillHeight / 2));
+    const maxY = Math.max(centerHeight / 2, ...radialSkills.map((node) => node.y + skillHeight / 2));
+
+    return {
+      width: maxX - minX,
+      height: maxY - minY,
+      minX,
+      minY,
+    };
+  }, [radialSkills]);
+
+  const fitScale = useMemo(() => {
+    if (!viewportSize.width || !viewportSize.height) return 1;
+    const widthScale = viewportSize.width / (graphBounds.width + 56);
+    const heightScale = viewportSize.height / (graphBounds.height + 56);
+    return clamp(Math.min(widthScale, heightScale), 0.55, 1);
+  }, [viewportSize.width, viewportSize.height, graphBounds]);
+
+  const mapScale = clamp(fitScale * zoom, 0.42, 2.2);
 
   const onToggleTree = (key: string) => {
     setExpandedTree((prev) => {
@@ -115,8 +159,8 @@ export function SecurityMindmapExperience() {
         </div>
       </header>
 
-      <section className="glass rounded-2xl p-4 md:p-5">
-        <div className="roles-toolbar-grid">
+      <section className="roles-toolbar rounded-2xl p-4 md:p-5">
+        <div className="roles-toolbar-grid roles-toolbar-grid--mindmap">
           <label className="roles-field">
             <span className="roles-field-label">Search roles</span>
             <input
@@ -128,34 +172,28 @@ export function SecurityMindmapExperience() {
             />
           </label>
 
-          <div className="roles-field">
+          <label className="roles-field">
             <span className="roles-field-label">Role family</span>
-            <div className="flex flex-wrap gap-2">
+            <select className="mindmap-input" value={family} onChange={(event) => setFamily(event.target.value)} aria-label="Filter by role family">
               {['All', ...roleFamilies].map((item) => (
-                <button
-                  key={item}
-                  onClick={() => setFamily(item)}
-                  className={`rounded-full border px-3 py-1.5 text-xs transition ${family === item ? 'border-cyan-300/70 bg-cyan-500/20 text-cyan-50' : 'border-white/15 bg-white/5 text-slate-200 hover:bg-white/10'}`}
-                >
-                  {item}
-                </button>
+                <option key={item} value={item}>{item}</option>
               ))}
-            </div>
-          </div>
+            </select>
+          </label>
         </div>
 
-        <div className="mt-4 flex max-h-36 flex-wrap gap-2 overflow-auto rounded-xl border border-white/10 bg-black/10 p-3">
+        <div className="roles-results mt-4">
           {filteredRoles.map((role) => {
             const selected = role.id === activeRole.id;
             return (
               <button
                 key={role.id}
                 onClick={() => setActiveId(role.id)}
-                className="rounded-full border px-3 py-1.5 text-xs transition"
+                className="roles-result-chip"
+                title={role.title}
                 style={{
                   borderColor: selected ? role.color : 'rgba(148,163,184,0.35)',
-                  background: selected ? toRgba(role.color, 0.22) : 'rgba(15,23,42,0.35)',
-                  color: selected ? '#f8fafc' : '#cbd5e1',
+                  background: selected ? toRgba(role.color, 0.2) : undefined,
                 }}
               >
                 {role.title}
@@ -171,18 +209,18 @@ export function SecurityMindmapExperience() {
           <div className="mb-4 flex items-center justify-between gap-2">
             <h2 className="text-lg font-semibold">Must Have Skills by Role</h2>
             <div className="flex items-center gap-2" role="group" aria-label="Map zoom controls">
-              <button onClick={() => setZoom((v) => clamp(v - 0.1, 0.7, 1.5))} className="mindmap-btn px-3 py-1 text-xs">−</button>
-              <span className="text-xs text-muted">{Math.round(zoom * 100)}%</span>
-              <button onClick={() => setZoom((v) => clamp(v + 0.1, 0.7, 1.5))} className="mindmap-btn px-3 py-1 text-xs">+</button>
-              <button onClick={() => setZoom(1)} className="mindmap-btn px-3 py-1 text-xs">Reset</button>
+              <button onClick={() => setZoom((v) => clamp(v - 0.12, 0.7, 2))} className="mindmap-btn px-3 py-1 text-xs">−</button>
+              <span className="text-xs text-muted">{Math.round(mapScale * 100)}%</span>
+              <button onClick={() => setZoom((v) => clamp(v + 0.12, 0.7, 2))} className="mindmap-btn px-3 py-1 text-xs">+</button>
+              <button onClick={() => setZoom(1)} className="mindmap-btn px-3 py-1 text-xs">Fit</button>
             </div>
           </div>
 
-          <div className="relative mx-auto min-h-[620px] max-w-6xl overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-slate-900/70 to-slate-950/65 p-4">
+          <div ref={mapViewportRef} className="relative mx-auto min-h-[620px] max-w-6xl overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-slate-900/70 to-slate-950/65 p-4">
             <div
               key={activeRole.id}
-              className="h-full w-full"
-              style={{ transform: `scale(${zoom})`, transformOrigin: 'center center', transition: 'transform 260ms ease, opacity 320ms ease', opacity: 1 }}
+              className="absolute left-1/2 top-1/2 h-full w-full"
+              style={{ transform: `translate(-50%, -50%) scale(${mapScale})`, transformOrigin: 'center center', transition: 'transform 260ms ease, opacity 320ms ease', opacity: 1 }}
             >
               <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 1200 700" preserveAspectRatio="none" aria-hidden>
                 {radialSkills.map((node) => {
