@@ -1,107 +1,97 @@
-import { OperatingModelSection } from '@/types/securityRoles';
+import { OrgSection } from '@/types/securityRoles';
 
-export const cyberOperatingModelSections: OperatingModelSection[] = [
+export const cyberOperatingModelSections: OrgSection[] = [
   {
     title: 'Board / Executive Committee',
-    groups: [
-      {
-        title: 'CISO',
-        units: [
-          { title: 'Deputy CISO / Head of Security' },
-          {
-            title: 'Head of GRC / Compliance / Privacy',
-            roles: [
-              'GRC Manager / Senior GRC',
-              'GRC Analyst',
-              'Third-Party Risk Analyst',
-              'Cybersecurity Program Manager',
-              'Security Awareness Lead',
-              'Compliance Manager',
-              'DPO / Privacy Officer',
-              'Privacy Analyst',
-            ],
-          },
-          {
-            title: 'Head of Cyber Defense',
-            roles: [
-              'SOC Manager / SOC Lead',
-              'SOC L3 / Senior Incident Responder / IR Lead',
-              'SOC L2 Analyst',
-              'SOC L1 Analyst',
-              'Threat Hunter',
-              'Threat Intelligence Analyst',
-              'Digital Forensics Analyst',
-              'Vulnerability Management Lead',
-              'Vulnerability Management Analyst',
-              'Purple Team Specialist',
-            ],
-          },
-          {
-            title: 'Head of Security Architecture / Security Engineering',
-            roles: [
-              'Enterprise Security Architect',
-              'Security Architect',
-              'Cloud Security Lead',
-              'Cloud Security Engineer',
-              'Network Security Lead',
-              'Network Security Engineer',
-              'Endpoint Security Lead',
-              'Endpoint Security Engineer',
-              'Data Security Lead',
-              'Data Security Specialist',
-              'OT / ICS Security Lead',
-              'OT / ICS Security Engineer',
-            ],
-          },
-          {
-            title: 'Head of IAM',
-            roles: ['IAM Manager / IAM Lead', 'IAM Engineer / IAM Analyst', 'Access Governance / UAR Analyst', 'PAM Lead', 'PAM Specialist'],
-          },
-          {
-            title: 'Head of AppSec / Product Security',
-            roles: [
-              'Application Security Lead',
-              'Application Security Engineer',
-              'DevSecOps Lead',
-              'DevSecOps Engineer',
-              'Product Security Lead',
-              'Product Security Engineer',
-            ],
-          },
-          {
-            title: 'Head of Offensive Security',
-            roles: [
-              'Red Team Lead',
-              'Red Teamer',
-              'Offensive Security Lead',
-              'Penetration Tester',
-              'Security Research Lead',
-              'Security Researcher',
-              'Purple Team Specialist',
-            ],
-          },
-          {
-            title: 'Head of AI Security / AI Governance',
-            roles: ['AI Security Lead', 'AI Security Specialist', 'AI Governance Lead', 'AI Governance / AI Risk Officer'],
-          },
-          {
-            title: 'Head of Security Transformation / PMO',
-            roles: ['Cybersecurity Program Manager'],
-          },
-        ],
-      },
-    ],
+    root: {
+      title: 'CISO',
+      children: [
+        { title: 'Deputy CISO / Head of Security' },
+        {
+          title: 'Head of GRC / Compliance / Privacy',
+          children: [
+            {
+              title: 'GRC Manager / Senior GRC',
+              children: [
+                { title: 'GRC Analyst' },
+                { title: 'Third-Party Risk Analyst' },
+                { title: 'Cybersecurity Program Manager' },
+                { title: 'Security Awareness Lead' },
+              ],
+            },
+            { title: 'Compliance Manager' },
+            { title: 'DPO / Privacy Officer', children: [{ title: 'Privacy Analyst' }] },
+          ],
+        },
+        {
+          title: 'Head of Cyber Defense',
+          children: [
+            {
+              title: 'SOC Manager / SOC Lead',
+              children: [{ title: 'SOC L3 / Senior Incident Responder / IR Lead', children: [{ title: 'SOC L2 Analyst', children: [{ title: 'SOC L1 Analyst' }] }] }],
+            },
+            { title: 'Threat Hunter' },
+            { title: 'Threat Intelligence Analyst' },
+            { title: 'Digital Forensics Analyst' },
+            { title: 'Vulnerability Management Lead', children: [{ title: 'Vulnerability Management Analyst' }] },
+            { title: 'Purple Team Specialist' },
+          ],
+        },
+        {
+          title: 'Head of Security Architecture / Security Engineering',
+          children: [
+            { title: 'Enterprise Security Architect' },
+            { title: 'Security Architect' },
+            { title: 'Cloud Security Lead', children: [{ title: 'Cloud Security Engineer' }] },
+            { title: 'Network Security Lead', children: [{ title: 'Network Security Engineer' }] },
+            { title: 'Endpoint Security Lead', children: [{ title: 'Endpoint Security Engineer' }] },
+            { title: 'Data Security Lead', children: [{ title: 'Data Security Specialist' }] },
+            { title: 'OT / ICS Security Lead', children: [{ title: 'OT / ICS Security Engineer' }] },
+          ],
+        },
+        {
+          title: 'Head of IAM',
+          children: [
+            { title: 'IAM Manager / IAM Lead', children: [{ title: 'IAM Engineer / IAM Analyst' }, { title: 'Access Governance / UAR Analyst' }] },
+            { title: 'PAM Lead', children: [{ title: 'PAM Specialist' }] },
+          ],
+        },
+        {
+          title: 'Head of AppSec / Product Security',
+          children: [
+            { title: 'Application Security Lead', children: [{ title: 'Application Security Engineer' }] },
+            { title: 'DevSecOps Lead', children: [{ title: 'DevSecOps Engineer' }] },
+            { title: 'Product Security Lead', children: [{ title: 'Product Security Engineer' }] },
+          ],
+        },
+        {
+          title: 'Head of Offensive Security',
+          children: [
+            { title: 'Red Team Lead', children: [{ title: 'Red Teamer' }] },
+            { title: 'Offensive Security Lead', children: [{ title: 'Penetration Tester' }] },
+            { title: 'Security Research Lead', children: [{ title: 'Security Researcher' }] },
+            { title: 'Purple Team Specialist' },
+          ],
+        },
+        {
+          title: 'Head of AI Security / AI Governance',
+          children: [
+            { title: 'AI Security Lead', children: [{ title: 'AI Security Specialist' }] },
+            { title: 'AI Governance Lead', children: [{ title: 'AI Governance / AI Risk Officer' }] },
+          ],
+        },
+        { title: 'Head of Security Transformation / PMO', children: [{ title: 'Cybersecurity Program Manager' }] },
+      ],
+    },
   },
   {
     title: 'Independent Assurance / Internal Audit',
-    groups: [
-      {
-        title: 'Chief Audit Executive / Head of Internal Audit',
-        units: [
-          { title: 'Head of IT Audit', roles: ['IT Audit Manager / Senior IT Auditor', 'IT Auditor'] },
-          { title: 'Head of Security Audit / Assurance', roles: ['Security Audit Manager / Senior Security Auditor', 'Security Auditor'] },
-        ],
-      },
-    ],
+    root: {
+      title: 'Chief Audit Executive / Head of Internal Audit',
+      children: [
+        { title: 'Head of IT Audit', children: [{ title: 'IT Audit Manager / Senior IT Auditor', children: [{ title: 'IT Auditor' }] }] },
+        { title: 'Head of Security Audit / Assurance', children: [{ title: 'Security Audit Manager / Senior Security Auditor', children: [{ title: 'Security Auditor' }] }] },
+      ],
+    },
   },
 ];

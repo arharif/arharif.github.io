@@ -8,12 +8,13 @@ import { SudokuMiniGame } from '@/components/games/SudokuMiniGame';
 import { MemoryPuzzleGame } from '@/components/games/MemoryPuzzleGame';
 import { safeStorage } from '@/lib/storage';
 import { MCQQuizEngine } from '@/components/games/MCQQuizEngine';
+import { PacmanGame } from '@/components/games/PacmanGame';
 import { gamesZoneQuizzes } from '@/data/gamesZoneData';
 import { GamesZoneCategory } from '@/types/games';
 
 type GameKey =
-  | 'full-ciso-qsa-pack' | 'security-awareness-qsm' | 'otaku-general-culture-quiz'
-  | 'snake' | 'battleship' | 'tictactoe' | 'reaction' | 'rps' | 'math' | 'geo'
+  | 'full-ciso-qsa-pack' | 'security-awareness-qsm' | 'ai-topic-qsm' | 'otaku-general-culture-quiz' | 'fc-barcelona-hardcore-fan-quiz'
+  | 'snake' | 'battleship' | 'tictactoe' | 'reaction' | 'rps' | 'math' | 'pacman' | 'geo'
   | 'card-shedding' | 'puzzle-2048' | 'sudoku' | 'memory';
 
 type GameEntry = {
@@ -40,6 +41,7 @@ const staticGames: GameEntry[] = [
   { key: 'tictactoe', title: 'Tic Tac Toe', desc: 'Fast strategic duels.', color: 'from-slate-400/35 to-indigo-400/25', icon: '✖️', category: 'Entertainment', typeLabel: 'Classic', sortOrder: 27 },
   { key: 'reaction', title: 'Reaction Time', desc: 'Measure and improve your response speed.', color: 'from-amber-400/35 to-orange-400/25', icon: '⚡', category: 'Entertainment', typeLabel: 'Arcade', sortOrder: 28 },
   { key: 'math', title: 'Quick Math', desc: 'Solve rapidly under a short timer.', color: 'from-rose-500/35 to-pink-400/25', icon: '➗', category: 'Entertainment', typeLabel: 'Arcade', sortOrder: 29 },
+  { key: 'pacman', title: 'Pac-Man Arcade', desc: 'Navigate the maze, collect pellets, and avoid ghosts.', color: 'from-yellow-400/35 to-orange-400/25', icon: '🟡', category: 'Entertainment', typeLabel: 'Arcade', sortOrder: 30 },
   { key: 'geo', title: 'Country Locator', desc: 'Region-based world challenge.', color: 'from-cyan-500/35 to-sky-400/25', icon: '🌍', category: 'Culture', typeLabel: 'Quiz', sortOrder: 30 },
 ];
 
@@ -171,6 +173,7 @@ export function GamesHub() {
         {active === 'rps' && <RPSGame />}
         {active === 'math' && <QuickMathGame />}
         {active === 'geo' && <CountryLocatorGame />}
+        {active === 'pacman' && <PacmanGame />}
       </section>
     </section>
   );

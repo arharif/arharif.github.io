@@ -17,17 +17,12 @@ export interface SecurityRole {
   careerPath: CareerPath;
 }
 
-export interface OperatingModelUnit {
+export interface OrgNode {
   title: string;
-  roles?: string[];
+  children?: OrgNode[];
 }
 
-export interface OperatingModelGroup {
+export interface OrgSection {
   title: string;
-  units: OperatingModelUnit[];
-}
-
-export interface OperatingModelSection {
-  title: string;
-  groups: OperatingModelGroup[];
+  root: OrgNode;
 }
