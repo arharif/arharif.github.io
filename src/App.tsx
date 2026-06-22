@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { BookOpen, Compass, Github, Linkedin, Mail, Search, Shield, Sparkles } from 'lucide-react';
+import { BookOpen, Compass, Github, Linkedin, Mail, Search, Shield, ShoppingBag, Sparkles } from 'lucide-react';
 import { Component, lazy, ReactNode, Suspense, useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { AdminEditor } from '@/components/admin/AdminEditor';
@@ -668,6 +668,9 @@ function Shell() {
             </a>
             <a href="https://github.com/arharif" target="_blank" rel="noopener noreferrer" aria-label="Open GitHub profile" title="GitHub" className="social-icon-link">
               <Github size={12} strokeWidth={2.15} />
+            </a>
+            <a href="https://payhip.com/CyberSecAIStore" target="_blank" rel="noopener noreferrer" aria-label="Visit CyberSecAI Store" title="Store" className="social-icon-link">
+              <ShoppingBag size={12} strokeWidth={2.15} />
             </a>
             <a href="mailto:rharifanass@gmail.com" aria-label="Send email to rharifanass@gmail.com" title="Email" className="social-icon-link">
               <Mail size={12} strokeWidth={2.15} />
