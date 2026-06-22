@@ -963,6 +963,23 @@ iframe { border: 0; }
   filter: saturate(1.05);
 }
 
+.content-card-clickable {
+  cursor: pointer;
+  transition: border-color .2s ease, box-shadow .2s ease, filter .2s ease;
+}
+
+.content-card-clickable:hover,
+.content-card-clickable:focus-visible {
+  border-color: color-mix(in srgb, var(--border-soft) 68%, var(--accent) 32%);
+  box-shadow: 0 14px 34px color-mix(in srgb, var(--accent) 18%, transparent);
+  filter: saturate(1.03);
+}
+
+.content-card-clickable:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
 .search-target-highlight {
   animation: search-target-pulse 2.2s ease-out;
 }

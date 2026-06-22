@@ -1,3 +1,4 @@
+import type { KeyboardEvent } from 'react';
 import { motion } from 'framer-motion';
 import { ContentRecord } from '@/content/types';
 
@@ -18,8 +19,22 @@ export function EntryCard({ title, description, onClick, label = 'Universe' }: {
 }
 
 export function ContentCard({ item, onOpen }: { item: ContentRecord; onOpen: () => void }) {
+  const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    onOpen();
+  };
+
   return (
-    <motion.article whileHover={{ y: -5 }} className="glass overflow-hidden rounded-2xl">
+    <motion.article
+      whileHover={{ y: -5 }}
+      role="link"
+      tabIndex={0}
+      aria-label={`Read ${item.title}`}
+      onClick={onOpen}
+      onKeyDown={handleKeyDown}
+      className="glass content-card-clickable overflow-hidden rounded-2xl"
+    >
       <div className="h-36 token-card">
         {item.coverImageUrl && <img src={item.coverImageUrl} alt={item.title} className="h-full w-full object-cover" loading="lazy" />}
       </div>
@@ -28,7 +43,15 @@ export function ContentCard({ item, onOpen }: { item: ContentRecord; onOpen: () 
         <h3 className="mt-1 text-lg font-semibold">{item.title}</h3>
         <p className="mt-2 text-sm text-muted">{item.excerpt}</p>
         <div className="mt-3 flex items-center gap-2 text-xs"><span className="rounded-full token-chip px-2 py-1">{item.status}</span></div>
-        <button onClick={onOpen} className="mt-4 rounded-lg token-btn px-3 py-2 text-sm">Read</button>
+        <button
+          onClick={(event) => {
+            event.stopPropagation();
+            onOpen();
+          }}
+          className="mt-4 rounded-lg token-btn px-3 py-2 text-sm"
+        >
+          Read
+        </button>
       </div>
     </motion.article>
   );
