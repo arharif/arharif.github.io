@@ -254,7 +254,7 @@ State style:
   - admin email-based manage policies
 - storage bucket `content-media` + policies
 
-Note: frontend queries `content` table path in REST calls; SQL defines `content_entries`. This implies either a renamed table/view in live DB or drift risk that must be reconciled.
+The frontend and SQL schema both use the `content_entries` REST resource.
 
 ---
 
@@ -292,7 +292,7 @@ Debug tips:
 4. Replace ad-hoc markdown parser with hardened library if feature scope grows.
 5. Move auth tokens to safer handling strategy where possible.
 6. Add robust error boundaries per route and better user-facing diagnostics.
-7. Align schema naming (`content` vs `content_entries`) to remove ambiguity.
+7. Add a recurring, documented Supabase backup-restore exercise before treating recovery as proven.
 8. Add explicit docs for required Supabase views/functions if used in production.
 9. Add observability hooks (analytics/error tracking).
 10. Add PR checks for lint/build and optionally type-only CI gates.

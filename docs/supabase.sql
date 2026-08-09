@@ -91,8 +91,8 @@ alter table public.topics add constraint topics_status_check check (status in ('
 
 alter table public.content_entries alter column status set default 'published';
 
-update public.topics set status = 'published' where status = 'draft' or status is null;
-update public.content_entries set status = 'published', published_at = coalesce(published_at, now()) where status = 'draft';
+-- Existing draft records are intentionally preserved. Publishing must be an
+-- explicit administrator action, never a side effect of applying a migration.
 
 drop trigger if exists handle_topics_updated on public.topics;
 create trigger handle_topics_updated before update on public.topics
@@ -108,7 +108,7 @@ alter table public.collections enable row level security;
 alter table public.academic_resources enable row level security;
 
 drop policy if exists "public_read_topics" on public.topics;
-create policy "public_read_topics" on public.topics for select using (true);
+create policy "public_read_topics" on public.topics for select using (status = 'published');
 
 drop policy if exists "public_read_published_content" on public.content_entries;
 create policy "public_read_published_content" on public.content_entries for select using (status = 'published');
@@ -117,7 +117,7 @@ drop policy if exists "public_read_collections" on public.collections;
 create policy "public_read_collections" on public.collections for select using (true);
 
 drop policy if exists "public_read_academic_resources" on public.academic_resources;
-create policy "public_read_academic_resources" on public.academic_resources for select using (true);
+create policy "public_read_academic_resources" on public.academic_resources for select using (status = 'published');
 
 drop policy if exists "admin_manage_academic_resources" on public.academic_resources;
 create policy "admin_manage_academic_resources" on public.academic_resources for all

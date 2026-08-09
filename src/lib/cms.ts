@@ -115,13 +115,13 @@ export async function deleteTopic(id: string, accessToken: string) {
 
 export async function listPublishedContent() {
   if (!isSupabaseConfigured) return getLocalContent().filter((c) => c.status === 'published');
-  const rows = await supabaseRest<Record<string, unknown>[]>("content?select=*,topic:topics(id,slug,title,description,universe,category,subcategory,display_style,cover_image_url,icon,order_index,created_at,updated_at)&status=eq.published&order=published_at.desc.nullslast");
+  const rows = await supabaseRest<Record<string, unknown>[]>("content_entries?select=*,topic:topics(id,slug,title,description,universe,category,subcategory,display_style,cover_image_url,icon,order_index,created_at,updated_at)&status=eq.published&order=published_at.desc.nullslast");
   return rows.map(normalizeContent);
 }
 
 export async function listAdminContent(accessToken: string) {
   if (!isSupabaseConfigured) return getLocalContent();
-  const rows = await supabaseRest<Record<string, unknown>[]>('content?select=*&order=updated_at.desc', undefined, accessToken);
+  const rows = await supabaseRest<Record<string, unknown>[]>('content_entries?select=*&order=updated_at.desc', undefined, accessToken);
   return rows.map(normalizeContent);
 }
 
@@ -131,7 +131,7 @@ export async function createContent(input: ContentInput, accessToken: string) {
     setLocalContent([next, ...getLocalContent()]);
     return;
   }
-  await supabaseRest('content', { method: 'POST', body: JSON.stringify(contentRow(input)) }, accessToken);
+  await supabaseRest('content_entries', { method: 'POST', body: JSON.stringify(contentRow(input)) }, accessToken);
 }
 
 export async function updateContent(id: string, input: ContentInput, accessToken: string) {
@@ -139,7 +139,7 @@ export async function updateContent(id: string, input: ContentInput, accessToken
     setLocalContent(getLocalContent().map((c) => (c.id === id ? { ...c, ...input, status: 'published', publishedAt: input.publishedAt ?? c.publishedAt ?? new Date().toISOString(), updatedAt: new Date().toISOString() } : c)));
     return;
   }
-  await supabaseRest(`content?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(contentRow(input)) }, accessToken);
+  await supabaseRest(`content_entries?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(contentRow(input)) }, accessToken);
 }
 
 export async function deleteContent(id: string, accessToken: string) {
@@ -147,13 +147,14 @@ export async function deleteContent(id: string, accessToken: string) {
     setLocalContent(getLocalContent().filter((c) => c.id !== id));
     return;
   }
-  await supabaseRest(`content?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' }, accessToken);
+  await supabaseRest(`content_entries?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' }, accessToken);
 }
 
 export async function uploadMedia(file: File, accessToken: string) {
   const allowed = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
   if (!allowed.has(file.type) || file.size > 8 * 1024 * 1024) throw new Error('Invalid upload.');
-  const ext = (file.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g, '') || 'png';
+  const extensionByType: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif' };
+  const ext = extensionByType[file.type];
   const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
   if (!isSupabaseConfigured) return URL.createObjectURL(file);
   return supabaseUpload(file, accessToken, path);
