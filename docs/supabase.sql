@@ -70,6 +70,17 @@ create table if not exists public.content_collections (
   primary key (content_id, collection_id)
 );
 
+create table if not exists public.academic_resources (
+  id uuid primary key default gen_random_uuid(),
+  name text not null check (char_length(trim(name)) between 1 and 120),
+  url text not null unique check (url ~* '^https?://'),
+  description text not null check (char_length(trim(description)) between 1 and 500),
+  type text not null default 'other' check (type in ('course','pdf','guide','research','other')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create unique index if not exists academic_resources_name_unique on public.academic_resources (lower(trim(name)));
+
 
 -- Migration safety for existing projects
 alter table public.topics add column if not exists status text not null default 'published';
@@ -93,6 +104,7 @@ for each row execute procedure extensions.moddatetime(updated_at);
 alter table public.topics enable row level security;
 alter table public.content_entries enable row level security;
 alter table public.collections enable row level security;
+alter table public.academic_resources enable row level security;
 
 drop policy if exists "public_read_topics" on public.topics;
 create policy "public_read_topics" on public.topics for select using (true);
@@ -102,6 +114,18 @@ create policy "public_read_published_content" on public.content_entries for sele
 
 drop policy if exists "public_read_collections" on public.collections;
 create policy "public_read_collections" on public.collections for select using (true);
+
+drop policy if exists "public_read_academic_resources" on public.academic_resources;
+create policy "public_read_academic_resources" on public.academic_resources for select using (true);
+
+drop policy if exists "admin_manage_academic_resources" on public.academic_resources;
+create policy "admin_manage_academic_resources" on public.academic_resources for all
+using (auth.jwt() ->> 'email' = '<ADMIN_EMAIL>')
+with check (auth.jwt() ->> 'email' = '<ADMIN_EMAIL>');
+
+drop trigger if exists handle_academic_resources_updated on public.academic_resources;
+create trigger handle_academic_resources_updated before update on public.academic_resources
+for each row execute procedure extensions.moddatetime(updated_at);
 
 drop policy if exists "admin_manage_topics" on public.topics;
 create policy "admin_manage_topics" on public.topics
