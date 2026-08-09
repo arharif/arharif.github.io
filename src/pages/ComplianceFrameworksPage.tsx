@@ -147,7 +147,7 @@ export function ComplianceFrameworksPage() {
                 <p>
                   <strong>Key requirements:</strong>{' '}
                   {safeArray(selectedFramework?.keyRequirements)
-                    .map((x) => `${x.requirement} — ${x.practicalMeaning}`)
+                    .map((x) => `${x.requirement}: ${x.practicalMeaning}`)
                     .join(' · ') || 'No data available.'}
                 </p>
                 <p>

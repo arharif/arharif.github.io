@@ -26,7 +26,7 @@ export function SudokuMiniGame() {
 
   return (
     <div className="space-y-3">
-      <p className="text-sm text-muted">Mini Sudoku (4×4). Fill empty cells with 1–4 so each row, column, and 2×2 block is unique.</p>
+      <p className="text-sm text-muted">Mini Sudoku (4×4). Fill empty cells with a number from 1 to 4 so each row, column and 2×2 block is unique.</p>
       <div className="grid grid-cols-4 gap-1 rounded-xl bg-black/20 p-2">
         {grid.flatMap((row, r) => row.map((cell, c) => (
           <div key={`${r}-${c}`} className="rounded-md border border-white/10 bg-white/10 p-2">

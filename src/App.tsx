@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { BookOpen, Compass, Github, GraduationCap, Lightbulb, Linkedin, Mail, Search, Shield, ShoppingBag, Sparkles } from 'lucide-react';
-import { Component, lazy, ReactNode, Suspense, useEffect, useMemo, useState } from 'react';
+import { Component, lazy, ReactNode, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { AdminEditor } from '@/components/admin/AdminEditor';
 import { TopicEditor } from '@/components/admin/TopicEditor';
@@ -93,7 +93,7 @@ function SearchPage() {
   useEffect(() => { loadPublishedGraph().then(({ topics: t, content: c }) => { setTopics(t); setContent(c); }); }, []);
   const matchedTopics = topics.filter((t) => `${t.title} ${t.description} ${t.category}`.toLowerCase().includes(query.toLowerCase()));
   const matchedContent = searchContent(content, query);
-  return <section><h1 className="mb-4 text-3xl font-semibold">Search</h1><div className="glass mb-5 rounded-2xl p-3"><input className="w-full bg-transparent outline-none" placeholder="Search topics, articles, tags, collections" value={query} onChange={(e) => setQuery(e.target.value)} /></div><div className="grid gap-6 md:grid-cols-2"><div><h2 className="mb-2 text-xl font-semibold">Topics</h2>{matchedTopics.map((t)=><button key={t.id} onClick={()=>nav(normalizeUniverse(t.universe)==='professional'?`/professional/topic/${t.slug}`:'/personal')} className="glass mb-2 block w-full rounded-xl p-3 text-left">{t.title}</button>)}</div><div><h2 className="mb-2 text-xl font-semibold">Content</h2>{matchedContent.map((c)=>{ const topic = topics.find((t)=>t.id===c.topicId); return <button key={c.id} onClick={()=>nav(topic && normalizeUniverse(topic.universe)==='professional'?`/professional/topic/${topic.slug}`:`/personal/post/${c.slug}`)} className="glass mb-2 block w-full rounded-xl p-3 text-left">{c.title}</button>; })}</div></div></section>;
+  return <section><h1 className="mb-4 text-3xl font-semibold">Search</h1><div className="glass mb-5 rounded-2xl p-3"><label htmlFor="site-search" className="sr-only">Search topics, articles, tags and collections</label><input id="site-search" type="search" className="w-full bg-transparent outline-none" placeholder="Search topics, articles, tags, collections" maxLength={120} value={query} onChange={(e) => setQuery(e.target.value)} /></div><div className="grid gap-6 md:grid-cols-2"><div><h2 className="mb-2 text-xl font-semibold">Topics</h2>{matchedTopics.map((t)=><button key={t.id} onClick={()=>nav(normalizeUniverse(t.universe)==='professional'?`/professional/topic/${t.slug}`:'/personal')} className="glass mb-2 block w-full rounded-xl p-3 text-left">{t.title}</button>)}</div><div><h2 className="mb-2 text-xl font-semibold">Content</h2>{matchedContent.map((c)=>{ const topic = topics.find((t)=>t.id===c.topicId); return <button key={c.id} onClick={()=>nav(topic && normalizeUniverse(topic.universe)==='professional'?`/professional/topic/${topic.slug}`:`/personal/post/${c.slug}`)} className="glass mb-2 block w-full rounded-xl p-3 text-left">{c.title}</button>; })}</div></div></section>;
 }
 
 function ProfessionalHome() {
@@ -602,15 +602,45 @@ function NotFound() { return <section className="mx-auto max-w-xl py-24 text-cen
 function Shell() {
   const [mode, setMode] = useState<ThemeMode>(() => initTheme());
   const location = useLocation();
+  const mainRef = useRef<HTMLElement>(null);
   useEffect(() => { document.documentElement.classList.remove('theme-dark', 'theme-light', 'theme-purple', 'theme-rainbow', 'theme-egyptian', 'theme-horror', 'theme-elite-green'); document.documentElement.classList.add(themeMap[mode]); safeStorage.set('theme', mode); }, [mode]);
   useEffect(() => {
-    const labels: Record<string, string> = {
-      '/': 'Cybersecurity Advisory', '/x1-academic': 'X1 Academic', '/insights-innovation': 'Insights & Innovation', '/about-x1': 'Cybersecurity Capabilities', '/academic-library': 'Course & PDF Library', '/compliance-frameworks': 'Compliance Frameworks', '/professional': 'Technology & Innovation', '/personal': 'Curiosities & Philosophy', '/security-mindmap': 'Security Map', '/Security_Mindmap': 'Security Map', '/search': 'Search', '/games': 'Entertainment', '/submitting': 'Connect / Contribute', '/admin': 'Admin', '/login': 'Login',
+    const pages: Record<string, { title: string; description: string }> = {
+      '/': { title: 'Cybersecurity Advisory', description: 'Explore cybersecurity, technology and business risk alongside research, curiosity and new ideas.' },
+      '/x1-academic': { title: 'X1 Academic', description: 'Structured cybersecurity knowledge, frameworks and professional learning resources.' },
+      '/insights-innovation': { title: 'Insights & Innovation', description: 'Ideas on technology, innovation, philosophy, human behaviour and continuous learning.' },
+      '/about-x1': { title: 'Cybersecurity Capabilities', description: 'An integrated view of cybersecurity strategy, risk, governance, assurance and business resilience.' },
+      '/academic-library': { title: 'Course & PDF Library', description: 'Curated cybersecurity courses, framework guidance, research and practitioner resources.' },
+      '/compliance-frameworks': { title: 'Compliance Frameworks', description: 'Explore security, privacy, resilience and governance frameworks.' },
+      '/professional': { title: 'Technology & Innovation', description: 'Cybersecurity, emerging technology and strategic digital perspectives.' },
+      '/personal': { title: 'Curiosities & Philosophy', description: 'Ideas, culture and perspectives spanning philosophy, science and human behaviour.' },
+      '/security-mindmap': { title: 'Security Map', description: 'Explore cybersecurity roles, capabilities and learning pathways.' },
+      '/Security_Mindmap': { title: 'Security Map', description: 'Explore cybersecurity roles, capabilities and learning pathways.' },
+      '/search': { title: 'Search', description: 'Search X1 topics, articles, resources and collections.' },
+      '/games': { title: 'Entertainment', description: 'A collection of lightweight interactive games and challenges.' },
+      '/submitting': { title: 'Connect / Contribute', description: 'Connect with X1 or submit an article for editorial review.' },
+      '/admin': { title: 'Admin', description: 'X1 content administration.' },
+      '/login': { title: 'Login', description: 'Sign in to X1 administration.' },
     };
-    const base = location.pathname.startsWith('/professional/topic/') ? 'Technology Topic'
-      : location.pathname.startsWith('/personal/post/') ? 'Curiosity Post'
-      : labels[location.pathname] || 'arharif';
-    document.title = base === 'arharif' ? 'arharif' : `${base} · arharif`; 
+    const page = location.pathname.startsWith('/professional/topic/') ? { title: 'Technology Topic', description: pages['/professional'].description }
+      : location.pathname.startsWith('/personal/post/') ? { title: 'Curiosity Post', description: pages['/personal'].description }
+      : pages[location.pathname] || { title: 'Page not found', description: 'The requested X1 page could not be found.' };
+    const url = new URL(location.pathname, 'https://arharif.github.io');
+    document.title = `${page.title} · arharif`;
+    document.querySelector<HTMLMetaElement>('meta[name="description"]')?.setAttribute('content', page.description);
+    document.querySelector<HTMLMetaElement>('meta[property="og:title"]')?.setAttribute('content', document.title);
+    document.querySelector<HTMLMetaElement>('meta[property="og:description"]')?.setAttribute('content', page.description);
+    document.querySelector<HTMLMetaElement>('meta[property="og:url"]')?.setAttribute('content', url.href);
+    document.querySelector<HTMLMetaElement>('meta[property="twitter:title"]')?.setAttribute('content', document.title);
+    document.querySelector<HTMLMetaElement>('meta[property="twitter:description"]')?.setAttribute('content', page.description);
+    document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.setAttribute('href', url.href);
+    const privatePage = location.pathname === '/admin' || location.pathname === '/login' || !pages[location.pathname] && !location.pathname.startsWith('/professional/topic/') && !location.pathname.startsWith('/personal/post/');
+    document.querySelector<HTMLMetaElement>('meta[name="robots"]')?.setAttribute('content', privatePage ? 'noindex,nofollow' : 'index,follow,max-image-preview:large');
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!location.hash) window.scrollTo({ top: 0, behavior: 'auto' });
+    mainRef.current?.focus({ preventScroll: Boolean(location.hash) });
   }, [location.pathname]);
 
   useEffect(() => {
@@ -629,9 +659,10 @@ function Shell() {
 
   return (
     <div className="gradient-bg min-h-screen transition-colors duration-500">
+      <a href="#main-content" className="skip-link">Skip to main content</a>
       <ThemeMotionBackground mode={mode} />
       <Navbar mode={mode} onTheme={setMode} />
-      <main className="mx-auto max-w-6xl p-4 md:p-8">
+      <main id="main-content" ref={mainRef} tabIndex={-1} className="mx-auto max-w-6xl p-4 md:p-8">
         {!hasSupabaseCoreConfig && <div className="glass mb-4 rounded-xl p-3 text-xs text-amber-300">Configuration is incomplete. Some authenticated features may be unavailable.</div>}
         <AnimatePresence mode="wait">
           <motion.div key={location.pathname} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.25 }}>
