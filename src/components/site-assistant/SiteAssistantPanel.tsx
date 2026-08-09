@@ -50,6 +50,8 @@ export function SiteAssistantPanel({ open, onClose }: { open: boolean; onClose: 
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const seenSections = useRef<Set<string>>(new Set());
+  const panelRef = useRef<HTMLElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -69,6 +71,23 @@ export function SiteAssistantPanel({ open, onClose }: { open: boolean; onClose: 
       return [welcomeMessage, ...prev].slice(0, 18);
     });
   }, [open, welcome]);
+
+  useEffect(() => {
+    if (!open) return;
+    inputRef.current?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+      if (event.key !== 'Tab' || !panelRef.current) return;
+      const focusable = [...panelRef.current.querySelectorAll<HTMLElement>('button:not([disabled]), a[href], input:not([disabled])')];
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [onClose, open]);
 
   const ask = async () => {
     const q = input.trim();
@@ -105,11 +124,12 @@ export function SiteAssistantPanel({ open, onClose }: { open: boolean; onClose: 
     <AnimatePresence>
       {open && (
         <motion.section
+          ref={panelRef}
           id="x1-assistant-panel"
           className={`assistant-panel ${themeClass}`}
           aria-label="X1 assistant"
           role="dialog"
-          aria-modal="false"
+          aria-modal="true"
           initial={{ opacity: 0, y: 12, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 10, scale: 0.98 }}
@@ -151,7 +171,7 @@ export function SiteAssistantPanel({ open, onClose }: { open: boolean; onClose: 
                 )}
               </div>
             ))}
-            {loading && <p className="text-xs text-muted">X1 is checking website content…</p>}
+            {loading && <p className="text-xs text-muted" role="status">X1 is checking published website content…</p>}
           </div>
           <form
             className="assistant-foot"
@@ -161,6 +181,7 @@ export function SiteAssistantPanel({ open, onClose }: { open: boolean; onClose: 
             }}
           >
             <input
+              ref={inputRef}
               className="assistant-input"
               value={input}
               onChange={(e) => setInput(e.target.value.slice(0, 280))}
