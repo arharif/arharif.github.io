@@ -24,6 +24,8 @@ import { normalizeUniverse, universeMeta } from '@/lib/universe';
 import { safeStorage } from '@/lib/storage';
 import { CollectionRecord, ContentRecord, TopicRecord } from './content/types';
 const ComplianceFrameworksPage = lazy(() => import('@/pages/ComplianceFrameworksPage').then((m) => ({ default: m.ComplianceFrameworksPage })));
+const AboutX1Page = lazy(() => import('@/pages/AboutX1Page').then((m) => ({ default: m.AboutX1Page })));
+const AcademicLibraryPage = lazy(() => import('@/pages/AcademicLibraryPage').then((m) => ({ default: m.AcademicLibraryPage })));
 
 const inferUniverseFromContentType = (contentType?: string | null) => normalizeUniverse(contentType);
 
@@ -607,7 +609,7 @@ function Shell() {
   useEffect(() => { document.documentElement.classList.remove('theme-dark', 'theme-light', 'theme-purple', 'theme-rainbow', 'theme-egyptian', 'theme-horror', 'theme-elite-green'); document.documentElement.classList.add(themeMap[mode]); safeStorage.set('theme', mode); }, [mode]);
   useEffect(() => {
     const labels: Record<string, string> = {
-      '/': 'Landing', '/professional': 'Technology & Innovation', '/personal': 'Curiosities & Philosophy', '/security-mindmap': 'Security Map', '/Security_Mindmap': 'Security Map', '/search': 'Search', '/games': 'Games', '/submitting': 'Submitting', '/admin': 'Admin', '/login': 'Login',
+      '/': 'Landing', '/about-x1': 'Cybersecurity Capabilities', '/academic-library': 'Course & PDF Library', '/compliance-frameworks': 'Compliance Frameworks', '/professional': 'Technology & Innovation', '/personal': 'Curiosities & Philosophy', '/security-mindmap': 'Security Map', '/Security_Mindmap': 'Security Map', '/search': 'Search', '/games': 'Games', '/submitting': 'Submitting', '/admin': 'Admin', '/login': 'Login',
     };
     const base = location.pathname.startsWith('/professional/topic/') ? 'Technology Topic'
       : location.pathname.startsWith('/personal/post/') ? 'Curiosity Post'
@@ -645,7 +647,8 @@ function Shell() {
               <Route path="/personal" element={<CuriositiesHub />} />
               <Route path="/personal/post/:slug" element={<CuriosityPost />} />
               <Route path="/compliance-frameworks" element={<Suspense fallback={<div className="glass rounded-2xl p-6">Loading compliance frameworks…</div>}><ComplianceFrameworksPage /></Suspense>} />
-              <Route path="/about-x1" element={<Navigate to="/" replace />} />
+              <Route path="/about-x1" element={<Suspense fallback={<div className="glass rounded-2xl p-6">Loading capability portfolio…</div>}><AboutX1Page /></Suspense>} />
+              <Route path="/academic-library" element={<Suspense fallback={<div className="glass rounded-2xl p-6">Loading academic library…</div>}><AcademicLibraryPage /></Suspense>} />
               <Route path="/submitting" element={<SubmittingPage />} />
               <Route path="/games" element={<GamesHub />} />
               <Route path="/Security_Mindmap" element={<SecurityMindmapPage />} />

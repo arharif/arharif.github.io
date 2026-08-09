@@ -1,82 +1,48 @@
-import { BookOpen, ShieldCheck, Sparkles, Target } from 'lucide-react';
+import { ArrowDown, CheckCircle2 } from 'lucide-react';
+import { useState } from 'react';
+
+const capabilities = [
+  { name: 'Cyber Strategy & GRC', can: ['Establish governance and operating models', 'Clarify ownership and accountability', 'Build strategies, policies and roadmaps'], problems: 'Fragmented security activity, unclear accountability and reporting that does not support decisions.', activities: ['Stakeholder discovery', 'Maturity assessment', 'Control and RACI design', 'KPI/KRI definition'], deliverables: ['Governance model', 'Cybersecurity strategy', 'Control catalogue', 'Executive dashboard'], frameworks: ['ISO 27001', 'NIST CSF 2.0', 'COBIT'], value: 'A structured, accountable and measurable security programme.' },
+  { name: 'Frameworks & Compliance', can: ['Interpret requirements', 'Map and tailor controls', 'Define audit-ready evidence'], problems: 'Overlapping obligations, unclear applicability and last-minute audit preparation.', activities: ['Gap assessment', 'Control mapping', 'Evidence review', 'Remediation monitoring'], deliverables: ['Control matrix', 'Gap assessment', 'Evidence pack', 'Audit readiness report'], frameworks: ['ISO 27001', 'PCI DSS', 'SOC 2', 'NIST SP 800-53'], value: 'Defensible compliance that supports the business rather than checklist completion.' },
+  { name: 'Risk & Assurance', can: ['Assess inherent and residual risk', 'Review control effectiveness', 'Structure treatment and acceptance'], problems: 'Poor risk visibility, inconsistent scoring and remediation without clear priorities.', activities: ['Identify', 'Analyse', 'Evaluate', 'Treat', 'Monitor', 'Report'], deliverables: ['Risk register', 'Treatment plan', 'Assurance review', 'Risk acceptance'], frameworks: ['NIST RMF', 'ISO 27005', 'NIST CSF 2.0'], value: 'Investment and remediation decisions grounded in meaningful business risk.' },
+  { name: 'IAM & Privacy', can: ['Design IAM governance', 'Assess access and privilege controls', 'Embed privacy and secure-by-design'], problems: 'Excessive access, unclear identity ownership and privacy risks introduced through change.', activities: ['Access review design', 'SoD analysis', 'PAM assurance', 'Privacy control review'], deliverables: ['IAM governance review', 'Access control matrix', 'Risk report', 'Remediation plan'], frameworks: ['ISO 27001', 'NIST SP 800-53', 'Privacy by Design'], value: 'Trusted access with clear accountability and reduced identity-driven exposure.' },
+  { name: 'Operational Resilience', can: ['Establish BCP/DR governance', 'Plan and facilitate exercises', 'Validate corrective action'], problems: 'Plans that are untested, unclear recovery ownership and weak post-exercise follow-through.', activities: ['Prepare', 'Exercise', 'Observe', 'Identify gaps', 'Remediate', 'Validate'], deliverables: ['BCP/DR assessment', 'Exercise report', 'Issue tracker', 'Readiness dashboard'], frameworks: ['ISO 22301', 'NIST CSF', 'Operational resilience guidance'], value: 'Critical services that can withstand, respond to and recover from disruption.' },
+  { name: 'AI Security & Governance', can: ['Govern AI use cases and agents', 'Assess data, model and supply-chain risk', 'Design oversight and assurance'], problems: 'Uncontrolled adoption, unclear accountability and inadequate monitoring of AI risks.', activities: ['Use case intake', 'Threat modelling', 'Control integration', 'Human oversight design'], deliverables: ['AI governance model', 'AI risk assessment', 'Acceptable-use controls', 'Assurance plan'], frameworks: ['NIST AI RMF', 'NIST CSF 2.0', 'ISO/IEC 42001'], value: 'Responsible, secure AI adoption with proportionate controls and visible risk.' },
+];
+
+const challenges = [
+  ['We need to implement NIST.', ['Understand business context', 'Define scope', 'Assess current state', 'Tailor controls', 'Identify gaps & risks', 'Build the roadmap', 'Implement', 'Validate evidence', 'Measure & improve'], ['NIST CSF 2.0', 'NIST SP 800-53', 'NIST RMF'], ['Current & Target Profiles', 'Control matrix', 'Risk register', 'Remediation roadmap']],
+  ['We need to prepare for an audit.', ['Confirm criteria', 'Set evidence plan', 'Test control design', 'Validate operation', 'Close priority gaps', 'Run readiness review'], ['ISO 27001', 'PCI DSS', 'SOC 2'], ['Evidence pack', 'Gap assessment', 'Audit readiness report']],
+  ["We don't have a clear view of cyber risk.", ['Set context', 'Identify scenarios', 'Analyse impact', 'Evaluate controls', 'Prioritise treatment', 'Report decisions'], ['NIST RMF', 'ISO 27005'], ['Risk register', 'Treatment plan', 'Executive dashboard']],
+  ['We need stronger IAM governance.', ['Map identities', 'Define ownership', 'Assess access lifecycle', 'Review privilege & SoD', 'Prioritise controls', 'Monitor'], ['NIST SP 800-53', 'ISO 27001'], ['IAM governance review', 'RACI', 'Control matrix']],
+  ['We need to improve operational resilience.', ['Identify critical services', 'Set recovery objectives', 'Assess plans', 'Exercise', 'Remediate', 'Validate'], ['ISO 22301', 'NIST CSF'], ['BCP/DR assessment', 'Exercise report', 'Action tracker']],
+  ['We want to adopt AI securely.', ['Qualify use case', 'Assess data & model', 'Threat model', 'Select controls', 'Define oversight', 'Monitor & assure'], ['NIST AI RMF', 'ISO/IEC 42001'], ['AI risk assessment', 'Governance model', 'Assurance plan']],
+] as const;
+
+const flow = [
+  ['Framework / Regulation', 'Interpret the external obligation in its business and risk context.'], ['Requirement', 'Translate regulatory, contractual and security expectations into clear organisational requirements.'], ['Control', 'Turn requirements into practical governance, process and technical controls with ownership.'], ['Evidence', 'Define what proves each control exists and operates effectively.'], ['Risk', 'Translate weaknesses into meaningful business risk and decision context.'], ['Remediation', 'Define proportionate actions, priorities, owners and deadlines.'], ['Management Decision', 'Give leaders the information to invest, remediate or accept risk.'],
+] as const;
+const deliverables = ['Cybersecurity Strategy', 'Governance Framework', 'Risk Register', 'Control Matrix', 'Gap Assessment', 'Compliance Assessment', 'NIST Current Profile', 'NIST Target Profile', 'Cybersecurity Roadmap', 'Policies and Procedures', 'Evidence Pack', 'Audit Readiness Assessment', 'Remediation Plan', 'Executive Dashboard', 'KPI/KRI Report', 'BCP/DR Assessment', 'IAM Governance Review', 'AI Risk Assessment'];
+const frameworkUses: Record<string, string> = { 'ISO 27001': 'Build and assure a risk-based information security management system.', 'PCI DSS': 'Protect payment data through scoped, testable security requirements.', 'SOC 2': 'Demonstrate trusted service controls through evidence and assurance.', 'NIST CSF': 'Describe current and target cybersecurity outcomes in business language.', 'NIST SP 800-53': 'Select and assess a comprehensive catalogue of security controls.', 'NIST RMF': 'Connect categorisation, control selection, assessment and ongoing risk decisions.', 'NIST AI RMF': 'Govern and manage trustworthiness risks throughout the AI lifecycle.' };
 
 export function AboutX1Page() {
-  return (
-    <section className="about-x1 space-y-6">
-      <header className="about-x1-hero glass rounded-3xl p-6 md:p-8">
-        <p className="about-x1-kicker">About X1 / About Me</p>
-        <h1 className="mt-2 text-3xl font-semibold md:text-4xl">A premium knowledge and cybersecurity strategy platform.</h1>
-        <p className="mt-3 max-w-4xl text-sm leading-7 text-muted md:text-base">
-          X1 is built as a modern knowledge platform connecting Technology & Innovation, Curiosities & Philosophy,
-          Security Map, and Compliance Frameworks. It simplifies complex knowledge through structured summaries,
-          practical insights, personal reflections, and professional experience.
-        </p>
-      </header>
+  const [capability, setCapability] = useState(0); const [challenge, setChallenge] = useState(0); const [stage, setStage] = useState(0); const [delivery, setDelivery] = useState(0); const [framework, setFramework] = useState('ISO 27001');
+  const selected = capabilities[capability]; const selectedChallenge = challenges[challenge];
+  return <section className="capability-page space-y-8">
+    <header className="capability-hero glass rounded-3xl p-6 md:p-10"><p className="academic-eyebrow">Cybersecurity capability portfolio</p><h1 className="mt-3 max-w-5xl text-3xl font-semibold leading-tight md:text-5xl">Turning cybersecurity requirements into governance, controls, evidence, risk decisions and measurable improvement.</h1><p className="mt-5 max-w-4xl text-base leading-7 text-muted">I work across Cybersecurity Governance, GRC, Risk, Compliance, IAM, Operational Resilience and AI Security—helping organisations translate complex security requirements into practical and defensible operating models.</p><a className="academic-primary mt-6 inline-flex" href="#capabilities">Explore My Capabilities</a></header>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <article className="glass about-card rounded-2xl p-5">
-          <h2 className="about-card-title"><Sparkles size={18} /> X1 platform purpose</h2>
-          <p>
-            X1 exists to make technology, cybersecurity, innovation, governance, compliance, science, books, anime,
-            philosophy, and personal growth easier to understand for all audiences regardless of generation,
-            background, or technical level.
-          </p>
-          <p>
-            It is designed as a space where curiosity, creativity, learning, and expertise meet together to make
-            complex knowledge open, inspiring, useful, and accessible to all.
-          </p>
-        </article>
+    <section id="capabilities" aria-labelledby="capabilities-title"><p className="academic-eyebrow">What I can do</p><h2 id="capabilities-title" className="mt-2 text-3xl font-semibold">Capability explorer</h2><div className="capability-tabs mt-5" role="tablist" aria-label="Cybersecurity capabilities">{capabilities.map((item, index) => <button role="tab" aria-selected={capability === index} className={capability === index ? 'is-active' : ''} onClick={() => setCapability(index)} key={item.name}>{item.name}</button>)}</div><article className="glass mt-4 rounded-2xl p-5 md:p-7" role="tabpanel"><h3 className="text-2xl font-semibold">{selected.name}</h3><div className="mt-5 grid gap-6 md:grid-cols-2 lg:grid-cols-3"><Info title="What I can do" items={selected.can} /><Info title="Problems I solve" text={selected.problems} /><Info title="Typical activities" items={selected.activities} /><Info title="Deliverables" items={selected.deliverables} /><Info title="Relevant frameworks" items={selected.frameworks} /><Info title="Business value" text={selected.value} /></div></article></section>
 
-        <article className="glass about-card rounded-2xl p-5">
-          <h2 className="about-card-title"><ShieldCheck size={18} /> Professional positioning</h2>
-          <p>
-            I specialize in cybersecurity strategy, governance, risk management, privacy, business resilience,
-            identity and access management, and AI security within highly regulated and business-critical
-            environments.
-          </p>
-          <p>
-            I help organizations translate complex security, regulatory, operational, and technology challenges into
-            clear risk-based decisions that protect business value, enable growth, strengthen resilience, and
-            withstand regulatory scrutiny.
-          </p>
-        </article>
+    <section aria-labelledby="challenge-title"><p className="academic-eyebrow">Choose your cybersecurity challenge</p><h2 id="challenge-title" className="mt-2 text-3xl font-semibold">What challenge are you trying to solve?</h2><div className="challenge-layout mt-5"><div className="capability-tabs vertical" role="list">{challenges.map((item, index) => <button className={challenge === index ? 'is-active' : ''} onClick={() => setChallenge(index)} key={item[0]}>{item[0]}</button>)}</div><article className="glass rounded-2xl p-5"><h3 className="text-xl font-semibold">{selectedChallenge[0]}</h3><div className="journey mt-5">{selectedChallenge[1].map((step, index) => <div key={step}><span>{index + 1}</span><p>{step}</p>{index < selectedChallenge[1].length - 1 && <ArrowDown size={15} aria-hidden="true" />}</div>)}</div><div className="mt-5 grid gap-4 sm:grid-cols-2"><Info title="Relevant expertise" items={[...selectedChallenge[2]]} /><Info title="Possible deliverables" items={[...selectedChallenge[3]]} /></div></article></div></section>
 
-        <article className="glass about-card rounded-2xl p-5">
-          <h2 className="about-card-title"><Target size={18} /> Information security management</h2>
-          <p>
-            My focus is centered on Governance, Risk, and Compliance, complemented by Business Continuity and Disaster
-            Recovery, Privacy, IAM, and Cybersecurity for AI systems.
-          </p>
-          <p>
-            I position myself as a cybersecurity and information security management professional able to connect
-            governance, risk, compliance, privacy, identity, operational resilience, and AI security into a coherent
-            security operating model.
-          </p>
-          <p>
-            My objective is to help organizations move from fragmented security activities to structured, measurable,
-            audit-ready, and business-aligned security management practices.
-          </p>
-        </article>
+    <section aria-labelledby="reality-title"><p className="academic-eyebrow">Requirement to reality</p><h2 id="reality-title" className="mt-2 text-3xl font-semibold">From obligation to management decision</h2><div className="flow-nodes mt-5">{flow.map((item, index) => <button key={item[0]} onClick={() => setStage(index)} className={stage === index ? 'is-active' : ''}>{item[0]}</button>)}</div><div className="glass mt-3 rounded-2xl p-5" aria-live="polite"><h3 className="text-xl font-semibold">{flow[stage][0]}</h3><p className="mt-2 text-muted">{flow[stage][1]}</p></div></section>
 
-        <article className="glass about-card rounded-2xl p-5">
-          <h2 className="about-card-title"><BookOpen size={18} /> Value proposition</h2>
-          <ul className="about-list">
-            <li>Turning cybersecurity, privacy, IAM, resilience, and AI security requirements into clear business decisions.</li>
-            <li>Connecting governance, risk, compliance, technical insight, and operational resilience.</li>
-            <li>Supporting environments where trust, regulation, availability, transformation, and innovation must coexist.</li>
-            <li>Building audit-ready, risk-based, and executive-readable security practices.</li>
-            <li>Growing toward CISO-level leadership and high-value cybersecurity advisory capabilities.</li>
-          </ul>
-        </article>
-      </div>
+    <section aria-labelledby="delivery-title"><p className="academic-eyebrow">What I deliver</p><h2 id="delivery-title" className="mt-2 text-3xl font-semibold">Decision-ready security artefacts</h2><div className="deliverable-grid mt-5">{deliverables.map((item, index) => <button key={item} className={delivery === index ? 'is-active' : ''} onClick={() => setDelivery(index)}>{item}</button>)}</div><article className="glass mt-4 grid gap-5 rounded-2xl p-5 md:grid-cols-3"><Info title="Purpose" text={`Create a clear, usable ${deliverables[delivery].toLowerCase()} aligned to scope and risk.`} /><Info title="Typical content" text="Context, scope, ownership, analysis, evidence, priorities and measurable next actions." /><Info title="Business value" text="A defensible basis for action, assurance, investment and executive decision-making." /></article></section>
 
-      <article className="glass about-quote rounded-2xl p-5 md:p-6">
-        <h2 className="about-card-title">Philosophy</h2>
-        <blockquote>
-          “Attack is the secret of defense; defense is the planning of an attack.”
-        </blockquote>
-        <p className="text-sm text-muted">— Sun Tzu, The Art of War</p>
-      </article>
-    </section>
-  );
+    <section aria-labelledby="framework-title"><p className="academic-eyebrow">Framework knowledge map</p><h2 id="framework-title" className="mt-2 text-3xl font-semibold">Cybersecurity Governance &amp; Risk</h2><div className="framework-map mt-5"><div className="framework-core">Cybersecurity<br />Governance &amp; Risk</div><div className="framework-orbit">{Object.keys(frameworkUses).map((item) => <button className={framework === item ? 'is-active' : ''} onClick={() => setFramework(item)} key={item}>{item}</button>)}</div></div><p className="glass mt-3 rounded-2xl p-5 text-muted" aria-live="polite"><strong className="text-current">{framework}:</strong> {frameworkUses[framework]}</p></section>
+
+    <section aria-labelledby="principles-title"><p className="academic-eyebrow">How I think</p><h2 id="principles-title" className="mt-2 text-3xl font-semibold">Consulting principles</h2><div className="mt-5 grid gap-3">{[['Business First', 'Understand business context, services and stakeholders before selecting controls.'], ['Risk-Based', 'Prioritise cybersecurity according to risk rather than checklist completion.'], ['Evidence-Driven', 'A control should be demonstrable and defensible.'], ['Practical', 'Translate complex standards into implementable actions.'], ['Executive-Ready', 'Convert technical issues into business impact, ownership, deadlines and decisions.']].map(([title, text]) => <details className="glass principle rounded-xl" key={title}><summary>{title}</summary><p>{text}</p></details>)}</div></section>
+  </section>;
 }
+
+function Info({ title, items, text }: { title: string; items?: string[]; text?: string }) { return <div><h4 className="text-sm font-semibold uppercase tracking-wider">{title}</h4>{items ? <ul className="mt-2 space-y-2 text-sm text-muted">{items.map((item) => <li className="flex gap-2" key={item}><CheckCircle2 size={15} className="mt-1 shrink-0" aria-hidden="true" />{item}</li>)}</ul> : <p className="mt-2 text-sm leading-6 text-muted">{text}</p>}</div>; }
