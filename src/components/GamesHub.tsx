@@ -297,7 +297,7 @@ function ReactionGame() {
     setPhase('idle');
   };
 
-  return <div><div className="mb-3 flex items-center justify-between text-sm text-muted"><p>{result ? `Last: ${result} ms` : 'Click to begin'}</p><p>Best: {best ? `${best} ms` : '—'}</p></div><button onClick={onClick} className={`w-full rounded-xl px-4 py-10 text-lg font-semibold ${phase === 'go' ? 'bg-emerald-400/50' : phase === 'wait' ? 'bg-amber-300/40' : 'token-btn hover:token-chip'}`}>{phase === 'idle' ? 'Start' : phase === 'wait' ? 'Wait…' : 'Click!'}</button><p className="mt-2 text-xs text-muted">Clicking too early resets the round.</p></div>;
+  return <div><div className="mb-3 flex items-center justify-between text-sm text-muted"><p>{result ? `Last: ${result} ms` : 'Click to begin'}</p><p>Best: {best ? `${best} ms` : 'Not set'}</p></div><button onClick={onClick} className={`w-full rounded-xl px-4 py-10 text-lg font-semibold ${phase === 'go' ? 'bg-emerald-400/50' : phase === 'wait' ? 'bg-amber-300/40' : 'token-btn hover:token-chip'}`}>{phase === 'idle' ? 'Start' : phase === 'wait' ? 'Wait…' : 'Click!'}</button><p className="mt-2 text-xs text-muted">Clicking too early resets the round.</p></div>;
 }
 
 function RPSGame() {
@@ -354,11 +354,11 @@ function RPSGame() {
       <div className="grid gap-3 sm:grid-cols-2">
         <div className={`rounded-xl border border-[color:var(--border)] token-card p-4 text-center transition ${phase === 'shake' ? 'animate-pulse' : ''}`}>
           <p className="text-xs uppercase tracking-[0.12em] text-muted">You</p>
-          <p className="mt-2 text-xl font-semibold">{playerChoice || '—'}</p>
+          <p className="mt-2 text-xl font-semibold">{playerChoice || 'Not selected'}</p>
         </div>
         <div className={`rounded-xl border border-[color:var(--border)] token-card p-4 text-center transition ${phase === 'shake' ? 'animate-pulse' : ''}`}>
           <p className="text-xs uppercase tracking-[0.12em] text-muted">CPU</p>
-          <p className="mt-2 text-xl font-semibold">{cpuChoice || (phase === 'shake' ? '…' : '—')}</p>
+          <p className="mt-2 text-xl font-semibold">{cpuChoice || (phase === 'shake' ? '…' : 'Not selected')}</p>
         </div>
       </div>
 
@@ -391,7 +391,7 @@ const HANGMAN_WORDS = [
 function HangmanX1(){const [idx,setIdx]=useState(()=>Math.floor(Math.random()*HANGMAN_WORDS.length));const [used,setUsed]=useState<string[]>([]);const item=HANGMAN_WORDS[idx];const misses=used.filter(c=>!item.word.includes(c)).length;const won=[...new Set(item.word.replace(/[^A-Z0-9]/g,'').split(''))].every(c=>used.includes(c));const lost=misses>=7;const letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.split('');const guess=(c:string)=>!won&&!lost&&setUsed(u=>u.includes(c)?u:[...u,c]);useEffect(()=>{const on=(e:KeyboardEvent)=>{const k=e.key.toUpperCase();if(letters.includes(k))guess(k)};window.addEventListener('keydown',on);return()=>window.removeEventListener('keydown',on)},[won,lost]);return <div className='space-y-3'><p className='text-sm text-muted'>Category: {item.category} · Misses: {misses}/7</p><p className='text-xs text-muted'>Hint: {item.hint}</p><p className='text-2xl tracking-[0.4em]'>{item.word.split('').map(ch=>/[A-Z0-9]/.test(ch)?(used.includes(ch)?ch:'_'):ch).join(' ')}</p><div className='grid grid-cols-6 gap-2'>{letters.map(l=><button key={l} onClick={()=>guess(l)} disabled={used.includes(l)||won||lost} className='rounded token-btn px-2 py-1 text-xs disabled:opacity-40'>{l}</button>)}</div><div className='flex gap-2'><button onClick={()=>{setIdx(Math.floor(Math.random()*HANGMAN_WORDS.length));setUsed([])}} className='rounded-lg token-btn px-3 py-1 text-xs'>Restart</button>{won&&<p className='status-success text-sm'>Great job!</p>}{lost&&<p className='text-rose-300 text-sm'>Round over. Word: {item.word}</p>}</div></div>}
 
 const MYSTERY_ITEMS=[
-'Fun Fact: Honey never spoils when sealed well.', 'Quote: “The future depends on what you do today.” — Gandhi', 'Mini Challenge: Name 3 things you learned this week.', 'Riddle: What has keys but cannot open locks? (A keyboard)', 'Curiosity: Which innovation changed your daily life most?', 'Motivation: Small progress daily creates big outcomes.'
+'Fun Fact: Honey never spoils when sealed well.', 'Quote: “The future depends on what you do today.” (Gandhi)', 'Mini Challenge: Name 3 things you learned this week.', 'Riddle: What has keys but cannot open locks? (A keyboard)', 'Curiosity: Which innovation changed your daily life most?', 'Motivation: Small progress daily creates big outcomes.'
 ];
 function MysteryBoxGame(){const [open,setOpen]=useState(false);const [item,setItem]=useState('');const reveal=()=>{setOpen(true);setItem(MYSTERY_ITEMS[Math.floor(Math.random()*MYSTERY_ITEMS.length)])};return <div className='space-y-3 text-center'><button onClick={reveal} className={`mx-auto rounded-2xl px-8 py-8 text-4xl transition ${open?'token-card':'token-btn hover:-translate-y-1 hover:shadow-[0_14px_28px_var(--glow)]'}`}>🎁</button><p className='text-sm text-muted'>{open?item:'Open the mystery box for a premium surprise.'}</p><button onClick={()=>{setOpen(false);setItem('')}} className='rounded-lg token-btn px-3 py-1 text-xs'>Open again</button></div>}
 
