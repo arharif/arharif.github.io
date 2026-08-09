@@ -1,12 +1,12 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { BookOpen, Compass, Github, Linkedin, Mail, Search, Shield, ShoppingBag, Sparkles } from 'lucide-react';
+import { BookOpen, Compass, Github, GraduationCap, Lightbulb, Linkedin, Mail, Search, Shield, ShoppingBag, Sparkles } from 'lucide-react';
 import { Component, lazy, ReactNode, Suspense, useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { AdminEditor } from '@/components/admin/AdminEditor';
 import { TopicEditor } from '@/components/admin/TopicEditor';
 import { X1Mark } from '@/components/branding/X1Mark';
 import { ArticleView } from '@/components/ArticleView';
-import { ContentCard, EntryCard } from '@/components/Cards';
+import { ContentCard } from '@/components/Cards';
 import { Navbar } from '@/components/Navbar';
 import { ThemeMotionBackground } from '@/components/ThemeMotionBackground';
 import { SearchBar } from '@/components/SearchBar';
@@ -60,34 +60,30 @@ function Landing() {
         <span className="landing-orb landing-orb--b" />
         <span className="landing-orb landing-orb--c" />
       </div>
-      <SearchBar />
-      <motion.section className="landing-grid grid gap-5 py-4 md:grid-cols-2" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, ease: 'easeOut' }}>
-        <EntryCard title={universeMeta.professional.label} description={universeMeta.professional.description} onClick={() => nav('/professional')} label="Universe" />
-        <EntryCard title={universeMeta.personal.label} description={universeMeta.personal.description} onClick={() => nav('/personal')} label="Universe" />
-        <EntryCard title="Security Map" description="Explore cybersecurity roles, skills, capabilities, and growth paths through an interactive security mindmap." onClick={() => nav('/security-mindmap')} label="Capability" />
-        <EntryCard title="Compliance Frameworks" description="Explore cybersecurity, privacy, resilience, payment security, AI governance, and certification guidance in one structured compliance hub." onClick={() => nav('/compliance-frameworks')} label="Governance" />
+      <header className="landing-positioning py-10 md:py-16">
+        <p className="academic-eyebrow">Cybersecurity · Risk · Technology</p>
+        <h1 className="mt-3 max-w-4xl text-4xl font-semibold leading-tight md:text-6xl">Clear thinking for complex security and technology decisions.</h1>
+        <p className="mt-5 max-w-2xl text-base leading-7 text-muted md:text-lg">A focused platform connecting cybersecurity knowledge with emerging ideas, practical governance and decision-ready insight.</p>
+        <div className="mt-7 max-w-xl"><SearchBar /></div>
+      </header>
+      <motion.section aria-label="Explore X1" className="landing-portals grid gap-5 py-4 md:grid-cols-2" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, ease: 'easeOut' }}>
+        <button className="landing-portal glass" onClick={() => nav('/x1-academic')}><span className="landing-portal-icon"><GraduationCap aria-hidden="true" /></span><span className="academic-eyebrow">Knowledge portal</span><strong>X1 Academic</strong><span>Structured cybersecurity knowledge, frameworks and professional learning resources.</span><span className="landing-portal-link">Explore Academic <span aria-hidden="true">→</span></span></button>
+        <button className="landing-portal glass" onClick={() => nav('/insights-innovation')}><span className="landing-portal-icon"><Lightbulb aria-hidden="true" /></span><span className="academic-eyebrow">Ideas portal</span><strong>Insights &amp; Innovation</strong><span>Exploring emerging technologies, ideas and perspectives shaping the future of security and digital transformation.</span><span className="landing-portal-link">Explore Insights <span aria-hidden="true">→</span></span></button>
       </motion.section>
-      <section className="x1-purpose mt-5 rounded-3xl p-5 md:p-6 theme-transition" aria-labelledby="x1-purpose-heading">
-        <p className="x1-purpose-kicker">X1 Platform Purpose</p>
-        <h2 id="x1-purpose-heading" className="mt-2 text-2xl font-semibold md:text-3xl">Making complex knowledge clear, practical, and accessible to everyone.</h2>
-        <p className="mt-3 max-w-4xl text-sm leading-7 text-muted md:text-base">
-          X1 exists to make technology, cybersecurity, innovation, governance, compliance, science, books, anime,
-          philosophy, and personal growth easier to understand regardless of generation, background, technical level,
-          or professional experience. It is where curiosity, creativity, learning, and expertise meet to keep
-          complex knowledge open, inspiring, useful, and accessible to all.
-        </p>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {[['◈','Simplify Complexity','Turn complex subjects into clear, structured, and easy-to-understand explanations.'],['◉','Share Knowledge','Provide practical insights, summaries, and lessons learned from research and real experience.'],['✦','Inspire Curiosity','Connect technology, cybersecurity, science, culture, books, anime, philosophy, and growth.'],['⬢','Connect Expertise','Bridge learning, governance, resilience, cybersecurity maturity, and executive-level thinking.']].map(([icon,title,desc],idx) => (
-            <motion.article key={String(title)} initial={{opacity:0,y:12}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{delay:idx*0.08,duration:0.35}} whileHover={{ y: -4 }} className="x1-purpose-card rounded-2xl p-4">
-              <p className="text-sm text-muted">{icon}</p>
-              <h3 className="text-sm font-semibold">{title}</h3>
-              <p className="mt-2 text-xs leading-6 text-muted">{desc}</p>
-            </motion.article>
-          ))}
-        </div>
-      </section>
     </section>
   );
+}
+
+function PortalHub({ academic = false }: { academic?: boolean }) {
+  const items = academic ? [
+    ['/security-mindmap', 'Security Map', 'Explore cybersecurity roles, capabilities and pathways.'],
+    ['/compliance-frameworks', 'Compliance Frameworks', 'Navigate security, privacy, resilience and governance frameworks.'],
+    ['/academic-library', 'Course & PDF Library', 'Access curated professional learning and practitioner resources.'],
+  ] : [
+    ['/professional', 'Technology & Innovation', 'Explore emerging technology and strategic digital perspectives.'],
+    ['/personal', 'Curiosities & Philosophy', 'Consider ideas, culture and perspectives beyond the familiar.'],
+  ];
+  return <section><header className="academic-hero glass rounded-3xl p-6 md:p-9"><p className="academic-eyebrow">X1 Portal</p><h1 className="mt-2 text-3xl font-semibold md:text-5xl">{academic ? 'X1 Academic' : 'Insights & Innovation'}</h1><p className="mt-4 max-w-3xl text-muted">{academic ? 'Structured cybersecurity knowledge, frameworks and professional learning resources.' : 'Emerging technologies, ideas and perspectives shaping security and digital transformation.'}</p></header><div className="mt-6 grid gap-4 md:grid-cols-3">{items.map(([to, title, description]) => <Link key={to} to={to} className="academic-card glass rounded-2xl p-5"><span className="academic-eyebrow">Explore</span><h2 className="mt-3 text-xl font-semibold">{title}</h2><p className="mt-3 text-sm leading-6 text-muted">{description}</p><span className="academic-open mt-auto pt-5">Open <span aria-hidden="true">→</span></span></Link>)}</div></section>;
 }
 function SearchPage() {
   const [topics, setTopics] = useState<TopicRecord[]>([]);
@@ -609,7 +605,7 @@ function Shell() {
   useEffect(() => { document.documentElement.classList.remove('theme-dark', 'theme-light', 'theme-purple', 'theme-rainbow', 'theme-egyptian', 'theme-horror', 'theme-elite-green'); document.documentElement.classList.add(themeMap[mode]); safeStorage.set('theme', mode); }, [mode]);
   useEffect(() => {
     const labels: Record<string, string> = {
-      '/': 'Cybersecurity Advisory', '/about-x1': 'Cybersecurity Capabilities', '/academic-library': 'Course & PDF Library', '/compliance-frameworks': 'Compliance Frameworks', '/professional': 'Technology & Innovation', '/personal': 'Curiosities & Philosophy', '/security-mindmap': 'Security Map', '/Security_Mindmap': 'Security Map', '/search': 'Search', '/games': 'Entertainment', '/submitting': 'Connect / Contribute', '/admin': 'Admin', '/login': 'Login',
+      '/': 'Cybersecurity Advisory', '/x1-academic': 'X1 Academic', '/insights-innovation': 'Insights & Innovation', '/about-x1': 'Cybersecurity Capabilities', '/academic-library': 'Course & PDF Library', '/compliance-frameworks': 'Compliance Frameworks', '/professional': 'Technology & Innovation', '/personal': 'Curiosities & Philosophy', '/security-mindmap': 'Security Map', '/Security_Mindmap': 'Security Map', '/search': 'Search', '/games': 'Entertainment', '/submitting': 'Connect / Contribute', '/admin': 'Admin', '/login': 'Login',
     };
     const base = location.pathname.startsWith('/professional/topic/') ? 'Technology Topic'
       : location.pathname.startsWith('/personal/post/') ? 'Curiosity Post'
@@ -641,6 +637,8 @@ function Shell() {
           <motion.div key={location.pathname} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.25 }}>
             <Routes>
               <Route path="/" element={<Landing />} />
+              <Route path="/x1-academic" element={<PortalHub academic />} />
+              <Route path="/insights-innovation" element={<PortalHub />} />
               <Route path="/search" element={<SearchPage />} />
               <Route path="/professional" element={<ProfessionalHome />} />
               <Route path="/professional/topic/:slug" element={<TechnologyBook />} />

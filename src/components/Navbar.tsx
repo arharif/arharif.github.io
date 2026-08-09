@@ -1,4 +1,4 @@
-import { ChevronDown, LockKeyhole, Menu, X } from 'lucide-react';
+import { ChevronDown, Gamepad2, LockKeyhole, Menu, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { ThemeMode } from '@/lib/theme';
@@ -7,13 +7,13 @@ import { X1Mark } from './branding/X1Mark';
 
 type NavItem = { to: string; label: string; active: (path: string) => boolean };
 const academic: NavItem[] = [
+  { to: '/security-mindmap', label: 'Security Map', active: (p) => p === '/security-mindmap' || p === '/Security_Mindmap' },
   { to: '/compliance-frameworks', label: 'Compliance Frameworks', active: (p) => p === '/compliance-frameworks' },
   { to: '/academic-library', label: 'Course & PDF Library', active: (p) => p === '/academic-library' },
 ];
 const insights: NavItem[] = [
   { to: '/professional', label: 'Technology & Innovation', active: (p) => p.startsWith('/professional') },
   { to: '/personal', label: 'Curiosities & Philosophy', active: (p) => p.startsWith('/personal') },
-  { to: '/security-mindmap', label: 'Security Map', active: (p) => p === '/security-mindmap' || p === '/Security_Mindmap' },
 ];
 
 function Dropdown({ label, items, open, setOpen, mobile = false }: { label: string; items: NavItem[]; open: boolean; setOpen: (value: boolean) => void; mobile?: boolean }) {
@@ -21,10 +21,10 @@ function Dropdown({ label, items, open, setOpen, mobile = false }: { label: stri
   const active = items.some((item) => item.active(location.pathname));
   const id = `${mobile ? 'mobile-' : ''}${label.toLowerCase().replace(/\W+/g, '-')}-menu`;
   return <div className="academic-nav">
-    <button type="button" className={`nav-link ${active ? 'is-active' : ''}`} aria-expanded={open} aria-controls={id} onClick={() => setOpen(!open)}>
+    <button type="button" className={`nav-link ${active ? 'is-active' : ''}`} aria-expanded={open} aria-haspopup="menu" aria-controls={id} onClick={() => setOpen(!open)}>
       {label}<ChevronDown size={15} className={open ? 'rotate-180' : ''} aria-hidden="true" />
     </button>
-    {open && <div className="academic-nav-menu" id={id}>{items.map((item) => <NavLink key={item.to} to={item.to} className={`nav-link ${item.active(location.pathname) ? 'is-active' : ''}`} aria-current={item.active(location.pathname) ? 'page' : undefined}>{item.label}</NavLink>)}</div>}
+    {open && <div className="academic-nav-menu" id={id} role="menu">{items.map((item) => <NavLink role="menuitem" key={item.to} to={item.to} className={`nav-link ${item.active(location.pathname) ? 'is-active' : ''}`} aria-current={item.active(location.pathname) ? 'page' : undefined}>{item.label}</NavLink>)}</div>}
   </div>;
 }
 
@@ -42,7 +42,7 @@ export function Navbar({ mode, onTheme }: { mode: ThemeMode; onTheme: (m: ThemeM
   }, []);
   const aboutActive = location.pathname === '/about-x1';
   const contributeActive = location.pathname === '/submitting';
-  const utility = <><NavLink to="/admin" className={`nav-utility ${location.pathname === '/admin' || location.pathname === '/login' ? 'is-active' : ''}`} aria-label="Admin" title="Admin"><LockKeyhole size={18} aria-hidden="true" /></NavLink><ThemeSwitcher mode={mode} onChange={onTheme} /></>;
+  const utility = <><NavLink to="/games" className={`nav-utility ${location.pathname === '/games' ? 'is-active' : ''}`} aria-label="Entertainment" title="Entertainment"><Gamepad2 size={17} strokeWidth={1.9} aria-hidden="true" /></NavLink><NavLink to="/admin" className={`nav-utility ${location.pathname === '/admin' || location.pathname === '/login' ? 'is-active' : ''}`} aria-label="Admin" title="Admin"><LockKeyhole size={17} strokeWidth={1.9} aria-hidden="true" /></NavLink><ThemeSwitcher mode={mode} onChange={onTheme} /></>;
   return <header ref={headerRef} className="nav-shell nav-enter sticky top-0 z-50">
     <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 p-3 md:px-4">
       <Link to="/" className="flex items-center rounded-lg" aria-label="X1 home" title="Home"><X1Mark size="sm" mode={mode} /></Link>

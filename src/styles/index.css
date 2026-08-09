@@ -1405,18 +1405,57 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 @media(max-width:374px){.deliverable-grid{grid-template-columns:1fr}.academic-card{min-height:auto}}
 @media(prefers-reduced-motion:reduce){.academic-nav-menu,.mobile-nav,.academic-card,.capability-tabs button,.deliverable-grid button,.flow-nodes button,.framework-orbit button,.academic-primary{animation:none!important;transition:none!important;transform:none!important}html:focus-within{scroll-behavior:auto}}
 
-/* Executive navigation and network learning */
+/* Executive navigation utilities */
 .nav-utility { display:inline-grid; place-items:center; width:2.65rem; height:2.65rem; border:1px solid var(--border-soft); border-radius:.75rem; color:var(--muted); }
 .nav-utility:hover,.nav-utility.is-active { color:var(--text); background:var(--surface-strong); }
 .nav-utility:focus-visible { outline:none; box-shadow:0 0 0 3px var(--focus-ring); }
-.learning-path { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.55rem; }
-.learning-path button { min-height:3.5rem; display:flex; align-items:center; gap:.65rem; padding:.65rem; text-align:left; border:1px solid var(--border-soft); border-radius:.75rem; background:var(--surface-soft); color:var(--text); font-size:.8rem; }
-.learning-path button span { color:var(--muted); font-variant-numeric:tabular-nums; }
-.learning-path button.is-active,.packet-path button.is-active { border-color:var(--accent); background:var(--accent-soft); }
-.packet-path { display:flex; align-items:center; gap:.45rem; overflow-x:auto; padding:.2rem .1rem .6rem; }
-.packet-path button { flex:0 0 auto; min-height:2.75rem; padding:.55rem .75rem; border:1px solid var(--border-soft); border-radius:.7rem; background:var(--surface-soft); color:var(--text); }
-.packet-path svg { flex:0 0 auto; color:var(--muted); }
-.architecture-flow { display:grid; gap:.5rem; }
-.architecture-flow div { display:flex; gap:.55rem; align-items:center; border-left:2px solid var(--accent); background:var(--surface-soft); padding:.65rem .8rem; border-radius:0 .6rem .6rem 0; }
-@media (max-width: 700px) { .learning-path { grid-template-columns:1fr; } .packet-path { align-items:stretch; flex-direction:column; overflow:visible; } .packet-path svg { transform:rotate(90deg); align-self:center; } }
 @media (prefers-reduced-motion: reduce) { *,*::before,*::after { scroll-behavior:auto !important; animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; } }
+
+/* Executive landing portals */
+.landing-positioning { position:relative; }
+.landing-portal { position:relative; display:flex; min-height:310px; flex-direction:column; align-items:flex-start; overflow:hidden; border-radius:1.5rem; padding:1.75rem; text-align:left; transition:transform .25s ease,border-color .25s ease,box-shadow .25s ease; }
+.landing-portal::after { content:""; position:absolute; width:11rem; height:11rem; right:-4rem; bottom:-5rem; border:1px solid color-mix(in srgb,var(--accent) 35%,transparent); border-radius:50%; transition:transform .3s ease; }
+.landing-portal:hover { transform:translateY(-5px); border-color:color-mix(in srgb,var(--accent) 55%,var(--border-soft)); box-shadow:var(--shadow); }
+.landing-portal:hover::after { transform:scale(1.15); }
+.landing-portal-icon { display:grid; width:3rem; height:3rem; margin-bottom:2rem; place-items:center; border:1px solid var(--border-soft); border-radius:1rem; color:var(--accent); background:var(--accent-soft); }
+.landing-portal-icon svg { width:1.35rem; }
+.landing-portal strong { margin-top:.7rem; font-size:clamp(1.5rem,3vw,2rem); }
+.landing-portal>span:nth-of-type(3) { margin-top:.8rem; max-width:28rem; line-height:1.7; color:var(--muted); }
+.landing-portal-link { display:flex; margin-top:auto; align-items:center; gap:.5rem; color:var(--accent); font-weight:700; }
+.landing-portal:hover .landing-portal-link span { transform:translateX(4px); }
+.landing-portal-link span { transition:transform .2s ease; }
+
+/* Executive About experience */
+.executive-about h2 { margin-top:.5rem; max-width:54rem; font-size:clamp(1.8rem,4vw,2.7rem); font-weight:650; line-height:1.15; }
+.section-intro { margin-top:1rem; color:var(--muted); }
+.executive-hero { display:grid; gap:2.5rem; align-items:center; padding:clamp(1.5rem,5vw,3.5rem); border-radius:1.75rem; background:linear-gradient(135deg,color-mix(in srgb,var(--surface) 94%,transparent),color-mix(in srgb,var(--accent) 12%,transparent)); }
+.executive-hero h1 { margin-top:.75rem; max-width:53rem; font-size:clamp(2.25rem,6vw,4.5rem); font-weight:680; line-height:1.02; letter-spacing:-.035em; }
+.executive-hero p:not(.academic-eyebrow) { margin-top:1.25rem; max-width:48rem; color:var(--muted); line-height:1.8; }
+.executive-hero strong { color:var(--text); }
+.governance-triangle { position:relative; min-height:310px; max-width:380px; margin:auto; width:100%; }
+.governance-triangle::before { content:""; position:absolute; inset:40px 42px 30px; clip-path:polygon(50% 0,100% 100%,0 100%); background:linear-gradient(135deg,var(--accent),var(--accent-secondary)); opacity:.2; }
+.governance-triangle>span,.governance-triangle>strong { position:absolute; display:grid; place-items:center; gap:.25rem; text-align:center; }
+.governance-triangle>span svg,.governance-triangle>strong svg { width:18px; }
+.governance-triangle>span:nth-child(1){left:50%;top:0;transform:translateX(-50%)}.governance-triangle>span:nth-child(2){left:0;bottom:0}.governance-triangle>span:nth-child(3){right:0;bottom:0}
+.governance-triangle>strong { inset:42% 30% auto; min-height:92px; border:1px solid var(--border-soft); border-radius:50%; background:var(--surface-strong); color:var(--accent); }
+.decision-flow { display:flex; margin-top:2rem; align-items:center; gap:.4rem; }
+.decision-flow>div { display:flex; min-width:0; flex:1; align-items:center; gap:.4rem; }
+.decision-flow button,.principle-tabs button { min-height:50px; width:100%; border:1px solid var(--border-soft); border-radius:.8rem; padding:.7rem; background:var(--surface-soft); font-size:.75rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; }
+.decision-flow svg { width:16px; flex:none; transform:rotate(-90deg); color:var(--muted); }
+.decision-flow button.is-active,.principle-tabs button.is-active,.capability-constellation button.is-active,.value-path button.is-active { border-color:var(--accent); background:var(--accent-soft); color:var(--text); }
+.executive-detail { margin-top:1rem; min-height:140px; padding:1.4rem; border-radius:1rem; }
+.executive-detail h3 { margin-top:.4rem; font-size:1.3rem; font-weight:650; }.executive-detail>p:last-child { margin-top:.5rem; color:var(--muted); line-height:1.7; }
+.capability-constellation { position:relative; display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin-top:2rem; padding:1.5rem; }
+.capability-constellation::before { content:""; position:absolute; inset:12% 16%; border:1px dashed color-mix(in srgb,var(--accent) 45%,transparent); border-radius:50%; pointer-events:none; }
+.capability-core { z-index:1; grid-column:2; grid-row:1 / span 2; align-self:center; display:grid; min-height:165px; place-items:center; border:1px solid var(--accent); border-radius:50%; background:var(--surface-strong); color:var(--accent); text-align:center; font-weight:700; box-shadow:0 0 45px var(--glow); }
+.capability-constellation button { z-index:1; display:flex; min-height:90px; align-items:center; gap:.75rem; border:1px solid var(--border-soft); border-radius:1rem; padding:1rem; background:var(--surface-strong); text-align:left; }
+.capability-constellation button span { color:var(--accent); font-size:.7rem; }.capability-constellation button:nth-of-type(2),.capability-constellation button:nth-of-type(4),.capability-constellation button:nth-of-type(6){grid-column:3}.capability-constellation button:nth-of-type(1),.capability-constellation button:nth-of-type(3),.capability-constellation button:nth-of-type(5){grid-column:1}.capability-constellation button:nth-of-type(2){grid-row:1}.capability-constellation button:nth-of-type(3),.capability-constellation button:nth-of-type(4){grid-row:2}.capability-constellation button:nth-of-type(5),.capability-constellation button:nth-of-type(6){grid-row:3}.capability-core{grid-row:1 / 4}
+.value-path { display:grid; grid-template-columns:repeat(6,1fr); gap:.6rem; margin-top:2rem; }
+.value-path button { display:flex; min-height:125px; flex-direction:column; align-items:flex-start; border:1px solid var(--border-soft); border-radius:1rem; padding:1rem; background:var(--surface-soft); text-align:left; }.value-path small,.value-detail small { color:var(--accent); text-transform:uppercase; letter-spacing:.12em }.value-path strong { margin-top:auto; text-transform:uppercase; }.value-path span { margin-top:.25rem; color:var(--muted); font-size:.75rem; }
+.value-detail { display:grid; grid-template-columns:repeat(3,1fr); gap:1.5rem; margin-top:1rem; border-radius:1rem; padding:1.4rem; }.value-detail p { margin-top:.5rem; color:var(--muted); line-height:1.65; }
+.principle-tabs { display:grid; grid-template-columns:repeat(5,1fr); gap:.6rem; margin-top:2rem; }
+.executive-objective { padding:clamp(1.5rem,5vw,3rem); border-left:3px solid var(--accent); border-radius:0 1.5rem 1.5rem 0; background:var(--surface-soft); }.executive-objective p{color:var(--muted)}.executive-objective strong{display:block;margin-top:.7rem;max-width:55rem;font-size:clamp(1.5rem,4vw,2.6rem);line-height:1.25}
+@media(min-width:900px){.executive-hero{grid-template-columns:minmax(0,1.7fr) minmax(280px,.8fr)}}
+@media(max-width:767px){.executive-about{overflow:hidden}.decision-flow{display:grid}.decision-flow>div{display:grid;justify-items:center}.decision-flow svg{transform:none}.capability-constellation{display:grid;grid-template-columns:1fr;padding:.5rem}.capability-constellation::before{display:none}.capability-core{grid-column:1!important;grid-row:auto!important;min-height:130px;border-radius:1.25rem}.capability-constellation button{grid-column:1!important;grid-row:auto!important}.value-path{grid-template-columns:repeat(2,1fr)}.value-detail,.principle-tabs{grid-template-columns:1fr}.governance-triangle{min-height:270px}}
+@media(max-width:374px){.landing-portal{min-height:280px;padding:1.25rem}.value-path{grid-template-columns:1fr}.executive-hero{padding:1.25rem}.governance-triangle{min-height:240px}.governance-triangle>strong{inset:40% 26% auto}}
+@media(prefers-reduced-motion:reduce){.landing-portal,.landing-portal::after,.landing-portal-link span,.decision-flow button,.capability-constellation button,.value-path button{transition:none!important;animation:none!important;transform:none!important}}

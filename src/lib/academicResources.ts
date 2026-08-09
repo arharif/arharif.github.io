@@ -4,12 +4,6 @@ import { AcademicResource, AcademicResourceInput } from '@/types/academic';
 
 type ResourceRow = { id: unknown; name: unknown; url: unknown; description: unknown; type: unknown; created_at?: unknown; updated_at?: unknown };
 
-const fallbackResources: AcademicResource[] = [
-  { id: 'nist-csf', name: 'NIST Cybersecurity Framework 2.0', url: 'https://www.nist.gov/cyberframework', description: 'Official guidance for understanding, assessing and communicating cybersecurity outcomes.', type: 'guide' },
-  { id: 'nist-ai-rmf', name: 'NIST AI Risk Management Framework', url: 'https://www.nist.gov/itl/ai-risk-management-framework', description: 'A practical foundation for governing and managing risks across the AI lifecycle.', type: 'research' },
-  { id: 'iso-27001', name: 'ISO/IEC 27001 Information Security', url: 'https://www.iso.org/isoiec-27001-information-security.html', description: 'An introduction to the international standard for information security management systems.', type: 'course' },
-];
-
 const resourceTypes = new Set<AcademicResource['type']>(['course', 'pdf', 'guide', 'framework', 'research', 'other']);
 const toResource = (row: ResourceRow): AcademicResource | null => {
   if (typeof row.id !== 'string' || typeof row.name !== 'string' || typeof row.url !== 'string' || typeof row.description !== 'string') return null;
@@ -18,15 +12,24 @@ const toResource = (row: ResourceRow): AcademicResource | null => {
 };
 
 export async function listAcademicResources(signal?: AbortSignal): Promise<AcademicResource[]> {
-  if (!hasSupabaseCoreConfig) return fallbackResources;
+  const staticRequest = fetch(`${import.meta.env.BASE_URL}academic-resources.json`, { signal })
+    .then(async (response) => {
+      if (!response.ok) throw new Error('The published library could not be loaded.');
+      const rows: unknown = await response.json();
+      if (!Array.isArray(rows)) throw new Error('The published library has an invalid format.');
+      return rows.map((row) => toResource(row as ResourceRow)).filter((item): item is AcademicResource => Boolean(item));
+    });
+  if (!hasSupabaseCoreConfig) return staticRequest;
   const timeout = new AbortController();
   const timer = window.setTimeout(() => timeout.abort(), 8000);
   const abort = () => timeout.abort();
   signal?.addEventListener('abort', abort, { once: true });
   try {
-    const rows = await supabaseRest<unknown>('academic_resources?select=id,name,url,description,type,created_at,updated_at&order=created_at.desc', { signal: timeout.signal });
-    if (!Array.isArray(rows)) throw new Error('The resource service returned an invalid response.');
-    return rows.map((row) => toResource(row as ResourceRow)).filter((item): item is AcademicResource => Boolean(item));
+    const [published, remote] = await Promise.all([staticRequest, supabaseRest<unknown>('academic_resources?select=id,name,url,description,type,created_at,updated_at&status=eq.published&order=created_at.desc', { signal: timeout.signal }).catch(() => [])]);
+    const remoteResources = Array.isArray(remote) ? remote.map((row) => toResource(row as ResourceRow)).filter((item): item is AcademicResource => Boolean(item)) : [];
+    const unique = new Map(published.map((item) => [item.url.toLowerCase(), item]));
+    remoteResources.forEach((item) => unique.set(item.url.toLowerCase(), item));
+    return [...unique.values()];
   } finally {
     window.clearTimeout(timer); signal?.removeEventListener('abort', abort);
   }
@@ -51,7 +54,7 @@ export async function createAcademicResource(input: AcademicResourceInput, acces
   const rows = await supabaseRest<ResourceRow[]>('academic_resources?select=id,name,url,description,type,created_at,updated_at', {
     method: 'POST',
     headers: { Prefer: 'return=representation' },
-    body: JSON.stringify(normalized),
+    body: JSON.stringify({ ...normalized, status: 'published' }),
   }, accessToken);
   const created = rows[0] && toResource(rows[0]);
   if (!created) throw new Error('The resource could not be saved.');
