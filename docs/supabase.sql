@@ -76,6 +76,7 @@ create table if not exists public.academic_resources (
   url text not null unique check (url ~* '^https?://'),
   description text not null check (char_length(trim(description)) between 1 and 500),
   type text not null default 'other' check (type in ('course','pdf','guide','framework','research','other')),
+  status text not null default 'published' check (status in ('draft','published')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -203,6 +204,7 @@ using (
 
 -- Apply when upgrading an existing academic_resources table.
 alter table public.academic_resources drop constraint if exists academic_resources_type_check;
+alter table public.academic_resources add column if not exists status text not null default 'published';
 alter table public.academic_resources add constraint academic_resources_type_check check (type in ('course','pdf','guide','framework','research','other'));
 alter table public.academic_resources drop constraint if exists academic_resources_url_check;
 alter table public.academic_resources add constraint academic_resources_url_check check (url ~* '^https://');

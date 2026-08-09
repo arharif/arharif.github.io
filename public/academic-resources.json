@@ -1,0 +1,23 @@
+[
+  {
+    "id": "nist-csf-2",
+    "name": "NIST Cybersecurity Framework 2.0",
+    "url": "https://www.nist.gov/cyberframework",
+    "description": "Official guidance for understanding, assessing and communicating cybersecurity outcomes.",
+    "type": "framework"
+  },
+  {
+    "id": "nist-ai-rmf",
+    "name": "NIST AI Risk Management Framework",
+    "url": "https://www.nist.gov/itl/ai-risk-management-framework",
+    "description": "A practical foundation for governing and managing risks across the AI lifecycle.",
+    "type": "research"
+  },
+  {
+    "id": "iso-27001",
+    "name": "ISO/IEC 27001 Information Security",
+    "url": "https://www.iso.org/isoiec-27001-information-security.html",
+    "description": "An introduction to the international standard for information security management systems.",
+    "type": "guide"
+  }
+]

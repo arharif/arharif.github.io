@@ -1,4 +1,3 @@
-import { NetworkLearningJourney } from './NetworkLearningJourney';
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { cyberOperatingModelSections } from '@/data/cyberOperatingModel';
 import { roleFamilies, securityRoles } from '@/data/securityRoles';
@@ -149,10 +148,7 @@ export function SecurityMindmapExperience() {
   if (!activeRole) return null;
 
   return (
-    <section className="space-y-10">
-      <NetworkLearningJourney />
-      <section aria-labelledby="career-map-title" className="space-y-5">
-      <h2 id="career-map-title" className="text-2xl font-semibold">Cybersecurity career and operating model</h2>
+    <section className="space-y-5">
       <header className="mindmap-hero rounded-3xl p-5 md:p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="max-w-3xl">
@@ -331,7 +327,6 @@ export function SecurityMindmapExperience() {
             </article>
           ))}
         </div>
-      </section>
       </section>
     </section>
   );
