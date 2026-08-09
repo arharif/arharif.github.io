@@ -61,7 +61,10 @@ export async function supabaseRest<T>(path: string, options?: RequestInit, acces
   const h = new Headers(options?.headers || {});
   h.set('apikey', config.supabaseAnonKey ?? '');
   h.set('Content-Type', 'application/json');
-  if (accessToken) h.set('Authorization', `Bearer ${accessToken}`);
+  // PostgREST requires a bearer identity as well as the project API key. Public
+  // reads use the anonymous role; authenticated mutations use the user's JWT.
+  const bearer = accessToken || config.supabaseAnonKey;
+  if (bearer) h.set('Authorization', `Bearer ${bearer}`);
   const res = await fetch(`${config.supabaseUrl}/rest/v1/${path}`, { ...options, headers: h });
   if (!res.ok) throw new Error('Unable to complete request.');
   if (res.status === 204) return null as T;

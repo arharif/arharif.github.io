@@ -1404,3 +1404,19 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 @media(max-width:767px){.challenge-layout,.framework-map{grid-template-columns:1fr}.flow-nodes{display:flex;overflow-x:auto;padding-bottom:.5rem}.flow-nodes button{min-width:145px}.deliverable-grid{grid-template-columns:1fr 1fr}.framework-core{min-height:130px;border-radius:1.5rem}.framework-orbit{grid-template-columns:1fr}.journey{display:grid}.journey>div{display:grid;grid-template-columns:28px 1fr}.journey svg{grid-column:1;transform:none;margin:auto}}
 @media(max-width:374px){.deliverable-grid{grid-template-columns:1fr}.academic-card{min-height:auto}}
 @media(prefers-reduced-motion:reduce){.academic-nav-menu,.mobile-nav,.academic-card,.capability-tabs button,.deliverable-grid button,.flow-nodes button,.framework-orbit button,.academic-primary{animation:none!important;transition:none!important;transform:none!important}html:focus-within{scroll-behavior:auto}}
+
+/* Executive navigation and network learning */
+.nav-utility { display:inline-grid; place-items:center; width:2.65rem; height:2.65rem; border:1px solid var(--border-soft); border-radius:.75rem; color:var(--muted); }
+.nav-utility:hover,.nav-utility.is-active { color:var(--text); background:var(--surface-strong); }
+.nav-utility:focus-visible { outline:none; box-shadow:0 0 0 3px var(--focus-ring); }
+.learning-path { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.55rem; }
+.learning-path button { min-height:3.5rem; display:flex; align-items:center; gap:.65rem; padding:.65rem; text-align:left; border:1px solid var(--border-soft); border-radius:.75rem; background:var(--surface-soft); color:var(--text); font-size:.8rem; }
+.learning-path button span { color:var(--muted); font-variant-numeric:tabular-nums; }
+.learning-path button.is-active,.packet-path button.is-active { border-color:var(--accent); background:var(--accent-soft); }
+.packet-path { display:flex; align-items:center; gap:.45rem; overflow-x:auto; padding:.2rem .1rem .6rem; }
+.packet-path button { flex:0 0 auto; min-height:2.75rem; padding:.55rem .75rem; border:1px solid var(--border-soft); border-radius:.7rem; background:var(--surface-soft); color:var(--text); }
+.packet-path svg { flex:0 0 auto; color:var(--muted); }
+.architecture-flow { display:grid; gap:.5rem; }
+.architecture-flow div { display:flex; gap:.55rem; align-items:center; border-left:2px solid var(--accent); background:var(--surface-soft); padding:.65rem .8rem; border-radius:0 .6rem .6rem 0; }
+@media (max-width: 700px) { .learning-path { grid-template-columns:1fr; } .packet-path { align-items:stretch; flex-direction:column; overflow:visible; } .packet-path svg { transform:rotate(90deg); align-self:center; } }
+@media (prefers-reduced-motion: reduce) { *,*::before,*::after { scroll-behavior:auto !important; animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; } }
