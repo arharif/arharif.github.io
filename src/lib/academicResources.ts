@@ -4,7 +4,7 @@ import { AcademicResource, AcademicResourceInput } from '@/types/academic';
 
 type ResourceRow = { id: unknown; name: unknown; url: unknown; description: unknown; type: unknown; created_at?: unknown; updated_at?: unknown };
 
-const resourceTypes = new Set<AcademicResource['type']>(['course', 'pdf', 'guide', 'framework', 'research', 'other']);
+const resourceTypes = new Set<AcademicResource['type']>(['course', 'pdf', 'guide', 'framework', 'research', 'professional-resource', 'other']);
 const toResource = (row: ResourceRow): AcademicResource | null => {
   if (typeof row.id !== 'string' || typeof row.name !== 'string' || typeof row.url !== 'string' || typeof row.description !== 'string') return null;
   const type = typeof row.type === 'string' && resourceTypes.has(row.type as AcademicResource['type']) ? row.type as AcademicResource['type'] : 'other';

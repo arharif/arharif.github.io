@@ -4,7 +4,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { createAcademicResource, isSafeHttpUrl, listAcademicResources, normalizeResource } from '@/lib/academicResources';
 import { AcademicResource, AcademicResourceInput, AcademicResourceType } from '@/types/academic';
 
-const types: Array<'all' | AcademicResourceType> = ['all', 'course', 'pdf', 'guide', 'framework', 'research', 'other'];
+const types: Array<'all' | AcademicResourceType> = ['all', 'course', 'pdf', 'guide', 'framework', 'research', 'professional-resource', 'other'];
+const typeLabel = (type: AcademicResourceType) => type === 'professional-resource' ? 'Professional Resource' : type;
 const emptyForm: AcademicResourceInput = { name: '', url: '', description: '', type: 'pdf' };
 
 function ResourceAdminForm({ resources, onCreated }: { resources: AcademicResource[]; onCreated: (resource: AcademicResource) => void }) {
@@ -36,7 +37,7 @@ function ResourceAdminForm({ resources, onCreated }: { resources: AcademicResour
     <form className="mt-4 grid gap-4 md:grid-cols-2" onSubmit={submit} noValidate>
       <label className="academic-field">Resource name<input required maxLength={120} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></label>
       <label className="academic-field">Link / URL<input required inputMode="url" placeholder="https://" value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} /></label>
-      <label className="academic-field">Resource type<select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value as AcademicResourceType })}>{types.slice(1).map((type) => <option key={type} value={type}>{type}</option>)}</select></label>
+      <label className="academic-field">Resource type<select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value as AcademicResourceType })}>{types.slice(1).map((type) => <option key={type} value={type}>{typeLabel(type as AcademicResourceType)}</option>)}</select></label>
       <label className="academic-field md:col-span-2">Description<textarea required maxLength={500} rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></label>
       <div className="flex items-center gap-3 md:col-span-2"><button className="academic-primary" disabled={saving}>{saving ? 'Publishing…' : 'Publish resource'}</button>{message && <p role="status" className={message.type === 'error' ? 'status-error text-sm' : 'status-success text-sm'}>{message.text}</p>}</div>
     </form>
@@ -65,12 +66,12 @@ export function AcademicLibraryPage() {
     {isAdmin && <ResourceAdminForm resources={resources} onCreated={(resource) => setResources((current) => [resource, ...current])} />}
     <div className="glass grid gap-3 rounded-2xl p-4 md:grid-cols-[1fr_auto]">
       <label className="academic-search"><Search size={18} aria-hidden="true" /><span className="sr-only">Search resources</span><input value={query} maxLength={120} onChange={(e) => setQuery(e.target.value)} placeholder="Search courses, PDFs, frameworks…" /></label>
-      <label className="academic-filter"><Filter size={17} aria-hidden="true" /><span className="sr-only">Filter by resource type</span><select value={type} onChange={(e) => setType(e.target.value as typeof type)}>{types.map((item) => <option key={item} value={item}>{item === 'all' ? 'All resource types' : item}</option>)}</select></label>
+      <label className="academic-filter"><Filter size={17} aria-hidden="true" /><span className="sr-only">Filter by resource type</span><select value={type} onChange={(e) => setType(e.target.value as typeof type)}>{types.map((item) => <option key={item} value={item}>{item === 'all' ? 'All resource types' : typeLabel(item)}</option>)}</select></label>
     </div>
     {status === 'loading' && <div className="academic-state glass rounded-2xl" role="status">Loading the library…</div>}
     {status === 'error' && <div className="academic-state glass rounded-2xl" role="alert"><p>We could not load the library right now.</p><button className="academic-primary mt-3" onClick={load}>Try again</button></div>}
     {status === 'ready' && resources.length === 0 && <div className="academic-state glass rounded-2xl"><BookOpen aria-hidden="true" /><p>No resources have been published yet.</p></div>}
     {status === 'ready' && resources.length > 0 && filtered.length === 0 && <div className="academic-state glass rounded-2xl"><p>No resources match your search. Try a broader term or another type.</p></div>}
-    {status === 'ready' && filtered.length > 0 && <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{filtered.map((item) => <article key={item.id} className="academic-card glass rounded-2xl p-5"><span className="academic-badge">{item.type}</span><h2 className="mt-4 text-xl font-semibold">{item.name}</h2><p className="mt-3 flex-1 text-sm leading-6 text-muted">{item.description}</p>{isSafeHttpUrl(item.url) ? <a className="academic-open mt-5" href={item.url} target="_blank" rel="noopener noreferrer">Open resource <ExternalLink size={16} aria-hidden="true" /></a> : <p className="status-error mt-5 text-sm">This resource is currently unavailable.</p>}</article>)}</div>}
+    {status === 'ready' && filtered.length > 0 && <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{filtered.map((item) => <article key={item.id} className="academic-card glass rounded-2xl p-5"><span className="academic-badge">{typeLabel(item.type)}</span><h2 className="mt-4 text-xl font-semibold">{item.name}</h2><p className="mt-3 flex-1 text-sm leading-6 text-muted">{item.description}</p>{isSafeHttpUrl(item.url) ? <a className="academic-open mt-5" href={item.url} target="_blank" rel="noopener noreferrer">Open resource <ExternalLink size={16} aria-hidden="true" /></a> : <p className="status-error mt-5 text-sm">This resource is currently unavailable.</p>}</article>)}</div>}
   </section>;
 }

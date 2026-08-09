@@ -1,5 +1,12 @@
 [
   {
+    "id": "cybersecai-professional-resources",
+    "name": "CyberSecAI Professional Resources",
+    "url": "https://payhip.com/CyberSecAIStore",
+    "description": "Professional cybersecurity, AI security and practitioner-focused digital resources.",
+    "type": "professional-resource"
+  },
+  {
     "id": "nist-csf-2",
     "name": "NIST Cybersecurity Framework 2.0",
     "url": "https://www.nist.gov/cyberframework",
