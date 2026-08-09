@@ -1,4 +1,4 @@
-export type AcademicResourceType = 'course' | 'pdf' | 'guide' | 'research' | 'other';
+export type AcademicResourceType = 'course' | 'pdf' | 'guide' | 'framework' | 'research' | 'other';
 
 export interface AcademicResource {
   id: string;

@@ -609,7 +609,7 @@ function Shell() {
   useEffect(() => { document.documentElement.classList.remove('theme-dark', 'theme-light', 'theme-purple', 'theme-rainbow', 'theme-egyptian', 'theme-horror', 'theme-elite-green'); document.documentElement.classList.add(themeMap[mode]); safeStorage.set('theme', mode); }, [mode]);
   useEffect(() => {
     const labels: Record<string, string> = {
-      '/': 'Landing', '/about-x1': 'Cybersecurity Capabilities', '/academic-library': 'Course & PDF Library', '/compliance-frameworks': 'Compliance Frameworks', '/professional': 'Technology & Innovation', '/personal': 'Curiosities & Philosophy', '/security-mindmap': 'Security Map', '/Security_Mindmap': 'Security Map', '/search': 'Search', '/games': 'Games', '/submitting': 'Submitting', '/admin': 'Admin', '/login': 'Login',
+      '/': 'Cybersecurity Advisory', '/about-x1': 'Cybersecurity Capabilities', '/academic-library': 'Course & PDF Library', '/compliance-frameworks': 'Compliance Frameworks', '/professional': 'Technology & Innovation', '/personal': 'Curiosities & Philosophy', '/security-mindmap': 'Security Map', '/Security_Mindmap': 'Security Map', '/search': 'Search', '/games': 'Entertainment', '/submitting': 'Connect / Contribute', '/admin': 'Admin', '/login': 'Login',
     };
     const base = location.pathname.startsWith('/professional/topic/') ? 'Technology Topic'
       : location.pathname.startsWith('/personal/post/') ? 'Curiosity Post'

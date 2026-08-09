@@ -1,10 +1,10 @@
 import { BookOpen, ExternalLink, Filter, Search } from 'lucide-react';
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { createAcademicResource, isSafeHttpUrl, listAcademicResources, normalizeResource } from '@/lib/academicResources';
 import { AcademicResource, AcademicResourceInput, AcademicResourceType } from '@/types/academic';
 
-const types: Array<'all' | AcademicResourceType> = ['all', 'course', 'pdf', 'guide', 'research', 'other'];
+const types: Array<'all' | AcademicResourceType> = ['all', 'course', 'pdf', 'guide', 'framework', 'research', 'other'];
 const emptyForm: AcademicResourceInput = { name: '', url: '', description: '', type: 'pdf' };
 
 function ResourceAdminForm({ resources, onCreated }: { resources: AcademicResource[]; onCreated: (resource: AcademicResource) => void }) {
@@ -16,7 +16,7 @@ function ResourceAdminForm({ resources, onCreated }: { resources: AcademicResour
     event.preventDefault();
     setMessage(null);
     if (!form.name.trim() || !form.description.trim() || !isSafeHttpUrl(form.url)) {
-      setMessage({ type: 'error', text: 'Complete every field and use a valid HTTP or HTTPS link.' }); return;
+      setMessage({ type: 'error', text: 'Complete every field and use a valid HTTPS link.' }); return;
     }
     const normalized = normalizeResource(form);
     if (resources.some((item) => item.url.toLowerCase() === normalized.url.toLowerCase() || item.name.toLowerCase() === normalized.name.toLowerCase())) {
@@ -49,12 +49,13 @@ export function AcademicLibraryPage() {
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [query, setQuery] = useState('');
   const [type, setType] = useState<(typeof types)[number]>('all');
-  const load = () => {
-    const controller = new AbortController(); setStatus('loading');
-    listAcademicResources(controller.signal).then((data) => { setResources(data); setStatus('ready'); }).catch((error) => { if (error instanceof DOMException && error.name === 'AbortError') return; setStatus('error'); });
-    return controller;
-  };
-  useEffect(() => { const controller = load(); return () => controller.abort(); }, []);
+  const requestRef = useRef<AbortController | null>(null);
+  const load = useCallback(() => {
+    requestRef.current?.abort();
+    const controller = new AbortController(); requestRef.current = controller; setStatus('loading');
+    listAcademicResources(controller.signal).then((data) => { if (!controller.signal.aborted) { setResources(data); setStatus('ready'); } }).catch((error) => { if (controller.signal.aborted || (error instanceof DOMException && error.name === 'AbortError')) return; setStatus('error'); }).finally(() => { if (requestRef.current === controller) requestRef.current = null; });
+  }, []);
+  useEffect(() => { load(); return () => requestRef.current?.abort(); }, [load]);
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return resources.filter((item) => (type === 'all' || item.type === type) && (!needle || `${item.name} ${item.description} ${item.type}`.toLowerCase().includes(needle)));
