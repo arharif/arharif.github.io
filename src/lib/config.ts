@@ -8,8 +8,18 @@ export interface RuntimeConfig {
 
 const env = import.meta.env;
 
+const optionalHttpsUrl = (value: unknown): string | undefined => {
+  if (typeof value !== 'string' || !value.trim()) return undefined;
+  try {
+    const parsed = new URL(value.trim());
+    return parsed.protocol === 'https:' ? parsed.origin : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
 export const config: RuntimeConfig = {
-  supabaseUrl: env.VITE_SUPABASE_URL as string | undefined,
+  supabaseUrl: optionalHttpsUrl(env.VITE_SUPABASE_URL),
   supabaseAnonKey: env.VITE_SUPABASE_ANON_KEY as string | undefined,
   adminEmail: (env.VITE_ADMIN_EMAIL as string | undefined)?.toLowerCase(),
   mediaBucket: (env.VITE_SUPABASE_MEDIA_BUCKET as string | undefined) || 'content-media',
