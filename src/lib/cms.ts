@@ -48,7 +48,21 @@ const normalizeContent = (r: Record<string, unknown>): ContentRecord => ({
 });
 
 const topicRow = (i: TopicInput) => ({ slug: i.slug, title: i.title, description: i.description, universe: i.universe, category: i.category, subcategory: i.subcategory ?? null, display_style: i.displayStyle, cover_image_url: i.coverImageUrl ?? null, icon: i.icon ?? null, order_index: i.orderIndex, status: i.status ?? 'published' });
-const contentRow = (i: ContentInput) => ({ topic_id: i.topicId, slug: i.slug, title: i.title, excerpt: i.excerpt, body: i.body, content_type: i.contentType, cover_image_url: i.coverImageUrl ?? null, video_url: i.videoUrl ?? null, status: 'published', published_at: i.publishedAt ?? new Date().toISOString(), author_name: i.authorName });
+const contentRow = (i: ContentInput) => ({
+  topic_id: i.topicId,
+  slug: i.slug,
+  title: i.title,
+  excerpt: i.excerpt,
+  body: i.body,
+  content_type: i.contentType,
+  cover_image_url: i.coverImageUrl ?? null,
+  video_url: i.videoUrl ?? null,
+  status: i.status,
+  // A draft has no public publication timestamp. Republishing retains the
+  // caller's timestamp, while the first publication receives one here.
+  published_at: i.status === 'published' ? (i.publishedAt ?? new Date().toISOString()) : null,
+  author_name: i.authorName,
+});
 
 const getLocalTopics = () => {
   const raw = readStorage(localTopicsKey);
@@ -127,7 +141,7 @@ export async function listAdminContent(accessToken: string) {
 
 export async function createContent(input: ContentInput, accessToken: string) {
   if (!isSupabaseConfigured) {
-    const next: ContentRecord = { ...input, status: 'published', publishedAt: input.publishedAt ?? new Date().toISOString(), id: crypto.randomUUID(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+    const next: ContentRecord = { ...input, publishedAt: input.status === 'published' ? input.publishedAt ?? new Date().toISOString() : undefined, id: crypto.randomUUID(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
     setLocalContent([next, ...getLocalContent()]);
     return;
   }
@@ -136,7 +150,7 @@ export async function createContent(input: ContentInput, accessToken: string) {
 
 export async function updateContent(id: string, input: ContentInput, accessToken: string) {
   if (!isSupabaseConfigured) {
-    setLocalContent(getLocalContent().map((c) => (c.id === id ? { ...c, ...input, status: 'published', publishedAt: input.publishedAt ?? c.publishedAt ?? new Date().toISOString(), updatedAt: new Date().toISOString() } : c)));
+    setLocalContent(getLocalContent().map((c) => (c.id === id ? { ...c, ...input, publishedAt: input.status === 'published' ? input.publishedAt ?? c.publishedAt ?? new Date().toISOString() : undefined, updatedAt: new Date().toISOString() } : c)));
     return;
   }
   await supabaseRest(`content_entries?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(contentRow(input)) }, accessToken);

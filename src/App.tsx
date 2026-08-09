@@ -475,8 +475,14 @@ function AdminPage() {
     try {
       const clean = { ...payload, contentType: payload.contentType || 'article' };
       selectedContent ? await updateContent(selectedContent.id, clean, token) : await createContent(clean, token);
+      const persisted = (await listAdminContent(token)).find((item) => item.slug === clean.slug);
+      if (!persisted || persisted.status !== clean.status) throw new Error('write-verification-failed');
+      if (clean.status === 'published') {
+        const publiclyVisible = (await listPublishedContent()).some((item) => item.slug === clean.slug);
+        if (!publiclyVisible) throw new Error('publication-verification-failed');
+      }
       setSelectedContent(undefined);
-      setNotice('Post saved.');
+      setNotice(clean.status === 'published' ? 'Published and verified on the public content service.' : 'Draft saved privately and verified.');
       try { await load(); } catch { /* keep success notice when write succeeds */ }
     } catch (e) {
       setError(friendly(e));
@@ -505,7 +511,7 @@ function AdminPage() {
 
       <div className="grid gap-3 md:grid-cols-3">
         <div className="glass rounded-xl p-3"><p className="text-xs text-muted">Published</p><p className="text-2xl font-semibold">{published}</p></div>
-        <div className="glass rounded-xl p-3"><p className="text-xs text-muted">Workflow</p><p className="text-sm font-semibold text-emerald-300">Publish only</p></div>
+        <div className="glass rounded-xl p-3"><p className="text-xs text-muted">Drafts</p><p className="text-2xl font-semibold">{content.filter((c) => c.status === 'draft').length}</p></div>
         <div className="glass rounded-xl p-3"><p className="text-xs text-muted">Topics</p><p className="text-2xl font-semibold">{topics.length}</p></div>
       </div>
 
@@ -524,11 +530,11 @@ function AdminPage() {
           <p className="mb-2 text-xs text-muted">Topics</p>
           <button className="mb-2 w-full rounded-xl bg-white/10 p-2 text-left" onClick={() => setSelectedTopic(undefined)}>+ New Topic</button>
           <div className="space-y-1">
-            {topics.map((t)=><div key={t.id} className="rounded-lg bg-white/5 p-2"><button className="text-left text-sm" onClick={()=>setSelectedTopic(t)}>{t.title}</button><button className="ml-2 text-xs text-rose-300" onClick={async()=>{ setNotice(''); setError(''); try { await deleteTopic(t.id, token); await load(); setNotice('Topic removed.'); } catch (e) { setError(friendly(e)); } }}>delete</button></div>)}
+            {topics.map((t)=><div key={t.id} className="rounded-lg bg-white/5 p-2"><button className="text-left text-sm" onClick={()=>setSelectedTopic(t)}>{t.title}</button><button className="ml-2 text-xs text-rose-300" onClick={async()=>{ if (!window.confirm(`Delete “${t.title}” and its content? This cannot be undone.`)) return; setNotice(''); setError(''); try { await deleteTopic(t.id, token); await load(); setNotice('Topic removed.'); } catch (e) { setError(friendly(e)); } }}>Delete</button></div>)}
           </div>
           <p className="mb-2 mt-4 text-xs text-muted">Posts</p>
           <button className="mb-2 w-full rounded-xl bg-white/10 p-2 text-left" onClick={() => setSelectedContent(undefined)}>+ New Post</button>
-          <div className="space-y-1">{content.slice(0,14).map((c)=><div key={c.id} className="rounded-lg bg-white/5 p-2"><button className="text-left text-sm" onClick={()=>setSelectedContent(c)}>{c.title}</button><button className="ml-2 text-xs text-rose-300" onClick={async()=>{ setNotice(''); setError(''); try { await deleteContent(c.id, token); await load(); setNotice('Post removed.'); } catch (e) { setError(friendly(e)); } }}>delete</button></div>)}</div>
+          <div className="space-y-1">{content.slice(0,14).map((c)=><div key={c.id} className="rounded-lg bg-white/5 p-2"><button className="text-left text-sm" onClick={()=>setSelectedContent(c)}>{c.title} <span className="text-xs text-muted">({c.status})</span></button><button className="ml-2 text-xs text-rose-300" onClick={async()=>{ if (!window.confirm(`Delete “${c.title}”? This cannot be undone.`)) return; setNotice(''); setError(''); try { await deleteContent(c.id, token); await load(); setNotice('Post removed.'); } catch (e) { setError(friendly(e)); } }}>Delete</button></div>)}</div>
         </aside>
         <div className="space-y-6">
           <TopicEditor value={selectedTopic} saving={saving} onSave={saveTopic} />

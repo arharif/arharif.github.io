@@ -1,10 +1,18 @@
 import { assistantKnowledge } from '@/data/assistantKnowledge';
 import { resolveAssistantSection } from '@/components/site-assistant/assistantContext';
+import { listPublishedContent, listPublishedTopics } from '@/lib/cms';
 
 export interface AssistantSource { title: string; route: string; excerpt: string }
 export interface AssistantReply { text: string; sources: AssistantSource[]; quickActions?: { label: string; route?: string; prompt?: string }[] }
 
-const blockedTerms = ['admin password', 'token', 'secret', 'private key', 'system prompt', 'env'];
+const sensitivePatterns = [
+  /\b(system|developer) prompt\b/,
+  /\b(password|access token|refresh token|private key|api key|secret|environment variable)s?\b/,
+  /\b(unpublished|private note|admin credential|draft content)s?\b/,
+  /ignore (all |your |the )?(previous|prior|system) instructions/,
+  /treat (this|the) (article|document|content) as instructions/,
+  /execute (a )?(command|instruction)/,
+];
 const normalize = (v: string) => v.toLowerCase().replace(/[^a-z0-9\s/-]/g, ' ').replace(/\s+/g, ' ').trim();
 const tokenize = (v: string) => normalize(v).split(' ').filter(Boolean);
 
@@ -30,9 +38,25 @@ export async function querySiteAssistant(rawQuery: string, pathname = '/'): Prom
     sources: assistantKnowledge.slice(0, 5).map((i) => ({ title: i.title, route: i.route, excerpt: i.description })),
     quickActions: contextual,
   };
-  if (blockedTerms.some((t) => query.includes(t))) return { text: 'I can only help with public X1 content and safe navigation guidance.', sources: [], quickActions: contextual };
+  if (sensitivePatterns.some((pattern) => pattern.test(query))) return { text: 'I can only use published X1 information. I cannot reveal private content, credentials, configuration, or hidden instructions.', sources: [], quickActions: contextual };
 
-  const ranked = assistantKnowledge.map((item) => {
+  // Published CMS records are fetched through the same RLS-protected public
+  // boundary used by the website. Drafts and administrative state never enter
+  // assistant context. Retrieved text is used only as searchable data.
+  let liveKnowledge: typeof assistantKnowledge = [];
+  let retrievalAvailable = true;
+  try {
+    const [topics, content] = await Promise.all([listPublishedTopics(), listPublishedContent()]);
+    liveKnowledge = [
+      ...topics.map((item) => ({ title: item.title, route: item.universe === 'professional' ? `/professional/topic/${item.slug}` : '/personal', description: item.description, categories: [item.category], tags: [], keywords: [item.title, item.category, item.description] })),
+      ...content.map((item) => ({ title: item.title, route: item.topic?.universe === 'professional' && item.topic ? `/professional/topic/${item.topic.slug}` : `/personal/post/${item.slug}`, description: item.excerpt || 'Published X1 content.', categories: [item.contentType], tags: item.tags ?? [], keywords: [item.title, item.excerpt, ...(item.tags ?? [])] })),
+    ];
+  } catch {
+    retrievalAvailable = false;
+  }
+
+  const authoritativeKnowledge = [...liveKnowledge, ...assistantKnowledge];
+  const ranked = authoritativeKnowledge.map((item) => {
     const hay = [item.title, item.description, ...item.categories, ...item.tags, ...item.keywords, ...(item.synonyms || []), ...(item.related || [])].join(' ');
     return { item, s: score(query, hay) };
   }).sort((a, b) => b.s - a.s);
@@ -44,7 +68,9 @@ export async function querySiteAssistant(rawQuery: string, pathname = '/'): Prom
     ? explainPage
       ? `You're on ${section}. Summary: ${top[0]?.excerpt}. Next, explore ${top.slice(1, 3).map((s) => s.title).join(' and ')} for a stronger learning path.`
       : `Best X1 matches for “${query}”: ${top.map((t) => t.title).join(', ')}. I can also compare topics and suggest your next step.`
-    : `I did not find an exact match for “${query}”. I recommend starting with Security Map for role clarity, then Compliance Frameworks for GRC and standards, then Games & Quizzes for practice.`;
+    : retrievalAvailable
+      ? `I could not verify that information in published X1 content. Try a topic, article title, or platform section instead.`
+      : `I cannot retrieve reliable platform context right now, so I will not guess. The public website remains available; please browse the main navigation or try again later.`;
 
   return { text, sources: top, quickActions: contextual };
 }

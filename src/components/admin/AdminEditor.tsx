@@ -27,7 +27,7 @@ export function AdminEditor({
     contentType: 'article',
     coverImageUrl: '',
     videoUrl: '',
-    status: 'published',
+    status: 'draft',
     publishedAt: undefined,
     authorName: 'X1',
     tags: [],
@@ -67,7 +67,7 @@ export function AdminEditor({
       contentType: value.contentType,
       coverImageUrl: value.coverImageUrl ?? '',
       videoUrl: value.videoUrl ?? '',
-      status: 'published',
+      status: value.status,
       publishedAt: value.publishedAt,
       authorName: value.authorName ?? 'X1',
       tags: value.tags ?? [],
@@ -125,7 +125,9 @@ export function AdminEditor({
           {topics.map((topic) => <option key={topic.id} value={topic.id}>{topic.title}</option>)}
         </select>
         <input className="rounded-xl bg-white/10 p-2" placeholder="Content type" value={form.contentType} onChange={(e) => update('contentType', e.target.value)} />
-        <div className="rounded-xl bg-emerald-500/15 p-2 text-sm text-emerald-200">Publish-only workflow: this post will be published immediately.</div>
+        <div className="rounded-xl border border-white/10 bg-white/5 p-2 text-sm">
+          Status: <strong>{form.status === 'published' ? 'Published' : 'Draft — private'}</strong>
+        </div>
         <input className="rounded-xl bg-white/10 p-2" placeholder="Author" value={form.authorName} onChange={(e) => update('authorName', e.target.value)} />
       </div>
       <input className="mt-3 w-full rounded-xl bg-white/10 p-2" placeholder="Quick tags (optional, text only)" value={tagsLike} onChange={(e) => setTagsLike(e.target.value)} />
@@ -190,16 +192,28 @@ export function AdminEditor({
         <label><input type="checkbox" checked={Boolean(form.featured)} onChange={(e)=>update('featured', e.target.checked)} /> Featured</label>
         <label><input type="checkbox" checked={Boolean(form.favorite)} onChange={(e)=>update('favorite', e.target.checked)} /> Favorite</label>
       </div>
-      <button disabled={saving || !form.topicId || !form.title.trim() || !form.slug.trim()} onClick={() => {
+      <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="Publishing actions">
+      <button type="button" disabled={saving || !form.topicId || !form.title.trim() || !form.slug.trim()} onClick={() => {
         if (!safeUrl(form.videoUrl) || !safeUrl(form.coverImageUrl) || !safeUrl(form.ogImageUrl)) {
           setLocalError('Only HTTPS URLs are allowed for media fields.');
           return;
         }
         setLocalError('');
-        onSave({ ...form, status: 'published', contentType: form.contentType, title: form.title.trim(), slug: form.slug.trim(), body: `${form.body}${tagsLike ? `\n\n> tags: ${tagsLike}` : ''}`, publishedAt: form.publishedAt || new Date().toISOString() });
-      }} className="mt-4 rounded-xl bg-white/15 px-4 py-2 hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-60">
-        {saving ? 'Saving...' : 'Save Content'}
+        void onSave({ ...form, status: 'draft', contentType: form.contentType, title: form.title.trim(), slug: form.slug.trim(), body: `${form.body}${tagsLike ? `\n\n> tags: ${tagsLike}` : ''}`, publishedAt: undefined });
+      }} className="rounded-xl border border-white/20 bg-white/10 px-4 py-2 hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-60">
+        {saving ? 'Saving…' : form.status === 'published' ? 'Unpublish to draft' : 'Save draft'}
       </button>
+      <button type="button" disabled={saving || !form.topicId || !form.title.trim() || !form.slug.trim()} onClick={() => {
+        if (!safeUrl(form.videoUrl) || !safeUrl(form.coverImageUrl) || !safeUrl(form.ogImageUrl)) {
+          setLocalError('Only HTTPS URLs are allowed for media fields.');
+          return;
+        }
+        setLocalError('');
+        void onSave({ ...form, status: 'published', contentType: form.contentType, title: form.title.trim(), slug: form.slug.trim(), body: `${form.body}${tagsLike ? `\n\n> tags: ${tagsLike}` : ''}`, publishedAt: form.publishedAt || new Date().toISOString() });
+      }} className="rounded-xl bg-emerald-600 px-4 py-2 text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60">
+        {saving ? 'Publishing…' : form.status === 'published' ? 'Update published' : 'Publish'}
+      </button>
+      </div>
     </div>
   );
 }
