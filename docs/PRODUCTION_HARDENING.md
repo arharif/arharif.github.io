@@ -24,6 +24,7 @@ External boundaries are GitHub Pages (hosting/TLS), Supabase (authentication, da
 - Added assistant dialog focus entry, Escape close, focus containment, live loading status, mobile dynamic-viewport sizing, safe-area positioning, and scroll containment.
 - Confirmed Markdown and assistant responses render through React nodes with HTTPS/mailto URL allowlists rather than raw HTML injection.
 - Existing protections retained: request timeout/cancellation, RLS-backed authorization, two-step administrator login, session revalidation, upload MIME/size controls, reduced-motion rules, route error boundary, lazy loading for large public sections, and published-only public reads.
+- Deferred games, the interactive security map, and assistant conversation code into on-demand bundles. The small assistant launcher remains available immediately while retrieval, conversation state, and CMS integration load only after the visitor opens it.
 
 ## Findings by discipline
 
@@ -49,7 +50,7 @@ Observability is proportionate to a static deployment but minimal. GitHub Pages 
 
 The application includes a skip link, semantic routes/headings, visible focus treatments, reduced-motion handling, labels on core controls, lazy routes, and lazy Markdown images. The assistant now behaves as a keyboard-contained modal and respects mobile safe areas. Remaining production QA should include automated WCAG scanning plus manual keyboard, screen reader, zoom, contrast, radar, roadmap, and editor checks at 320, 360, 390, 430, 768, 1024, 1280, and 1440 pixels.
 
-The assistant adds no external SDK and loads only local code/data. Major page modules are route-lazy. The largest remaining performance risks are game/security-map code imported into the main application and media that lacks enforced dimensions/responsive variants; measure with production Lighthouse before optimizing.
+The assistant adds no external SDK and loads only local code/data. Major page modules, games, the interactive security map, and assistant conversation code are loaded on demand. Media without enforced dimensions/responsive variants remains the clearest performance risk; measure with production Lighthouse before optimizing.
 
 ## Remaining acceptance risks
 
