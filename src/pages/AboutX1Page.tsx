@@ -3,12 +3,12 @@ import { CSSProperties, KeyboardEvent, SyntheticEvent, useState } from 'react';
 const portraitUrl = 'https://media.licdn.com/dms/image/v2/D4D03AQHwOA1DG7VJZQ/profile-displayphoto-scale_200_200/B4DZm6CPbRHYAc-/0/1759762774254?e=2147483647&v=beta&t=yzSDalrj20Mgz4WtEfglrPHXInGV8qmiDTLSVTXVzOQ';
 
 const radarCapabilities = [
-  { name: 'Cyber Strategy & Governance', score: 4.5, alignment: 'Business Direction & Accountability', description: 'Connect security priorities, governance and investment to business direction and clear accountability.', focus: 'Strategy · Governance · Investment · Accountability · Enterprise risk' },
-  { name: 'Risk & Assurance', score: 4.4, alignment: 'Risk Visibility & Confidence', description: 'Create visibility over material cyber exposure and confidence in whether controls are working as intended.', focus: 'Risk scenarios · Control assurance · Evidence · Residual risk · Executive reporting' },
-  { name: 'Security Architecture & Controls', score: 4.1, alignment: 'Secure Design & Control Effectiveness', description: 'Translate risk and security requirements into coherent, scalable controls that work in practice.', focus: 'Architecture · Requirements · Control design · Technology patterns · Effectiveness' },
-  { name: 'Identity, Privacy & Trust', score: 4.0, alignment: 'Access, Data & Digital Trust', description: 'Strengthen access, accountability and the protection of sensitive information across digital services.', focus: 'Identity governance · Privileged access · Privacy · Data protection · Accountability' },
-  { name: 'Operational Resilience', score: 4.3, alignment: 'Continuity & Recovery', description: 'Improve the organisation’s ability to withstand disruption and recover its critical services.', focus: 'Critical services · Continuity · Recovery · Dependencies · Crisis readiness' },
-  { name: 'AI Security & Governance', score: 3.9, alignment: 'Responsible Innovation', description: 'Support responsible AI adoption through practical governance, security and assurance.', focus: 'AI governance · Model risk · Security · Assurance · Responsible adoption' },
+  { name: 'Cyber Strategy & Governance', score: 4.6, alignment: 'Business Direction & Accountability', description: 'Connect security priorities, governance and investment to business direction and clear accountability.', focus: 'Strategy · Governance · Investment · Accountability · Enterprise risk' },
+  { name: 'Risk & Assurance', score: 4.0, alignment: 'Risk Visibility & Confidence', description: 'Create visibility over material cyber exposure and confidence in whether controls are working as intended.', focus: 'Risk scenarios · Control assurance · Evidence · Residual risk · Executive reporting' },
+  { name: 'Security Architecture & Controls', score: 4.0, alignment: 'Secure Design & Control Effectiveness', description: 'Translate risk and security requirements into coherent, scalable controls that work in practice.', focus: 'Architecture · Requirements · Control design · Technology patterns · Effectiveness' },
+  { name: 'Identity, Privacy & Trust', score: 3.4, alignment: 'Access, Data & Digital Trust', description: 'Strengthen access, accountability and the protection of sensitive information across digital services.', focus: 'Identity governance · Privileged access · Privacy · Data protection · Accountability' },
+  { name: 'Operational Resilience', score: 3.0, alignment: 'Continuity & Recovery', description: 'Improve the organisation’s ability to withstand disruption and recover its critical services.', focus: 'Critical services · Continuity · Recovery · Dependencies · Crisis readiness' },
+  { name: 'AI Security & Governance', score: 4.2, alignment: 'Responsible Innovation', description: 'Support responsible AI adoption through practical governance, security and assurance.', focus: 'AI governance · Model risk · Security · Assurance · Responsible adoption' },
 ] as const;
 
 const roadmap = [
@@ -50,7 +50,23 @@ export function AboutX1Page() {
   return <article className="executive-about">
     <header className="executive-hero glass">
       <figure className={`executive-portrait ${portraitFailed ? 'has-fallback' : ''}`}><img src={portraitUrl} width="96" height="96" loading="eager" decoding="async" referrerPolicy="no-referrer" alt="Professional portrait of Anass Rharif" onError={imageFailed} /><span className="portrait-fallback" aria-hidden={!portraitFailed}>AR</span></figure>
-      <div><p className="academic-eyebrow">Cybersecurity Advisory</p><h1>Turning Cyber Risk into Business Resilience</h1><p>I work across <strong>cybersecurity, business risk, governance and technology</strong>, helping turn complex threats, regulatory expectations and technical realities into clear priorities, practical operating models and informed decisions.</p><p>I approach cybersecurity as an enterprise management capability. The objective is not simply to add more controls, but to understand material exposure, strengthen accountability, build confidence in what is working and help the organisation transform securely.</p></div>
+      <div>
+        <p className="academic-eyebrow">Connecting Business, Risk and Technology</p>
+        <h1>My Cybersecurity Advisory Focus</h1>
+        <p>I am a <strong>Cybersecurity Governance, Risk &amp; Advisory professional</strong> with experience working across cybersecurity, enterprise risk, regulatory compliance and technology within the <strong>payments and financial-services environment</strong>.</p>
+        <p>My work focuses on helping organisations translate complex cybersecurity requirements, regulatory expectations and technical risks into <strong>clear priorities, practical controls, remediation programmes and management decisions</strong>.</p>
+        <p>My role is therefore not simply to identify whether a requirement is compliant or non-compliant.</p>
+        <p>I seek to understand:</p>
+        <ul style={{ display: 'grid', gap: '0.65rem', marginTop: '1rem', padding: 0, listStyle: 'none' }}>
+          <li><strong>What is the business trying to protect?</strong></li>
+          <li><strong>Where is the organisation materially exposed?</strong></li>
+          <li><strong>Which risks require management attention?</strong></li>
+          <li><strong>Are the controls appropriately designed and effectively implemented?</strong></li>
+          <li><strong>Who owns the risk and the remediation?</strong></li>
+          <li><strong>What should be prioritised first?</strong></li>
+          <li><strong>How can management gain confidence that the organisation is becoming more resilient?</strong></li>
+        </ul>
+      </div>
     </header>
 
     <section className="about-section" aria-labelledby="capability-title"><p className="academic-eyebrow">Enterprise Cybersecurity Model</p><h2 id="capability-title">Cybersecurity is a System of Connected Capabilities</h2><div className="section-copy"><p>Effective cybersecurity depends on how strategy, risk, architecture, identity, resilience and emerging technology work together.</p><p>My focus is on connecting these disciplines so security supports business priorities, informed risk decisions and resilient operations.</p></div>
