@@ -23,11 +23,10 @@ export function CertificationExplorer() {
     });
   }, [activeCategory, query, safeCertifications]);
 
-  const selectedCertification =
-    filteredCertifications.find((item) => item.id === selectedId) ??
-    filteredCertifications[0] ??
-    safeCertifications[0] ??
-    null;
+  // Selection is the single source for every detail and recommendation. Search
+  // and category filters only control the chooser; they must not silently
+  // replace the selected profile with the first visible result.
+  const selectedCertification = safeCertifications.find((item) => item.id === selectedId) ?? safeCertifications[0] ?? null;
 
   const recommendedForProfile = useMemo(
     () => selectedCertification ? recommendCertifications(selectedCertification, safeCertifications) : [],
