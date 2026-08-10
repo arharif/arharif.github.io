@@ -25,10 +25,13 @@ export async function listAcademicResources(signal?: AbortSignal): Promise<Acade
   const abort = () => timeout.abort();
   signal?.addEventListener('abort', abort, { once: true });
   try {
-    // A failed Supabase read is not an empty result. Propagate the error so the
-    // library can distinguish an unavailable backend from a successful query
-    // that contains no additional records.
-    const [published, remote] = await Promise.all([staticRequest, supabaseRest<unknown>('academic_resources?select=id,name,url,description,type,created_at,updated_at&status=eq.published&order=created_at.desc', { signal: timeout.signal })]);
+    // The checked-in catalogue is itself a published source. A failure of the
+    // optional remote extension must not turn that valid catalogue into a page
+    // failure; only an unavailable/invalid catalogue is unrecoverable here.
+    const [published, remote] = await Promise.all([staticRequest, supabaseRest<unknown>('academic_resources?select=id,name,url,description,type,created_at,updated_at&status=eq.published&order=created_at.desc', { signal: timeout.signal }).catch((error) => {
+      if (import.meta.env.DEV) console.error('[academic-resources] Supabase extension failed', { resource: 'academic_resources', error });
+      return [];
+    })]);
     const remoteResources = Array.isArray(remote) ? remote.map((row) => toResource(row as ResourceRow)).filter((item): item is AcademicResource => Boolean(item)) : [];
     const unique = new Map(published.map((item) => [item.url.toLowerCase(), item]));
     remoteResources.forEach((item) => unique.set(item.url.toLowerCase(), item));
