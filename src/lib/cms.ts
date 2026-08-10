@@ -137,13 +137,13 @@ export async function listPublishedContent() {
     'id,topic_id,slug,title,excerpt,body,content_type,cover_image_url,video_url,status,published_at,created_at,updated_at,author_name',
     'topic:topics(id,slug,title,description,universe,category,subcategory,display_style,cover_image_url,icon,order_index,status,created_at,updated_at)',
   ].join(',');
-  const rows = await supabaseRest<Record<string, unknown>[]>(`content_entries?select=${select}&status=eq.published&order=published_at.desc.nullslast,created_at.desc`);
+  const rows = await supabaseRest<Record<string, unknown>[]>(`content?select=${select}&status=eq.published&order=published_at.desc.nullslast,created_at.desc`);
   return rows.map(normalizeContent);
 }
 
 export async function listAdminContent(accessToken: string) {
   if (!isSupabaseConfigured) return getLocalContent();
-  const rows = await supabaseRest<Record<string, unknown>[]>('content_entries?select=*&order=updated_at.desc', undefined, accessToken);
+  const rows = await supabaseRest<Record<string, unknown>[]>('content?select=*&order=updated_at.desc', undefined, accessToken);
   return rows.map(normalizeContent);
 }
 
@@ -153,7 +153,7 @@ export async function createContent(input: ContentInput, accessToken: string) {
     setLocalContent([next, ...getLocalContent()]);
     return;
   }
-  await supabaseRest('content_entries', { method: 'POST', body: JSON.stringify(contentRow(input)) }, accessToken);
+  await supabaseRest('content', { method: 'POST', body: JSON.stringify(contentRow(input)) }, accessToken);
 }
 
 export async function updateContent(id: string, input: ContentInput, accessToken: string) {
@@ -161,7 +161,7 @@ export async function updateContent(id: string, input: ContentInput, accessToken
     setLocalContent(getLocalContent().map((c) => (c.id === id ? { ...c, ...input, publishedAt: input.status === 'published' ? input.publishedAt ?? c.publishedAt ?? new Date().toISOString() : undefined, updatedAt: new Date().toISOString() } : c)));
     return;
   }
-  await supabaseRest(`content_entries?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(contentRow(input)) }, accessToken);
+  await supabaseRest(`content?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(contentRow(input)) }, accessToken);
 }
 
 export async function deleteContent(id: string, accessToken: string) {
@@ -169,7 +169,7 @@ export async function deleteContent(id: string, accessToken: string) {
     setLocalContent(getLocalContent().filter((c) => c.id !== id));
     return;
   }
-  await supabaseRest(`content_entries?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' }, accessToken);
+  await supabaseRest(`content?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' }, accessToken);
 }
 
 export async function uploadMedia(file: File, accessToken: string) {

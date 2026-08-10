@@ -25,4 +25,4 @@ jobs:
           curl -fsS --retry 2 --max-time 20 \
             -H "apikey: ${SUPABASE_ANON_KEY}" \
             -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
-            "${SUPABASE_URL}/rest/v1/content_entries?select=id&limit=1" > /dev/null || true
+            "${SUPABASE_URL}/rest/v1/content?select=id&limit=1" > /dev/null || true

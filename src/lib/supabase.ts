@@ -10,6 +10,13 @@ export interface AuthSession {
 
 type PostgrestError = { code?: string; details?: string; hint?: string; message?: string };
 
+export class SupabaseRequestError extends Error {
+  constructor(public readonly status: number, public readonly code?: string, message?: string) {
+    super(message || `Supabase request failed (${status}).`);
+    this.name = 'SupabaseRequestError';
+  }
+}
+
 const baseHeaders = {
   apikey: config.supabaseAnonKey ?? '',
   'Content-Type': 'application/json',
@@ -88,7 +95,9 @@ export async function supabaseRest<T>(path: string, options?: RequestInit, acces
   if (!res.ok) {
     const payload = await res.json().catch(() => null) as PostgrestError | null;
     const detail = [payload?.code, payload?.message, payload?.details, payload?.hint].filter(Boolean).join(' — ');
-    throw new Error(detail ? `Supabase request failed (${res.status}): ${detail}` : `Supabase request failed (${res.status}).`);
+    const error = new SupabaseRequestError(res.status, payload?.code, detail ? `Supabase request failed (${res.status}): ${detail}` : undefined);
+    if (import.meta.env.DEV) console.error('[supabase-rest] Request failed', { resource: path.split('?')[0], status: res.status, code: payload?.code });
+    throw error;
   }
   if (res.status === 204) return null as T;
   return res.json() as Promise<T>;
