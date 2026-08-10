@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Search } from 'lucide-react';
-import { certificationAreas, certificationGroups, certifications } from '@/data/certifications';
+import { certificationAreas, certifications } from '@/data/certifications';
+import { recommendCertifications } from '@/lib/certificationRecommendations';
 
 const safeArray = <T,>(value: T[] | undefined | null): T[] => (Array.isArray(value) ? value : []);
 
@@ -22,14 +23,12 @@ export function CertificationArchitecture() {
     });
   }, [activeArea, safeCertifications, searchValue]);
 
-  const selectedCertification =
-    filteredCertifications.find((item) => item.id === selectedId) ?? filteredCertifications[0] ?? safeCertifications[0] ?? null;
+  const selectedCertification = safeCertifications.find((item) => item.id === selectedId) ?? safeCertifications[0] ?? null;
 
-  const recommendedSet = useMemo(() => {
-    const group = safeArray(certificationGroups).find((item) => item.id === 'recommended-grc-ciso-track');
-    const knownIds = new Set(safeCertifications.map((item) => item.id));
-    return safeArray(group?.certifications).filter((id) => knownIds.has(id));
-  }, [safeCertifications]);
+  const recommendedForProfile = useMemo(
+    () => selectedCertification ? recommendCertifications(selectedCertification, safeCertifications) : [],
+    [safeCertifications, selectedCertification],
+  );
 
   return (
     <section id="certification-explorer" className="space-y-4">
@@ -109,25 +108,25 @@ export function CertificationArchitecture() {
                     ))}
                   </ul>
                 </div>
-                {recommendedSet.length > 0 && (
+                {recommendedForProfile.length > 0 && (
                   <div className="rounded-xl border border-[color:var(--accent)] bg-[color:var(--accent-soft)] p-3">
                     <p className="text-sm font-semibold theme-accent-text">Recommended for this profile</p>
                     <p className="mt-1 text-xs text-muted">
-                      These certifications are recommended for professionals targeting governance, security leadership, audit, risk, privacy, resilience, AI governance, and senior cybersecurity roles.
+                      Contextual next steps for {selectedCertification.name}, based on its {selectedCertification.category.toLowerCase()}, role, career-path, domain, and level metadata.
                     </p>
                     <div className="mt-2 space-y-2 text-xs">
-                      <p><strong>Target professional profile:</strong> Professionals who want to grow from cybersecurity governance, audit, risk, compliance, privacy, resilience, or security operations into senior security governance and leadership roles.</p>
-                      <p><strong>Best-fit job roles:</strong> GRC Analyst / GRC Consultant · IT Risk Analyst · Compliance Analyst · IT Auditor / Internal Auditor · Information Security Officer · Security Governance Analyst · ISMS Manager · Privacy / DPO Support · Business Continuity &amp; Resilience Specialist · AI Governance Analyst · Security Manager · Future CISO</p>
-                      <p><strong>Why this path is recommended:</strong> This path combines governance, risk, audit, resilience, privacy, AI governance, and enterprise security leadership capabilities to manage controls, evidence, risks, audits, security programs, and executive-level governance.</p>
-                      <p><strong>Recommended certification path:</strong> Start with ISO/IEC 27001 Lead Implementer, CISM, and CRISC; then strengthen assurance with CISA, resilience with ISO 22301 Lead Implementer, privacy with CIPP/E, AI governance with IAPP AIGP or ISO/IEC 42001 Lead Implementer, and cap with CISSP.</p>
+                      <p><strong>Target professional profile:</strong> {selectedCertification.bestFit}</p>
+                      <p><strong>Career path:</strong> {selectedCertification.careerPath}</p>
+                      <p><strong>Why this path is recommended:</strong> {selectedCertification.recommendationReason ?? selectedCertification.practicalValue}</p>
                     </div>
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      {recommendedSet.map((id) => {
-                        const item = safeCertifications.find((certification) => certification.id === id);
-                        if (!item) return null;
-                        return <span key={id} className="rounded-full border border-[color:var(--accent)] bg-[color:var(--badge-bg)] px-2 py-1 text-xs">{item.name}</span>;
-                      })}
-                    </div>
+                    <ol aria-label={`Recommended certifications for ${selectedCertification.name}`} className="mt-2 space-y-1 pl-4 text-xs">
+                      {recommendedForProfile.map(({ certification, sharedConcepts }) => (
+                        <li key={certification.id} className="list-decimal">
+                          <strong>{certification.name}</strong>
+                          {sharedConcepts.length > 0 && <span className="text-muted"> — complements {sharedConcepts.join(', ')}</span>}
+                        </li>
+                      ))}
+                    </ol>
                   </div>
                 )}
               </div>
