@@ -1,18 +1,8 @@
 import { useMemo, useState } from 'react';
-import { certifications, type Certification, certificationCategories } from '@/data/certifications';
+import { certifications, certificationCategories } from '@/data/certifications';
+import { recommendCertifications } from '@/lib/certificationRecommendations';
 
 const safeArray = <T,>(value: T[] | undefined | null): T[] => (Array.isArray(value) ? value : []);
-
-const profilePriority = [
-  'iso-27001-lead-auditor',
-  'iso-27001-lead-implementer',
-  'cism',
-  'crisc',
-  'cisa',
-  'iso-22301-lead-implementer',
-  'cippe',
-  'cissp',
-] as const;
 
 export function CertificationExplorer() {
   const safeCertifications = safeArray(certifications);
@@ -26,7 +16,7 @@ export function CertificationExplorer() {
       const categoryMatch = activeCategory === 'All' || item.category === activeCategory;
       const searchMatch =
         !term ||
-        `${item.name} ${item.definition} ${item.bestFor} ${item.careerPath} ${item.category} ${safeArray(item.domainsCovered).join(' ')}`
+        `${item.name} ${item.area} ${item.bestFit} ${item.careerPath} ${item.category} ${safeArray(item.domains).join(' ')}`
           .toLowerCase()
           .includes(term);
       return categoryMatch && searchMatch;
@@ -39,10 +29,10 @@ export function CertificationExplorer() {
     safeCertifications[0] ??
     null;
 
-  const recommendedForProfile = useMemo(() => {
-    const certMap = new Map(safeCertifications.map((cert) => [cert.id, cert]));
-    return profilePriority.map((id) => certMap.get(id)).filter((item): item is Certification => Boolean(item));
-  }, [safeCertifications]);
+  const recommendedForProfile = useMemo(
+    () => selectedCertification ? recommendCertifications(selectedCertification, safeCertifications) : [],
+    [safeCertifications, selectedCertification],
+  );
 
   return (
     <section id="certification-explorer" className="space-y-4">
@@ -102,9 +92,14 @@ export function CertificationExplorer() {
             {recommendedForProfile.length > 0 && (
               <div className="mt-4 rounded-xl border border-[color:var(--accent-secondary)] bg-[color:var(--accent-soft)] p-3">
                 <p className="text-xs uppercase tracking-[0.16em] theme-accent-text">Recommended for this profile</p>
-                <p className="mt-2 text-xs text-[color:var(--text-primary)]/90">Based on a GRC, PCI, SOC 2, PCA/DR Drill, privacy, AI governance, NIST, ISO, and CISO-track profile, prioritize:</p>
+                <p className="mt-2 text-xs text-[color:var(--text-primary)]/90">Contextual next steps for {selectedCertification?.name}, ranked from its domain, role, career-path, and level metadata:</p>
                 <ol className="mt-2 list-decimal space-y-1 pl-4 text-xs text-[color:var(--text-primary)]/90">
-                  {recommendedForProfile.map((cert) => <li key={`recommended-${cert.id}`}>{cert.name}</li>)}
+                  {recommendedForProfile.map(({ certification: cert, sharedConcepts }) => (
+                    <li key={`recommended-${cert.id}`}>
+                      <strong>{cert.name}</strong>
+                      {sharedConcepts.length > 0 && <span className="text-muted"> — complements {sharedConcepts.join(', ')}</span>}
+                    </li>
+                  ))}
                 </ol>
               </div>
             )}
@@ -118,19 +113,20 @@ export function CertificationExplorer() {
                 <div className="flex flex-wrap items-center gap-2">
                   <h3 className="text-xl font-semibold">{selectedCertification.name}</h3>
                   <span className="rounded-full bg-[color:var(--badge-bg)] px-2 py-0.5 text-xs">{selectedCertification.category}</span>
+                  <span className="rounded-full bg-[color:var(--badge-bg)] px-2 py-0.5 text-xs">{selectedCertification.level}</span>
                 </div>
                 <div className="mt-3 space-y-3">
-                  <div><p className="text-xs uppercase tracking-[0.14em] text-muted">Definition</p><p className="mt-1">{selectedCertification.definition}</p></div>
-                  <div><p className="text-xs uppercase tracking-[0.14em] text-muted">Best for</p><p className="mt-1">{selectedCertification.bestFor}</p></div>
+                  <div><p className="text-xs uppercase tracking-[0.14em] text-muted">Area</p><p className="mt-1">{selectedCertification.area}</p></div>
+                  <div><p className="text-xs uppercase tracking-[0.14em] text-muted">Best fit</p><p className="mt-1">{selectedCertification.bestFit}</p></div>
                   <div><p className="text-xs uppercase tracking-[0.14em] text-muted">Career path</p><p className="mt-1">{selectedCertification.careerPath}</p></div>
                   <div>
                     <p className="text-xs uppercase tracking-[0.14em] text-muted">Domains / chapters covered</p>
                     <div className="mt-2 flex flex-wrap gap-1.5">
-                      {safeArray(selectedCertification.domainsCovered).map((domain) => <span key={domain} className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface-bg)] px-2 py-0.5 text-xs">{domain}</span>)}
+                      {safeArray(selectedCertification.domains).map((domain) => <span key={domain} className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface-bg)] px-2 py-0.5 text-xs">{domain}</span>)}
                     </div>
                   </div>
                   <div><p className="text-xs uppercase tracking-[0.14em] text-muted">Practical value</p><p className="mt-1">{selectedCertification.practicalValue}</p></div>
-                  <div><p className="text-xs uppercase tracking-[0.14em] text-muted">Why recommended</p><p className="mt-1">{selectedCertification.whyRecommended}</p></div>
+                  <div><p className="text-xs uppercase tracking-[0.14em] text-muted">Why recommended</p><p className="mt-1">{selectedCertification.recommendationReason ?? `Relevant to ${selectedCertification.bestFit.toLowerCase()}`}</p></div>
                 </div>
               </>
             )}
