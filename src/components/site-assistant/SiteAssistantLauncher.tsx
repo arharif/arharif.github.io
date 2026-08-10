@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { X1Mark } from '@/components/branding/X1Mark';
-import { SiteAssistantPanel } from './SiteAssistantPanel';
 import { resolveAssistantSection } from './assistantContext';
 import { safeStorage } from '@/lib/storage';
 
@@ -9,6 +8,8 @@ const SINGLETON_KEY = '__x1_single_launcher__' as const;
 const SEEN_KEY = 'x1-assistant-seen-sections';
 
 type LauncherWindow = Window & { [SINGLETON_KEY]?: boolean };
+
+const SiteAssistantPanel = lazy(() => import('./SiteAssistantPanel').then((module) => ({ default: module.SiteAssistantPanel })));
 
 const readSeen = (): Record<string, boolean> => {
   const raw = safeStorage.get(SEEN_KEY);
@@ -25,6 +26,7 @@ const writeSeen = (value: Record<string, boolean>) => safeStorage.set(SEEN_KEY, 
 
 export function SiteAssistantLauncher() {
   const [open, setOpen] = useState(false);
+  const [hasOpened, setHasOpened] = useState(false);
   const [enabled, setEnabled] = useState(true);
   const [seenSections, setSeenSections] = useState<Record<string, boolean>>(() => readSeen());
 
@@ -84,7 +86,7 @@ export function SiteAssistantLauncher() {
         onClick={() => {
           setOpen((v) => {
             const next = !v;
-            if (next) { markSeen(routeKey); setNavIndicator(false); }
+            if (next) { setHasOpened(true); markSeen(routeKey); setNavIndicator(false); }
             return next;
           });
         }}
@@ -95,7 +97,11 @@ export function SiteAssistantLauncher() {
         <span className="assistant-launcher-logo"><X1Mark size="sm" /></span>
         {showBadge && <span className="assistant-launcher-badge" aria-hidden="true" />}
       </button>
-      <SiteAssistantPanel open={open} onClose={() => setOpen(false)} />
+      {hasOpened && (
+        <Suspense fallback={<span className="sr-only" role="status" aria-live="polite">Loading X1 assistant…</span>}>
+          <SiteAssistantPanel open={open} onClose={() => setOpen(false)} />
+        </Suspense>
+      )}
     </>
   );
 }

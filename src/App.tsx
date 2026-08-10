@@ -10,10 +10,7 @@ import { ContentCard } from '@/components/Cards';
 import { Navbar } from '@/components/Navbar';
 import { ThemeMotionBackground } from '@/components/ThemeMotionBackground';
 import { SearchBar } from '@/components/SearchBar';
-import { GamesHub } from '@/components/GamesHub';
 import { TopicFilterBar } from '@/components/TopicFilterBar';
-import { SecurityMindmapPage } from '@/pages/SecurityMindmapPage';
-import { SiteAssistantLauncher } from '@/components/site-assistant/SiteAssistantLauncher';
 import { ProtectedRoute } from '@/routes/ProtectedRoute';
 import { AuthProvider, useAuth } from '@/hooks/useAuth';
 import { createContent, createTopic, deleteContent, deleteTopic, listAdminContent, listAdminTopics, listCollections, listPublishedContent, listPublishedTopics, updateContent, updateTopic, uploadMedia } from '@/lib/cms';
@@ -26,6 +23,13 @@ import { CollectionRecord, ContentRecord, TopicRecord } from './content/types';
 const ComplianceFrameworksPage = lazy(() => import('@/pages/ComplianceFrameworksPage').then((m) => ({ default: m.ComplianceFrameworksPage })));
 const AboutX1Page = lazy(() => import('@/pages/AboutX1Page').then((m) => ({ default: m.AboutX1Page })));
 const AcademicLibraryPage = lazy(() => import('@/pages/AcademicLibraryPage').then((m) => ({ default: m.AcademicLibraryPage })));
+const GamesHub = lazy(() => import('@/components/GamesHub').then((m) => ({ default: m.GamesHub })));
+const SecurityMindmapPage = lazy(() => import('@/pages/SecurityMindmapPage').then((m) => ({ default: m.SecurityMindmapPage })));
+const SiteAssistantLauncher = lazy(() => import('@/components/site-assistant/SiteAssistantLauncher').then((m) => ({ default: m.SiteAssistantLauncher })));
+
+const RouteLoading = ({ label }: { label: string }) => (
+  <div className="glass rounded-2xl p-6" role="status" aria-live="polite">Loading {label}…</div>
+);
 
 const inferUniverseFromContentType = (contentType?: string | null) => normalizeUniverse(contentType);
 
@@ -685,9 +689,9 @@ function Shell() {
               <Route path="/about-x1" element={<Suspense fallback={<div className="glass rounded-2xl p-6">Loading capability portfolio…</div>}><AboutX1Page /></Suspense>} />
               <Route path="/academic-library" element={<Suspense fallback={<div className="glass rounded-2xl p-6">Loading academic library…</div>}><AcademicLibraryPage /></Suspense>} />
               <Route path="/submitting" element={<SubmittingPage />} />
-              <Route path="/games" element={<GamesHub />} />
-              <Route path="/Security_Mindmap" element={<SecurityMindmapPage />} />
-              <Route path="/security-mindmap" element={<SecurityMindmapPage />} />
+              <Route path="/games" element={<Suspense fallback={<RouteLoading label="games" />}><GamesHub /></Suspense>} />
+              <Route path="/Security_Mindmap" element={<Suspense fallback={<RouteLoading label="security map" />}><SecurityMindmapPage /></Suspense>} />
+              <Route path="/security-mindmap" element={<Suspense fallback={<RouteLoading label="security map" />}><SecurityMindmapPage /></Suspense>} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
@@ -695,7 +699,7 @@ function Shell() {
           </motion.div>
         </AnimatePresence>
       </main>
-      <SiteAssistantLauncher />
+      <Suspense fallback={null}><SiteAssistantLauncher /></Suspense>
       <footer className="footer-enter mx-auto mt-8 flex max-w-6xl items-center border-t border-white/10 p-6 text-sm text-muted">
         <div className="footer-inline">
           <span className="footer-brand">arharif © 2026</span>
