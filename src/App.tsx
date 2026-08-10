@@ -13,13 +13,13 @@ import { SearchBar } from '@/components/SearchBar';
 import { TopicFilterBar } from '@/components/TopicFilterBar';
 import { ProtectedRoute } from '@/routes/ProtectedRoute';
 import { AuthProvider, useAuth } from '@/hooks/useAuth';
-import { createContent, createTopic, deleteContent, deleteTopic, listAdminContent, listAdminTopics, listCollections, listPublishedContent, listPublishedTopics, updateContent, updateTopic, uploadMedia } from '@/lib/cms';
+import { createContent, createTopic, deleteContent, deleteTopic, listAdminContent, listAdminTopics, listPublishedContent, listPublishedTopics, updateContent, updateTopic, uploadMedia } from '@/lib/cms';
 import { searchContent } from '@/lib/content';
 import { genericAccessDenied, genericAuthError, hasSupabaseCoreConfig } from '@/lib/config';
 import { initTheme, ThemeMode, themeMap } from '@/lib/theme';
 import { normalizeUniverse, universeMeta } from '@/lib/universe';
 import { safeStorage } from '@/lib/storage';
-import { CollectionRecord, ContentRecord, TopicRecord } from './content/types';
+import { ContentRecord, TopicRecord } from './content/types';
 const ComplianceFrameworksPage = lazy(() => import('@/pages/ComplianceFrameworksPage').then((m) => ({ default: m.ComplianceFrameworksPage })));
 const AboutX1Page = lazy(() => import('@/pages/AboutX1Page').then((m) => ({ default: m.AboutX1Page })));
 const AcademicLibraryPage = lazy(() => import('@/pages/AcademicLibraryPage').then((m) => ({ default: m.AcademicLibraryPage })));
@@ -102,7 +102,6 @@ function SearchPage() {
 
 function ProfessionalHome() {
   const [topics, setTopics] = useState<TopicRecord[]>([]);
-  const [collections, setCollections] = useState<CollectionRecord[]>([]);
   const [posts, setPosts] = useState<ContentRecord[]>([]);
   const [activeTopic, setActiveTopic] = useState('all');
   const [query, setQuery] = useState('');
@@ -127,9 +126,6 @@ function ProfessionalHome() {
       setLoadState('ready');
     }).catch(() => { if (current) setLoadState('error'); });
 
-    listCollections()
-      .then((c) => setCollections(c.filter((x) => normalizeUniverse(x.universe) === 'professional')))
-      .catch(() => setCollections([]));
     return () => { current = false; };
   }, [reload]);
 
@@ -182,12 +178,6 @@ function ProfessionalHome() {
         <div className="glass mb-6 rounded-2xl p-4 text-sm text-muted">{posts.length === 0 ? 'No published content is available in this section yet.' : 'No content matches your current search or filters.'}</div>
       )}
 
-      <h2 className="mb-3 text-xl font-semibold">Curated Collections</h2>
-      {collections.length > 0 ? (
-        <div className="grid gap-3 md:grid-cols-2">{collections.map((c)=><div className="glass rounded-xl p-3" key={c.id}><p className="text-sm font-semibold">{c.title}</p><p className="text-xs text-muted">{c.description}</p></div>)}</div>
-      ) : (
-        <div className="glass rounded-xl p-3 text-xs text-muted">Collections are optional. Technology & Innovation topics are shown above.</div>
-      )}
     </section>
   );
 }
@@ -311,8 +301,21 @@ function CuriositiesHub() {
 function CuriosityPost() {
   const { slug } = useParams();
   const [item, setItem] = useState<ContentRecord | null>(null);
-  useEffect(() => { listPublishedContent().then((c) => setItem(c.find((x) => x.slug === slug) || null)).catch(() => setItem(null)); }, [slug]);
-  if (!item) return <div className="glass rounded-2xl p-6">Loading...</div>;
+  const [loadState, setLoadState] = useState<'loading' | 'ready' | 'not-found' | 'error'>('loading');
+  useEffect(() => {
+    let current = true;
+    setLoadState('loading');
+    listPublishedContent().then((content) => {
+      if (!current) return;
+      const match = content.find((entry) => entry.slug === slug) || null;
+      setItem(match);
+      setLoadState(match ? 'ready' : 'not-found');
+    }).catch(() => { if (current) setLoadState('error'); });
+    return () => { current = false; };
+  }, [slug]);
+  if (loadState === 'loading') return <div className="glass rounded-2xl p-6" role="status">Loading article…</div>;
+  if (loadState === 'error') return <div className="glass rounded-2xl p-6" role="alert">We couldn’t load this content. Please try again.</div>;
+  if (loadState === 'not-found' || !item) return <div className="glass rounded-2xl p-6">This published article could not be found.</div>;
   return <ArticleView item={item} />;
 }
 
