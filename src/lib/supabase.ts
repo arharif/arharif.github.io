@@ -8,6 +8,8 @@ export interface AuthSession {
   user: { id: string; email?: string };
 }
 
+type PostgrestError = { code?: string; details?: string; hint?: string; message?: string };
+
 const baseHeaders = {
   apikey: config.supabaseAnonKey ?? '',
   'Content-Type': 'application/json',
@@ -83,7 +85,11 @@ export async function supabaseRest<T>(path: string, options?: RequestInit, acces
   const bearer = accessToken || config.supabaseAnonKey;
   if (bearer) h.set('Authorization', `Bearer ${bearer}`);
   const res = await request(`${config.supabaseUrl}/rest/v1/${path}`, { ...options, headers: h });
-  if (!res.ok) throw new Error('Unable to complete request.');
+  if (!res.ok) {
+    const payload = await res.json().catch(() => null) as PostgrestError | null;
+    const detail = [payload?.code, payload?.message, payload?.details, payload?.hint].filter(Boolean).join(' — ');
+    throw new Error(detail ? `Supabase request failed (${res.status}): ${detail}` : `Supabase request failed (${res.status}).`);
+  }
   if (res.status === 204) return null as T;
   return res.json() as Promise<T>;
 }

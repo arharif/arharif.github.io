@@ -129,35 +129,16 @@ export async function deleteTopic(id: string, accessToken: string) {
 
 export async function listPublishedContent() {
   if (!isSupabaseConfigured) return getLocalContent().filter((c) => c.status === 'published');
-  // Relationships are left embedded deliberately: a missing optional relation
-  // must never remove an otherwise public content row. Publication is enforced
-  // here and independently by RLS.
+  // Keep the public read limited to the two records required to render a card.
+  // Tag/collection relationships are optional and must not be allowed to make
+  // the primary published-content request fail when they are not exposed in a
+  // project's PostgREST schema cache.
   const select = [
-    '*',
+    'id,topic_id,slug,title,excerpt,body,content_type,cover_image_url,video_url,status,published_at,created_at,updated_at,author_name',
     'topic:topics(id,slug,title,description,universe,category,subcategory,display_style,cover_image_url,icon,order_index,status,created_at,updated_at)',
-    'content_tags(tag:tags(name))',
-    'content_collections(collection:collections(id))',
   ].join(',');
   const rows = await supabaseRest<Record<string, unknown>[]>(`content_entries?select=${select}&status=eq.published&order=published_at.desc.nullslast,created_at.desc`);
-  return rows.map((row) => normalizeContent({
-    ...row,
-    tags: Array.isArray(row.content_tags)
-      ? row.content_tags.flatMap((link) => {
-          const tag = link && typeof link === 'object' ? (link as Record<string, unknown>).tag : null;
-          return tag && typeof tag === 'object' && (tag as Record<string, unknown>).name
-            ? [String((tag as Record<string, unknown>).name)]
-            : [];
-        })
-      : row.tags,
-    collection_ids: Array.isArray(row.content_collections)
-      ? row.content_collections.flatMap((link) => {
-          const collection = link && typeof link === 'object' ? (link as Record<string, unknown>).collection : null;
-          return collection && typeof collection === 'object' && (collection as Record<string, unknown>).id
-            ? [String((collection as Record<string, unknown>).id)]
-            : [];
-        })
-      : row.collection_ids,
-  }));
+  return rows.map(normalizeContent);
 }
 
 export async function listAdminContent(accessToken: string) {
