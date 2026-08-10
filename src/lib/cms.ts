@@ -91,8 +91,8 @@ export async function listCollections(): Promise<CollectionRecord[]> {
 
 export async function listPublishedTopics() {
   if (!isSupabaseConfigured) return getLocalTopics().filter((t) => (t.status ?? 'published') === 'published').sort((a, b) => a.orderIndex - b.orderIndex);
-  const rows = await supabaseRest<Record<string, unknown>[]>('topics?select=*&order=order_index.asc');
-  return rows.map(normalizeTopic).filter((t) => (t.status ?? 'published') === 'published');
+  const rows = await supabaseRest<Record<string, unknown>[]>('topics?select=*&status=eq.published&order=order_index.asc');
+  return rows.map(normalizeTopic);
 }
 
 export async function listAdminTopics(accessToken: string) {
@@ -129,8 +129,35 @@ export async function deleteTopic(id: string, accessToken: string) {
 
 export async function listPublishedContent() {
   if (!isSupabaseConfigured) return getLocalContent().filter((c) => c.status === 'published');
-  const rows = await supabaseRest<Record<string, unknown>[]>("content_entries?select=*,topic:topics(id,slug,title,description,universe,category,subcategory,display_style,cover_image_url,icon,order_index,created_at,updated_at)&status=eq.published&order=published_at.desc.nullslast");
-  return rows.map(normalizeContent);
+  // Relationships are left embedded deliberately: a missing optional relation
+  // must never remove an otherwise public content row. Publication is enforced
+  // here and independently by RLS.
+  const select = [
+    '*',
+    'topic:topics(id,slug,title,description,universe,category,subcategory,display_style,cover_image_url,icon,order_index,status,created_at,updated_at)',
+    'content_tags(tag:tags(name))',
+    'content_collections(collection:collections(id))',
+  ].join(',');
+  const rows = await supabaseRest<Record<string, unknown>[]>(`content_entries?select=${select}&status=eq.published&order=published_at.desc.nullslast,created_at.desc`);
+  return rows.map((row) => normalizeContent({
+    ...row,
+    tags: Array.isArray(row.content_tags)
+      ? row.content_tags.flatMap((link) => {
+          const tag = link && typeof link === 'object' ? (link as Record<string, unknown>).tag : null;
+          return tag && typeof tag === 'object' && (tag as Record<string, unknown>).name
+            ? [String((tag as Record<string, unknown>).name)]
+            : [];
+        })
+      : row.tags,
+    collection_ids: Array.isArray(row.content_collections)
+      ? row.content_collections.flatMap((link) => {
+          const collection = link && typeof link === 'object' ? (link as Record<string, unknown>).collection : null;
+          return collection && typeof collection === 'object' && (collection as Record<string, unknown>).id
+            ? [String((collection as Record<string, unknown>).id)]
+            : [];
+        })
+      : row.collection_ids,
+  }));
 }
 
 export async function listAdminContent(accessToken: string) {

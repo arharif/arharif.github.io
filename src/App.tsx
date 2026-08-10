@@ -34,9 +34,9 @@ const RouteLoading = ({ label }: { label: string }) => (
 const inferUniverseFromContentType = (contentType?: string | null) => normalizeUniverse(contentType);
 
 async function loadPublishedGraph(): Promise<{ topics: TopicRecord[]; content: ContentRecord[] }> {
-  const [topicsResult, contentResult] = await Promise.allSettled([listPublishedTopics(), listPublishedContent()]);
-  const topics = topicsResult.status === 'fulfilled' ? topicsResult.value : [];
-  const content = contentResult.status === 'fulfilled' ? contentResult.value : [];
+  // A failed public query is not an empty data set. Let consumers render an
+  // explicit error and retry rather than silently discarding the failure.
+  const [topics, content] = await Promise.all([listPublishedTopics(), listPublishedContent()]);
   const topicFromContent = content
     .map((item) => item.topic)
     .filter((item): item is TopicRecord => Boolean(item));
@@ -106,10 +106,15 @@ function ProfessionalHome() {
   const [posts, setPosts] = useState<ContentRecord[]>([]);
   const [activeTopic, setActiveTopic] = useState('all');
   const [query, setQuery] = useState('');
+  const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [reload, setReload] = useState(0);
   const nav = useNavigate();
 
   useEffect(() => {
+    let current = true;
+    setLoadState('loading');
     loadPublishedGraph().then(({ topics: t, content }) => {
+      if (!current) return;
       const professionalTopics = t.filter((x) => normalizeUniverse(x.universe) === 'professional');
       const professionalTopicIds = new Set(professionalTopics.map((x) => x.id));
       const professionalPosts = content.filter((item) => {
@@ -118,13 +123,15 @@ function ProfessionalHome() {
         return topicUniverse === 'professional' || inferUniverseFromContentType(item.contentType) === 'professional';
       });
       setTopics(professionalTopics);
-      setPosts(professionalPosts.slice(0, 24));
-    });
+      setPosts(professionalPosts);
+      setLoadState('ready');
+    }).catch(() => { if (current) setLoadState('error'); });
 
     listCollections()
       .then((c) => setCollections(c.filter((x) => normalizeUniverse(x.universe) === 'professional')))
       .catch(() => setCollections([]));
-  }, []);
+    return () => { current = false; };
+  }, [reload]);
 
   const filterOptions = [{ id: 'all', label: 'All' }, ...topics.map((t) => ({ id: t.id, label: t.title }))];
   const filteredTopics = useMemo(() => {
@@ -152,7 +159,11 @@ function ProfessionalHome() {
         <p className="mt-2 text-xs text-muted">Try searching by topic, tag, or keyword.</p>
       </div>
 
-      {filteredTopics.length > 0 ? (
+      {loadState === 'loading' ? (
+        <div className="glass mb-6 mt-4 rounded-2xl p-4 text-sm text-muted" role="status">Loading technology and innovation content…</div>
+      ) : loadState === 'error' ? (
+        <div className="glass mb-6 mt-4 rounded-2xl p-4 text-sm" role="alert">We couldn’t load this content. Please try again. <button className="ml-2 underline" onClick={() => setReload((value) => value + 1)}>Retry</button></div>
+      ) : filteredTopics.length > 0 ? (
         <div className="mb-6 mt-4 grid gap-4 md:grid-cols-3">
           {filteredTopics.map((t)=><motion.button whileHover={{y:-5}} key={t.id} onClick={()=>nav(`/professional/topic/${t.slug}`)} className="glass rounded-2xl p-5 text-left"><p className="text-xs text-muted">{t.category} · {t.displayStyle}</p><h3 className="mt-2 text-xl font-semibold">{t.title}</h3><p className="mt-2 text-sm text-muted">{t.description}</p></motion.button>)}
         </div>
@@ -160,7 +171,7 @@ function ProfessionalHome() {
         <div className="glass mb-6 mt-4 rounded-2xl p-4 text-sm text-muted">No technology and innovation topics match this filter.</div>
       )}
 
-      {filteredPosts.length > 0 ? (
+      {loadState !== 'ready' ? null : filteredPosts.length > 0 ? (
         <>
           <h2 className="mb-3 text-xl font-semibold">Latest Technology & Innovation Posts</h2>
           <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -168,7 +179,7 @@ function ProfessionalHome() {
           </div>
         </>
       ) : (
-        <div className="glass mb-6 rounded-2xl p-4 text-sm text-muted">No matching content found.</div>
+        <div className="glass mb-6 rounded-2xl p-4 text-sm text-muted">{posts.length === 0 ? 'No published content is available in this section yet.' : 'No content matches your current search or filters.'}</div>
       )}
 
       <h2 className="mb-3 text-xl font-semibold">Curated Collections</h2>
@@ -221,10 +232,15 @@ function CuriositiesHub() {
   const [query, setQuery] = useState('');
   const [tag, setTag] = useState('');
   const [activeTopic, setActiveTopic] = useState('all');
+  const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [reload, setReload] = useState(0);
   const nav = useNavigate();
 
   useEffect(() => {
+    let current = true;
+    setLoadState('loading');
     loadPublishedGraph().then(({ topics: t, content: c }) => {
+      if (!current) return;
       const personalTopics = t.filter((x) => normalizeUniverse(x.universe) === 'personal');
       const personalTopicIds = new Set(personalTopics.map((x) => x.id));
       const personalContent = c.filter((item) => {
@@ -234,8 +250,10 @@ function CuriositiesHub() {
       });
       setTopics(personalTopics);
       setContent(personalContent);
-    });
-  }, []);
+      setLoadState('ready');
+    }).catch(() => { if (current) setLoadState('error'); });
+    return () => { current = false; };
+  }, [reload]);
 
   const allTags = [...new Set(safeArray(content).flatMap((c) => safeArray(c.tags)))].slice(0, 16);
   const filterOptions = [{ id: 'all', label: 'All' }, ...topics.map((t) => ({ id: t.id, label: t.title }))];
@@ -275,12 +293,16 @@ function CuriositiesHub() {
         <p className="mt-2 text-xs text-muted">Search by title, description, category, tags, or excerpt.</p>
       </div>
 
-      {searched.length > 0 ? (
+      {loadState === 'loading' ? (
+        <div className="glass rounded-xl p-4 text-sm text-muted" role="status">Loading curiosities and philosophy content…</div>
+      ) : loadState === 'error' ? (
+        <div className="glass rounded-xl p-4 text-sm" role="alert">We couldn’t load this content. Please try again. <button className="ml-2 underline" onClick={() => setReload((value) => value + 1)}>Retry</button></div>
+      ) : searched.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {searched.map((p) => <ContentCard key={p.id} item={p} onOpen={() => nav(`/personal/post/${p.slug}`)} />)}
         </div>
       ) : (
-        <div className="glass rounded-xl p-4 text-sm text-muted">No matching content found.</div>
+        <div className="glass rounded-xl p-4 text-sm text-muted">{content.length === 0 ? 'No published content is available in this section yet.' : 'No content matches your current search or filters.'}</div>
       )}
     </section>
   );
