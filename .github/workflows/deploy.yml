@@ -52,7 +52,8 @@ jobs:
           grep -q '/assets/' dist/index.html
 
       - name: Record deployment revision
-        run: node -e "require('node:fs').writeFileSync('dist/deployment.json', JSON.stringify({ commit: process.env.GITHUB_SHA, generatedAt: new Date().toISOString() }))"
+        run: |
+          node -e "require('node:fs').writeFileSync('dist/deployment.json', JSON.stringify({ commit: process.env.GITHUB_SHA, generatedAt: new Date().toISOString() }))"
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

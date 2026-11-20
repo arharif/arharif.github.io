@@ -4,6 +4,7 @@ export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: false,
   workers: 1,
+  reporter: process.env.CI ? [["github"], ["list"]] : "list",
   timeout: 30000,
   use: {
     baseURL: "http://127.0.0.1:4174",
@@ -11,7 +12,7 @@ export default defineConfig({
     launchOptions: {
       executablePath:
         process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ||
-        (existsSync("/usr/bin/chromium") ? "/usr/bin/chromium" : undefined),
+        (!process.env.CI && existsSync("/usr/bin/chromium") ? "/usr/bin/chromium" : undefined),
       args: ["--no-sandbox"],
     },
     trace: "retain-on-failure",
