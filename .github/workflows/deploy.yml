@@ -51,6 +51,9 @@ jobs:
           fi
           grep -q '/assets/' dist/index.html
 
+      - name: Record deployment revision
+        run: node -e "require('node:fs').writeFileSync('dist/deployment.json', JSON.stringify({ commit: process.env.GITHUB_SHA, generatedAt: new Date().toISOString() }))"
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
@@ -62,3 +65,6 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Verify published revision, routes and assets
+        run: node scripts/verify-deployment.mjs
