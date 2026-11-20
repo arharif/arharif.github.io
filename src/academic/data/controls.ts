@@ -14,7 +14,7 @@ export const frameworkSources = [
     id: "nist-800-53",
     name: "NIST SP 800-53",
     publisher: "NIST",
-    edition: "Revision 5. Subsequent catalogue release verification pending.",
+    edition: "Revision 5; release 5.2.0 (August 2025). Selected base-control summaries.",
     url: "https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final",
     scope: "Security and privacy controls for systems and organisations",
     limitation:
@@ -24,7 +24,7 @@ export const frameworkSources = [
     id: "iso-27001",
     name: "ISO/IEC 27001",
     publisher: "ISO / IEC",
-    edition: "2022. Amendment applicability verification pending.",
+    edition: "2022; Amendment 1:2024 (climate action changes).",
     url: "https://www.iso.org/standard/27001",
     scope: "Requirements for an information security management system",
     limitation:

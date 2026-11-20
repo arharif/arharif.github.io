@@ -1,6 +1,10 @@
 import { useMemo, useState } from "react";
 import { useAcademic } from "../app/context";
 import type { AIConfiguration } from "../data/types";
+import { Kpi, Panel, Curve } from "../workspace/charts";
+import { metricInsight, useInsight } from "../workspace/insights";
+import { download } from "../components/shared";
+import { csv } from "../utils/engines";
 import { predictions, metrics } from "../utils/engines";
 import {
   ExportPanel,
@@ -66,6 +70,7 @@ const experiments = [
 ] as const;
 const percent = (value: number) => `${(value * 100).toFixed(1)}%`;
 export default function AILab() {
+  const { explain } = useInsight();
   const { progress, setProgress } = useAcademic();
   const [config, setConfig] = useState<AIConfiguration>(
     progress.savedExperiment ?? baseline,
@@ -77,9 +82,9 @@ export default function AILab() {
   const [message, setMessage] = useState("");
   const data = useMemo(() => predictions(config), [config]);
   const result = metrics(data, config.threshold);
-  const curve = Array.from({ length: 11 }, (_, i) => ({
-    threshold: i / 10,
-    ...metrics(data, i / 10),
+  const curve = Array.from({ length: 21 }, (_, i) => ({
+    threshold: i / 20,
+    ...metrics(data, i / 20),
   }));
   const update = (key: keyof AIConfiguration, value: number | string) =>
     setConfig({ ...config, [key]: value });
@@ -105,6 +110,42 @@ export default function AILab() {
           of separation, noise, shift and optimistic training evaluation.
         </p>
       </LabIntro>
+      <div className="xa-kpi-grid">
+        {(["precision", "recall", "f1", "fpr"] as const).map((key, index) => (
+          <Kpi
+            key={key}
+            label={key === "fpr" ? "False-positive rate" : key.toUpperCase()}
+            value={<span data-testid={key}>{percent(result[key])}</span>}
+            detail={
+              [
+                "TP / (TP + FP)",
+                "TP / (TP + FN)",
+                "2 × precision × recall / (precision + recall)",
+                "FP / (FP + TN)",
+              ][index]
+            }
+            tone={index === 3 ? "amber" : index === 2 ? "blue" : "mint"}
+            onClick={() =>
+              explain(
+                metricInsight(
+                  key.toUpperCase(),
+                  {
+                    precision:
+                      "The fraction of flagged events that are truly positive.",
+                    recall:
+                      "The fraction of actual positives that are detected.",
+                    f1: "The harmonic mean of precision and recall, weighting both equally.",
+                    fpr: "The fraction of normal events that are incorrectly flagged.",
+                  }[key],
+                  `${["TP/(TP+FP)", "TP/(TP+FN)", "2PR/(P+R)", "FP/(FP+TN)"][index]}. TP=${result.tp}, FP=${result.fp}, FN=${result.fn}, TN=${result.tn}. Zero denominator yields 0 by convention.`,
+                  `At threshold ${config.threshold}, ${result.fp} false alerts and ${result.fn} missed positives occur in 400 synthetic records.`,
+                  "ai",
+                ),
+              )
+            }
+          />
+        ))}
+      </div>
       <Field label="Experiment">
         <select
           value={experiment}
@@ -211,15 +252,12 @@ export default function AILab() {
         </div>
         <div className="xa-panel">
           <h2>Detection results</h2>
-          <div className="xa-statline" aria-live="polite">
-            {(["precision", "recall", "f1"] as const).map((key) => (
-              <div className="xa-stat" key={key}>
-                <strong data-testid={key}>{percent(result[key])}</strong>
-                <span>{key}</span>
-              </div>
-            ))}
-          </div>
-          <div className="xa-table-scroll" role="region" aria-label="Confusion matrix results" tabIndex={0}>
+          <div
+            className="xa-table-scroll"
+            role="region"
+            aria-label="Confusion matrix results"
+            tabIndex={0}
+          >
             <table>
               <caption>
                 Confusion matrix · threshold {config.threshold.toFixed(2)}
@@ -234,13 +272,81 @@ export default function AILab() {
               <tbody>
                 <tr>
                   <th>Suspicious</th>
-                  <td>TP {result.tp}</td>
-                  <td>FN {result.fn}</td>
+                  <td>
+                    <button
+                      className="xa-confusion-cell tp"
+                      onClick={() =>
+                        explain(
+                          metricInsight(
+                            "Correctly flagged suspicious events",
+                            "Correctly flagged suspicious events.",
+                            `Count of records with the corresponding known label and predicted class at threshold ${config.threshold}.`,
+                            `${result.tp} records fall in this cell. Select a different threshold and compare the counts.`,
+                            "ai",
+                          ),
+                        )
+                      }
+                    >
+                      TP<strong>{result.tp}</strong>
+                    </button>
+                  </td>
+                  <td>
+                    <button
+                      className="xa-confusion-cell fn"
+                      onClick={() =>
+                        explain(
+                          metricInsight(
+                            "Suspicious events missed by the threshold",
+                            "Suspicious events missed by the threshold.",
+                            `Count of records with the corresponding known label and predicted class at threshold ${config.threshold}.`,
+                            `${result.fn} records fall in this cell. Select a different threshold and compare the counts.`,
+                            "ai",
+                          ),
+                        )
+                      }
+                    >
+                      FN<strong>{result.fn}</strong>
+                    </button>
+                  </td>
                 </tr>
                 <tr>
                   <th>Normal</th>
-                  <td>FP {result.fp}</td>
-                  <td>TN {result.tn}</td>
+                  <td>
+                    <button
+                      className="xa-confusion-cell fp"
+                      onClick={() =>
+                        explain(
+                          metricInsight(
+                            "Normal events incorrectly flagged",
+                            "Normal events incorrectly flagged.",
+                            `Count of records with the corresponding known label and predicted class at threshold ${config.threshold}.`,
+                            `${result.fp} records fall in this cell. Select a different threshold and compare the counts.`,
+                            "ai",
+                          ),
+                        )
+                      }
+                    >
+                      FP<strong>{result.fp}</strong>
+                    </button>
+                  </td>
+                  <td>
+                    <button
+                      className="xa-confusion-cell tn"
+                      onClick={() =>
+                        explain(
+                          metricInsight(
+                            "Normal events correctly cleared",
+                            "Normal events correctly cleared.",
+                            `Count of records with the corresponding known label and predicted class at threshold ${config.threshold}.`,
+                            `${result.tn} records fall in this cell. Select a different threshold and compare the counts.`,
+                            "ai",
+                          ),
+                        )
+                      }
+                    >
+                      TN<strong>{result.tn}</strong>
+                    </button>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -264,20 +370,64 @@ export default function AILab() {
       </section>
       <section className="xa-panel">
         <h2>Precision–recall operating points</h2>
-        <div className="xa-plot" aria-hidden="true">
-          {curve.map((row) => (
-            <div
-              key={row.threshold}
-              style={{
-                height: `${row.recall * 100}%`,
-                opacity: 0.3 + row.precision * 0.7,
+        <div className="xa-grid two">
+          <Panel
+            title="ROC curve"
+            subtitle="False-positive rate → / true-positive rate ↑"
+          >
+            <Curve
+              points={[
+                { threshold: 1.01, ...metrics(data, 1.01) },
+                ...curve.slice().reverse(),
+              ]}
+              xKey="fpr"
+              yKey="recall"
+              label="ROC operating points"
+              onSelect={(p) => {
+                if (p.threshold <= 1) update("threshold", p.threshold);
+                explain(
+                  metricInsight(
+                    "ROC operating point",
+                    "Recall against false-positive rate at a decision threshold.",
+                    `TPR=TP/(TP+FN); FPR=FP/(FP+TN). Selected threshold ${p.threshold.toFixed(2)}.`,
+                    p.threshold > 1
+                      ? "This reference endpoint uses threshold > 1, so it flags zero records. It leaves your configuration unchanged; the slider is capped at 1, where scores equal to 1 remain positive."
+                      : `Recall ${percent(p.recall)}, false-positive rate ${percent(p.fpr)}. The full counts above now reflect this threshold.`,
+                    "ai",
+                  ),
+                );
               }}
             />
-          ))}
+          </Panel>
+          <Panel
+            title="Precision–recall curve"
+            subtitle="Recall → / precision ↑ · sampled thresholds"
+          >
+            <Curve
+              points={curve.slice().reverse()}
+              xKey="recall"
+              yKey="precision"
+              label="Precision recall operating points"
+              onSelect={(p) => {
+                update("threshold", p.threshold);
+                explain(
+                  metricInsight(
+                    "Precision–recall operating point",
+                    "The proportion of relevant alerts compared with the proportion of positive events found.",
+                    `Threshold ${p.threshold}; precision=TP/(TP+FP), recall=TP/(TP+FN).`,
+                    `Precision ${percent(p.precision)}, recall ${percent(p.recall)}. Recheck class prevalence before comparing configurations.`,
+                    "ai",
+                  ),
+                );
+              }}
+            />
+          </Panel>
         </div>
-        <p>
-          Bar height shows recall as threshold rises from 0 to 1. The table
-          provides the full accessible values.
+        <p className="xa-muted">
+          Select a threshold beneath either curve to apply that operating point.
+          Lines join sampled thresholds; the table lists exact values.
+          No-positive precision uses 0. These synthetic curves are not empirical
+          model performance.
         </p>
         <details>
           <summary>Threshold results table</summary>
@@ -364,6 +514,32 @@ export default function AILab() {
             : [{ ...config, ...result }]
         }
       />
+      <div className="xa-actions">
+        <button
+          onClick={() =>
+            download(
+              "x1-synthetic-predictions.csv",
+              csv(
+                data.map((p, index) => ({
+                  index,
+                  label: Number(p.label),
+                  score: p.score,
+                  threshold: config.threshold,
+                  predicted: Number(p.score >= config.threshold),
+                  seed: config.seed,
+                  generator: "v1",
+                })),
+              ),
+              "text/csv",
+            )
+          }
+        >
+          Export reproducible predictions
+        </button>
+        <button disabled={!comparison.length} onClick={() => setComparison([])}>
+          Clear comparisons
+        </button>
+      </div>
       <Reset
         onClick={() => {
           setConfig(baseline);

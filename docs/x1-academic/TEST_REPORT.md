@@ -1,3 +1,31 @@
+# Interactive workspace verification — 20 November 2026
+
+Tested source: `feat/x1-academy-interactive-workspace`, built from base `9403047` with the interactive workspace changes. Production deployment/commit identity is recorded by GitHub Actions and `deployment.json` after publication.
+
+| Check | Executed result |
+| --- | --- |
+| `npm run lint` | PASS — TypeScript project build checks |
+| `npm test` | PASS — 24 unit/contract tests |
+| `npm run build` | PASS — production assets and 40 academic route documents |
+| `npm run test:e2e` | PASS — 26 Chromium browser tests, approximately 1.7 minutes |
+| Dark/light automated accessibility | PASS — WCAG A/AA rule scans on overview, five labs, graph, lesson and resources |
+| Responsive checks | PASS — 320px / 768px page-width checks and menu behaviour; 390px analysis/filter/explanation workflow |
+| XLSX workflow | PASS — download template, inspect/edit real workbook, import, map, analyse, filter, edit, duplicate/delete and read exported workbook |
+| CSV workflow | PASS — renamed-column mapping, date/rating row errors, atomic rejection, valid import and boardroom snapshot navigation |
+| Data integrity | PASS — hand-counted ordinal totals, closed-risk exclusion, overdue/age/owner groups, CSF 6/22/106 uniqueness, deterministic prediction/metric checks, observations separate from snapshot |
+| Exports | PASS — risk JSON/Excel, treatment/report controls, legacy assessment/incident/AI/boardroom JSON/CSV and print media visibility of dedicated risk report |
+| Local processing | PASS — no POST/PUT requests during the risk spreadsheet workflow |
+| Direct refresh / legacy routes | PASS — generated learning/graph documents, refresh, metadata, fallback query/fragment preservation and existing main site routes |
+| `git diff --check` | PASS |
+| `npm audit --omit=dev --audit-level=high` | PASS at configured threshold — 0 high/critical, 2 inherited moderate React Router findings |
+| Visual self-review | Captured and inspected desktop overview, risk, light framework, graph, AI and mobile risk screens; artifacts linked in the implementation report |
+
+The first browser rounds exposed active-link contrast, small standalone link targets, a drawer obstruction, graph pointer-capture interference and overly broad test locators. Product issues and locators were corrected; the complete final suite above passed on the resulting build. Tests use the static GitHub Pages fixture rather than Vite fallback routing.
+
+Limits: Chromium only; automated axe is not a full screen-reader or WCAG certification audit. Print-media layout is exercised, but cross-browser PDF pagination has not been independently reviewed. No live bank data, genuine incident evidence, trained-model performance or certification claim is part of these tests. Live publication verification is a separate deployment check.
+
+## Previous baseline report (historical)
+
 # Executed validation
 
 Validated on 2026-11-20 with Node 24.22.1, npm 11.9.0 and system Chromium through Playwright 1.65.1. The baseline commit had four passing Node tests. Tests ran against the actual checkout and built dist output. The original implementation results are recorded first. The publication follow-up below records later production verification and CI remediation.

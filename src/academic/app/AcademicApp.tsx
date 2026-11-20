@@ -13,11 +13,25 @@ import {
   ArrowUpRight,
   Sun,
   Moon,
+  Menu,
+  PanelRight,
+  Activity,
+  BriefcaseBusiness,
+  BrainCircuit,
+  LayoutDashboard,
+  ArrowRight,
 } from "lucide-react";
 import { AcademicProvider, useAcademic } from "./context";
 import { base, CaseSelect } from "../components/shared";
 import { searchIndex } from "../data/search";
 import "./academic.css";
+import {
+  ExplanationPanel,
+  InsightProvider,
+  useInsight,
+} from "../workspace/insights";
+import { WorkspaceProvider } from "../workspace/state";
+const KnowledgeGraph = lazy(() => import("../features/KnowledgeGraph"));
 const Home = lazy(() => import("../features/Home"));
 const Lesson = lazy(() => import("../features/Learning"));
 const Catalogue = lazy(() =>
@@ -49,19 +63,48 @@ const IncidentLab = lazy(() => import("../features/IncidentLab"));
 const AILab = lazy(() => import("../features/AILab"));
 const BoardroomLab = lazy(() => import("../features/BoardroomLab"));
 const navigation = [
-  { path: "", label: "Academy home", Icon: GraduationCap },
-  { path: "/learning", label: "Learning paths", Icon: BookOpen },
-  { path: "/labs", label: "Laboratories", Icon: FlaskConical },
-  { path: "/frameworks", label: "Frameworks", Icon: Shield },
-  { path: "/case-studies", label: "Case studies", Icon: Library },
-  { path: "/security-map", label: "Roles & skills", Icon: Network },
-  { path: "/certifications", label: "Certifications", Icon: CheckCircle },
-  { path: "/resources", label: "Resources", Icon: Compass },
-  { path: "/assistant", label: "Navigator", Icon: MessageSquare },
+  { path: "", label: "Academic Overview", Icon: LayoutDashboard },
+  { path: "/cybersecurity", label: "Cybersecurity Academy", Icon: Shield },
+  { path: "/grc", label: "GRC & Risk Academy", Icon: BriefcaseBusiness },
+  {
+    path: "/artificial-intelligence",
+    label: "AI & Machine Learning",
+    Icon: BrainCircuit,
+  },
+  {
+    path: "/labs/framework-explorer",
+    label: "Control & Framework Explorer",
+    Icon: CheckCircle,
+  },
+  {
+    path: "/knowledge-graph",
+    label: "Interactive Knowledge Graph",
+    Icon: Network,
+  },
+  {
+    path: "/labs/risk-decision",
+    label: "Risk Register & Simulator",
+    Icon: Activity,
+  },
+  { path: "/labs/cyber-incident", label: "Cyber Incident Lab", Icon: Shield },
+  {
+    path: "/labs/ai-experiment",
+    label: "AI Experiment Studio",
+    Icon: FlaskConical,
+  },
+  {
+    path: "/labs/ciso-boardroom",
+    label: "CISO Boardroom",
+    Icon: BriefcaseBusiness,
+  },
+  { path: "/resources", label: "Learning Resources", Icon: Library },
+  { path: "/certifications", label: "Certifications", Icon: GraduationCap },
   { path: "/progress", label: "Your progress", Icon: BookOpen },
 ];
 function Layout() {
   const location = useLocation();
+  const { open, setOpen } = useInsight();
+  const [menuOpen, setMenuOpen] = useState(false);
   const { caseId, storageError } = useAcademic();
   const mainRef = useRef<HTMLElement>(null);
   const [theme, setTheme] = useState(() => {
@@ -107,6 +150,7 @@ function Layout() {
     document
       .querySelector('meta[property="og:url"]')
       ?.setAttribute("content", url);
+    setMenuOpen(false);
     window.scrollTo(0, 0);
     mainRef.current?.focus({ preventScroll: true });
   }, [location.pathname, relative, title]);
@@ -118,9 +162,31 @@ function Layout() {
       <header className="xa-top">
         <div className="xa-top-inner">
           <Link className="xa-brand" to={base}>
-            X1 <span>ACADEMIC</span>
+            <span className="xa-brand-mark">X1</span>{" "}
+            <span>
+              ACADEMIC<small>THE CONNECTED ACADEMY</small>
+            </span>
           </Link>
+          <div className="xa-top-context">
+            <span className="xa-live-dot" /> Learning workspace{" "}
+            <span className="xa-pill">LOCAL & PRIVATE</span>
+          </div>
           <div className="xa-actions" style={{ margin: 0 }}>
+            <button
+              className="xa-menu-toggle"
+              aria-expanded={menuOpen}
+              aria-controls="academy-sidebar"
+              onClick={() => setMenuOpen(!menuOpen)}
+            >
+              <Menu size={17} /> Menu
+            </button>
+            <button
+              className="xa-guide-toggle"
+              aria-expanded={open}
+              onClick={() => setOpen(!open)}
+            >
+              <PanelRight size={17} /> Explain
+            </button>
             <Link className="xa-button secondary" to="/">
               Professional gateway <ArrowUpRight size={14} aria-hidden="true" />
             </Link>
@@ -146,15 +212,47 @@ function Layout() {
         </div>
       </header>
       <div className="xa-shell">
-        <aside className="xa-sidebar">
+        <aside
+          id="academy-sidebar"
+          className={`xa-sidebar ${menuOpen ? "is-open" : ""}`}
+        >
+          <p className="xa-nav-label">WORKSPACE</p>
           <nav aria-label="Academic navigation">
             {navigation.map(({ path, label, Icon }) => (
-              <NavLink key={path} to={`${base}${path}`} end={!path}>
-                <Icon size={17} aria-hidden="true" />
-                {label}
-              </NavLink>
+              <div key={path}>
+                <NavLink key={path} to={`${base}${path}`} end={!path}>
+                  <Icon size={17} aria-hidden="true" />
+                  {label}
+                </NavLink>
+                {path === "/labs/framework-explorer" && (
+                  <div className="xa-subnav">
+                    {[
+                      ["nist-csf-2", "NIST CSF 2.0"],
+                      ["nist-800-53", "NIST SP 800-53"],
+                      ["iso-27001", "ISO/IEC 27001"],
+                      ["pci-dss", "PCI DSS"],
+                    ].map(([id, name]) => (
+                      <Link
+                        key={id}
+                        to={`${base}/labs/framework-explorer?framework=${id}`}
+                      >
+                        {name}
+                      </Link>
+                    ))}
+                    <Link to={`${base}/frameworks`}>
+                      Other frameworks <ArrowRight size={12} />
+                    </Link>
+                  </div>
+                )}
+              </div>
             ))}
           </nav>
+          <div className="xa-sidebar-note">
+            <GraduationCap size={22} />
+            <strong>Learn. Experiment. Lead.</strong>
+            <p>Practical judgement starts with good questions.</p>
+            <Link to={`${base}/learning`}>Find your learning path →</Link>
+          </div>
         </aside>
         <main id="academic-main" tabIndex={-1} ref={mainRef}>
           <nav className="xa-breadcrumbs" aria-label="Breadcrumb">
@@ -227,6 +325,7 @@ function Layout() {
               />
               <Route path="frameworks" element={<Frameworks />} />
               <Route path="frameworks/:id" element={<Frameworks />} />
+              <Route path="knowledge-graph" element={<KnowledgeGraph />} />
               <Route path="security-map" element={<SecurityMap />} />
               <Route path="certifications" element={<Certifications />} />
               <Route path="resources" element={<Resources />} />
@@ -248,6 +347,7 @@ function Layout() {
             </Routes>
           </Suspense>
         </main>
+        <ExplanationPanel />
       </div>
       <footer className="xa-footer">
         <span>X1 Academic · Evidence, practice & judgement</span>
@@ -261,7 +361,11 @@ function Layout() {
 export default function AcademicApp() {
   return (
     <AcademicProvider>
-      <Layout />
+      <WorkspaceProvider>
+        <InsightProvider>
+          <Layout />
+        </InsightProvider>
+      </WorkspaceProvider>
     </AcademicProvider>
   );
 }
