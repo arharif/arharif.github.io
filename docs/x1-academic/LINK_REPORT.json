@@ -1,0 +1,58 @@
+[
+  {
+    "id": "csf",
+    "url": "https://www.nist.gov/cyberframework",
+    "checkedAt": "2026-11-20T14:51:40.544Z",
+    "outcome": "unverified",
+    "error": "Command failed: curl --silent --show-error --location --max-time 15 --output /dev/null --write-out %{http_code} %{url_effective} https://www.nist.gov/cyberframework\ncurl: (56) CONNECT tunnel failed, response 403\n"
+  },
+  {
+    "id": "controls",
+    "url": "https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final",
+    "checkedAt": "2026-11-20T14:51:40.544Z",
+    "outcome": "unverified",
+    "error": "Command failed: curl --silent --show-error --location --max-time 15 --output /dev/null --write-out %{http_code} %{url_effective} https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final\ncurl: (56) CONNECT tunnel failed, response 403\n"
+  },
+  {
+    "id": "incident",
+    "url": "https://csrc.nist.gov/projects/incident-response",
+    "checkedAt": "2026-11-20T14:51:40.543Z",
+    "outcome": "unverified",
+    "error": "Command failed: curl --silent --show-error --location --max-time 15 --output /dev/null --write-out %{http_code} %{url_effective} https://csrc.nist.gov/projects/incident-response\ncurl: (56) CONNECT tunnel failed, response 403\n"
+  },
+  {
+    "id": "attack",
+    "url": "https://attack.mitre.org/",
+    "checkedAt": "2026-11-20T14:51:40.544Z",
+    "outcome": "unverified",
+    "error": "Command failed: curl --silent --show-error --location --max-time 15 --output /dev/null --write-out %{http_code} %{url_effective} https://attack.mitre.org/\ncurl: (56) CONNECT tunnel failed, response 403\n"
+  },
+  {
+    "id": "owasp",
+    "url": "https://owasp.org/www-project-application-security-verification-standard/",
+    "checkedAt": "2026-11-20T14:51:40.549Z",
+    "outcome": "unverified",
+    "error": "Command failed: curl --silent --show-error --location --max-time 15 --output /dev/null --write-out %{http_code} %{url_effective} https://owasp.org/www-project-application-security-verification-standard/\ncurl: (56) CONNECT tunnel failed, response 403\n"
+  },
+  {
+    "id": "ai-rmf",
+    "url": "https://www.nist.gov/itl/ai-risk-management-framework",
+    "checkedAt": "2026-11-20T14:51:40.561Z",
+    "outcome": "unverified",
+    "error": "Command failed: curl --silent --show-error --location --max-time 15 --output /dev/null --write-out %{http_code} %{url_effective} https://www.nist.gov/itl/ai-risk-management-framework\ncurl: (56) CONNECT tunnel failed, response 403\n"
+  },
+  {
+    "id": "ml",
+    "url": "https://scikit-learn.org/stable/modules/model_evaluation.html",
+    "checkedAt": "2026-11-20T14:51:40.557Z",
+    "outcome": "unverified",
+    "error": "Command failed: curl --silent --show-error --location --max-time 15 --output /dev/null --write-out %{http_code} %{url_effective} https://scikit-learn.org/stable/modules/model_evaluation.html\ncurl: (56) CONNECT tunnel failed, response 403\n"
+  },
+  {
+    "id": "cisa",
+    "url": "https://www.cisa.gov/cross-sector-cybersecurity-performance-goals",
+    "checkedAt": "2026-11-20T14:51:40.551Z",
+    "outcome": "unverified",
+    "error": "Command failed: curl --silent --show-error --location --max-time 15 --output /dev/null --write-out %{http_code} %{url_effective} https://www.cisa.gov/cross-sector-cybersecurity-performance-goals\ncurl: (56) CONNECT tunnel failed, response 403\n"
+  }
+]

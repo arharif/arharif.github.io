@@ -1,0 +1,182 @@
+import type { FrameworkControl } from "./types";
+export const frameworkSources = [
+  {
+    id: "nist-csf-2",
+    name: "NIST CSF 2.0",
+    publisher: "NIST",
+    edition: "2.0, February 2024",
+    url: "https://www.nist.gov/cyberframework",
+    scope: "Cybersecurity risk outcomes across sectors",
+    limitation:
+      "Selected outcomes for education. A current profile requires a defined scope and wider outcome review.",
+  },
+  {
+    id: "nist-800-53",
+    name: "NIST SP 800-53",
+    publisher: "NIST",
+    edition: "Revision 5. Subsequent catalogue release verification pending.",
+    url: "https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final",
+    scope: "Security and privacy controls for systems and organisations",
+    limitation:
+      "Selected base controls. Enhancements and baselines require tailoring and official assessment guidance.",
+  },
+  {
+    id: "iso-27001",
+    name: "ISO/IEC 27001",
+    publisher: "ISO / IEC",
+    edition: "2022. Amendment applicability verification pending.",
+    url: "https://www.iso.org/standard/27001",
+    scope: "Requirements for an information security management system",
+    limitation:
+      "Original educational summaries only. Consult licensed text for requirements and conformity assessment.",
+  },
+];
+const rows = [
+  [
+    "GV.RR-02",
+    "nist-csf-2",
+    ["GOVERN", "GV.RR · Roles, Responsibilities, and Authorities"],
+    "Accountable security roles",
+    "Assign and communicate responsibilities and decision authority.",
+    "The service owner approves access boundaries and risk acceptance.",
+    "Approved responsibility matrix and committee decision record",
+    "Unclear approval authority",
+  ],
+  [
+    "ID.AM-02",
+    "nist-csf-2",
+    ["IDENTIFY", "ID.AM · Asset Management"],
+    "Software and service inventory",
+    "Understand the software, systems and services supporting critical activity.",
+    "Reconcile the payment API, OT gateway or telemetry broker against the service inventory.",
+    "Inventory reconciliation, ownership and discovery exceptions",
+    "Unowned services and incomplete discovery",
+  ],
+  [
+    "PR.AA-05",
+    "nist-csf-2",
+    [
+      "PROTECT",
+      "PR.AA · Identity Management, Authentication, and Access Control",
+    ],
+    "Review access permissions",
+    "Define, enforce and review access entitlements using least privilege.",
+    "Review the supplier identity against its authorised service tasks.",
+    "Role definitions, sampled access reviews and removal logs",
+    "Broad privileges and stale supplier access",
+  ],
+  [
+    "DE.CM-01",
+    "nist-csf-2",
+    ["DETECT", "DE.CM · Continuous Monitoring"],
+    "Monitor networks and services",
+    "Monitor network activity to find potentially adverse events.",
+    "Correlate gateway sessions and unexpected service configuration changes.",
+    "Time-aligned network events, alert logic and investigation records",
+    "Missing correlation or incomplete telemetry",
+  ],
+  [
+    "AC-2",
+    "nist-800-53",
+    ["AC · Access Control", "AC-2 · Account Management"],
+    "Account management",
+    "Manage account creation, change, review and removal under defined authority.",
+    "Time-bound supplier accounts and sample timely removal after support completion.",
+    "Account inventory, approvals and disabled-account samples",
+    "Expired accounts remain enabled",
+  ],
+  [
+    "AU-6",
+    "nist-800-53",
+    [
+      "AU · Audit and Accountability",
+      "AU-6 · Audit Record Review, Analysis, and Reporting",
+    ],
+    "Audit review and analysis",
+    "Review audit records for inappropriate activity and report findings.",
+    "Reconcile service changes with identity and gateway sessions.",
+    "Review schedule, investigation tickets and traceable audit records",
+    "Logs collected without review",
+  ],
+  [
+    "IR-4",
+    "nist-800-53",
+    ["IR · Incident Response", "IR-4 · Incident Handling"],
+    "Incident handling",
+    "Coordinate preparation, detection, analysis, containment, eradication and recovery.",
+    "Exercise a supplier compromise response with service and incident owners.",
+    "Exercise record, containment approval and recovery validation",
+    "Playbook untested against operational dependencies",
+  ],
+  [
+    "ISO-6.1",
+    "iso-27001",
+    ["ISMS clauses", "Clause 6 · Planning"],
+    "Risk planning",
+    "Define a repeatable risk assessment and treatment process within the ISMS scope.",
+    "Record risk criteria, owners, chosen treatment and the rationale for control selection.",
+    "Risk method, treatment plan and Statement of Applicability",
+    "Risk treatment detached from business scope",
+  ],
+  [
+    "ISO-9.2",
+    "iso-27001",
+    ["ISMS clauses", "Clause 9 · Performance evaluation"],
+    "Internal audit",
+    "Plan independent review of the management system and act on findings.",
+    "Sample the access-review process and trace exceptions to corrective action.",
+    "Audit programme, scope, sampling rationale and corrective actions",
+    "Auditors assess their own work without safeguards",
+  ],
+  [
+    "ISO-A.5",
+    "iso-27001",
+    ["Annex A themes", "Organisational controls"],
+    "Organisational safeguards",
+    "Connect policy, ownership and supplier governance to risk treatment.",
+    "Set access conditions, monitoring responsibilities and escalation obligations with the supplier.",
+    "Supplier clauses, policy approval and control ownership",
+    "Contract requirements have no operational owner",
+  ],
+] as const;
+export const controls: FrameworkControl[] = rows.map((row) => ({
+  id: row[0],
+  framework: row[1],
+  path: [...row[2]],
+  title: row[3],
+  explanation: row[4],
+  objective:
+    "Protect continuity and accountable operation of the selected critical service.",
+  implementation: row[5],
+  roles:
+    "Service owner, control owner, security analyst and independent assessor",
+  assets:
+    "Selected case service, its identities, supplier access and supporting records",
+  methods:
+    "Examine documents, interview the owner and test a risk-based sample. Record scope, period and exceptions.",
+  evidence: row[6],
+  gap: row[7],
+  risk: "Unauthorised changes, unobserved compromise and delayed recovery.",
+  source: frameworkSources.find((source) => source.id === row[1])!.url,
+  lesson: "risk-assessment",
+}));
+export const mappings = [
+  {
+    from: "PR.AA-05",
+    to: "AC-2",
+    concept: "Entitlement lifecycle",
+    rationale:
+      "Access reviews and account management overlap. AC-2 contains more specific account lifecycle requirements.",
+    confidence: "Educational conceptual overlap, partial and non-equivalent",
+    source: "https://www.nist.gov/cyberframework/informative-references",
+  },
+  {
+    from: "DE.CM-01",
+    to: "AU-6",
+    concept: "Detection and review",
+    rationale:
+      "Monitoring provides signals. Audit review examines recorded activity. Neither alone establishes the other outcome.",
+    confidence: "Educational partial relationship, requires scope validation",
+    source: "https://www.nist.gov/cyberframework/informative-references",
+  },
+];

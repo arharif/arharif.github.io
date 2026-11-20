@@ -20,6 +20,7 @@ import { initTheme, ThemeMode, themeMap } from '@/lib/theme';
 import { normalizeUniverse, universeMeta } from '@/lib/universe';
 import { safeStorage } from '@/lib/storage';
 import { ContentRecord, TopicRecord } from './content/types';
+const AcademicApp = lazy(() => import('@/academic/app/AcademicApp'));
 const ComplianceFrameworksPage = lazy(() => import('@/pages/ComplianceFrameworksPage').then((m) => ({ default: m.ComplianceFrameworksPage })));
 const AboutX1Page = lazy(() => import('@/pages/AboutX1Page').then((m) => ({ default: m.AboutX1Page })));
 const AcademicLibraryPage = lazy(() => import('@/pages/AcademicLibraryPage').then((m) => ({ default: m.AcademicLibraryPage })));
@@ -635,6 +636,13 @@ Blog/Article Content:
 function NotFound() { return <section className="mx-auto max-w-xl py-24 text-center"><h1 className="text-4xl font-semibold">404</h1><Link to="/" className="mt-4 inline-block rounded-xl bg-white/10 px-4 py-2">Home</Link></section>; }
 
 function Shell() {
+  useEffect(() => {
+    const font = document.createElement('link');
+    font.rel = 'stylesheet';
+    font.href = 'https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap';
+    document.head.appendChild(font);
+    return () => font.remove();
+  }, []);
   const [mode, setMode] = useState<ThemeMode>(() => initTheme());
   const location = useLocation();
   const mainRef = useRef<HTMLElement>(null);
@@ -750,5 +758,7 @@ function Shell() {
 }
 
 export default function App() {
-  return <ErrorBoundary><AuthProvider><Shell /></AuthProvider></ErrorBoundary>;
+  const location = useLocation();
+  const academic = location.pathname === '/x1-academic' || location.pathname.startsWith('/x1-academic/');
+  return <ErrorBoundary>{academic ? <Suspense fallback={<RouteLoading label="X1 Academic" />}><Routes><Route path="/x1-academic/*" element={<AcademicApp />} /></Routes></Suspense> : <AuthProvider><Shell /></AuthProvider>}</ErrorBoundary>;
 }

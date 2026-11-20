@@ -7,6 +7,7 @@ import { X1Mark } from './branding/X1Mark';
 
 type NavItem = { to: string; label: string; active: (path: string) => boolean };
 const academic: NavItem[] = [
+  { to: '/x1-academic', label: 'Academic Home', active: (p) => p.startsWith('/x1-academic') },
   { to: '/security-mindmap', label: 'Security Map', active: (p) => p === '/security-mindmap' || p === '/Security_Mindmap' },
   { to: '/compliance-frameworks', label: 'Compliance Frameworks', active: (p) => p === '/compliance-frameworks' },
   { to: '/academic-library', label: 'Course & PDF Library', active: (p) => p === '/academic-library' },

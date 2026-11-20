@@ -19,7 +19,7 @@
         var segmentCount = 0;
         var l = window.location;
         var repoRoot = l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '');
-        var redirect = repoRoot + '/?/' + l.pathname.slice(1).split('/').slice(segmentCount).join('/') + (l.search ? '&' + l.search.slice(1) : '') + l.hash;
+        var redirect = repoRoot + '/?/' + l.pathname.slice(1).split('/').slice(segmentCount).join('/') + (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') + l.hash;
         window.location.replace(redirect);
       })();
     </script>
