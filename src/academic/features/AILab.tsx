@@ -219,30 +219,32 @@ export default function AILab() {
               </div>
             ))}
           </div>
-          <table>
-            <caption>
-              Confusion matrix · threshold {config.threshold.toFixed(2)}
-            </caption>
-            <thead>
-              <tr>
-                <th>Actual label</th>
-                <th>Flagged positive</th>
-                <th>Predicted negative</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <th>Suspicious</th>
-                <td>TP {result.tp}</td>
-                <td>FN {result.fn}</td>
-              </tr>
-              <tr>
-                <th>Normal</th>
-                <td>FP {result.fp}</td>
-                <td>TN {result.tn}</td>
-              </tr>
-            </tbody>
-          </table>
+          <div className="xa-table-scroll" role="region" aria-label="Confusion matrix results" tabIndex={0}>
+            <table>
+              <caption>
+                Confusion matrix · threshold {config.threshold.toFixed(2)}
+              </caption>
+              <thead>
+                <tr>
+                  <th>Actual label</th>
+                  <th>Flagged positive</th>
+                  <th>Predicted negative</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th>Suspicious</th>
+                  <td>TP {result.tp}</td>
+                  <td>FN {result.fn}</td>
+                </tr>
+                <tr>
+                  <th>Normal</th>
+                  <td>FP {result.fp}</td>
+                  <td>TN {result.tn}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
           <p>
             {result.fp} false alerts and {result.fn} missed positives in 400
             events. Precision = TP/(TP+FP). Recall = TP/(TP+FN). F1 = 2PR/(P+R).

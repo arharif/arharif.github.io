@@ -1,6 +1,6 @@
 # Release review
 
-This increment is prepared for code and educational review. The complete transformation remains in progress. No production deployment was performed.
+The academy has been published through the established GitHub Pages workflow. The complete transformation remains in progress. Production verification checks the deployed revision, ten public pages and compiled entry assets.
 
 - [x] Baseline recorded and existing routes retained
 - [x] New primary capabilities under `/x1-academic/*`
@@ -15,7 +15,7 @@ This increment is prepared for code and educational review. The complete transfo
 - [ ] Full framework hierarchies and comprehensive certification metadata
 - [ ] Independent subject-matter and assistive-technology sign-off
 - [ ] Hosted tutor backend, if desired
-- [ ] Deployed production smoke test
+- [x] Deployed production smoke test through GitHub Actions
 
 ## Development and testing
 
@@ -28,3 +28,5 @@ For browser tests, use installed Chromium or run `npx playwright install --with-
 ## Deployment
 
 Review the branch and test report. The established GitHub Pages workflow builds from the lockfile using Node 24, validates compiled asset references and uploads dist. The CI workflow now runs the Node tests and Playwright checks. Merge through the repository's normal authorised review process. Production remains on the user-site domain with root-relative assets. Verify `/x1-academic`, all five labs, a lesson refresh, a shared query URL, report downloads and a representative legacy page after deployment. Never infer deployed success from a local build.
+
+The deployment workflow writes a public deployment.json revision manifest before uploading dist. After deployment, scripts/verify-deployment.mjs waits for the expected commit and checks canonical metadata, the five lab routes, three lessons, the academy entry, the personal homepage and compiled entry assets. Public revision metadata contains the commit and generation time only.

@@ -1,6 +1,6 @@
 # Executed validation
 
-Validated on 2026-11-20 with Node 24.22.1, npm 11.9.0 and system Chromium through Playwright 1.65.1. The baseline commit had four passing Node tests. Tests ran against the actual checkout and built dist output.
+Validated on 2026-11-20 with Node 24.22.1, npm 11.9.0 and system Chromium through Playwright 1.65.1. The baseline commit had four passing Node tests. Tests ran against the actual checkout and built dist output. The original implementation results are recorded first. The publication follow-up below records later production verification and CI remediation.
 
 | Command or check | Actual result |
 | --- | --- |
@@ -32,3 +32,12 @@ Initial browser runs exposed missing parent route context, inline links without 
 The two moderate dependency records are react-router and its react-router-dom parent. Advisory fixes require React Router 7.18.6, a major-version migration. The academy supplies internal routes from controlled metadata and does not use SSR hydration. Those scope facts do not remove the advisories. A tested major-version migration remains pending.
 
 Source editions, programme eligibility and external resource reachability remain unverified under the current egress policy. No production GitHub Pages deployment, live Supabase RLS test, hosted tutor test, Firefox/WebKit run or external screen-reader review occurred. Browser print is provided, with dedicated PDF fidelity review pending. The new academic application chunk is approximately 18 KB gzip, and individual lab chunks are approximately 3–4 KB gzip. The inherited entry bundle remains approximately 128 KB gzip.
+
+
+## Publication follow-up
+
+The user authorised direct publication to main. Fast-forward pushes succeeded without merge conflicts. The existing keepalive workflow had an invalid direct secrets reference in a step condition. Job-level environment bindings now support that condition, with a regression test bringing the Node suite to 18 tests.
+
+GitHub-hosted CI found AI Studio table overflow at 768px that the local browser did not reproduce. The confusion matrix now has a keyboard-accessible scrolling region, and two-column panels stack below 1000px. The original width assertion remains active. CI uses the installed Playwright browser and publishes failure annotations and traces for diagnosis.
+
+The Pages workflow now verifies its published commit using deployment.json, then checks ten public routes and compiled entry assets. This verification runs on the GitHub runner because the cloud machine's egress policy blocks the production hostname. Production verification succeeded during publication. Latest run status is available in the repository Actions pages.
