@@ -1,216 +1,279 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  ArrowRight,
+  ArrowUpRight,
   ShieldCheck,
   Network,
   BrainCircuit,
+  ArrowRight,
+  Fingerprint,
   FlaskConical,
 } from "lucide-react";
-import { tracks, modules } from "../data/curriculum";
-import { labLinks, scenarios } from "../data/cases";
-import { resources } from "../data/resources";
-import { academicSearch } from "../data/search";
-import { base, Field, Source } from "../components/shared";
+import { useScenario } from "../app/context";
+import { base } from "../components/shared";
+import {
+  analyseRisks,
+  band,
+  residualScore,
+  scenarioRisks,
+  riskMethod,
+} from "../workspace/risk";
+import {
+  Bars,
+  Donut,
+  Kpi,
+  palette,
+  Panel,
+  RiskMatrix,
+} from "../workspace/charts";
+import { metricInsight, useInsight } from "../workspace/insights";
+import { useWorkspace } from "../workspace/state";
+import { labLinks } from "../data/cases";
+import { modules } from "../data/curriculum";
 export default function Home() {
-  const [query, setQuery] = useState("");
-  const icons = [ShieldCheck, Network, BrainCircuit];
+  const scenario = useScenario(),
+    { analysed, provenance, asOf } = useWorkspace(),
+    { explain } = useInsight();
+  const data = analysed ?? scenarioRisks(scenario.id),
+    s = analyseRisks(data, asOf);
+  const select = (title: string, method: string) =>
+    explain(
+      metricInsight(
+        title,
+        `Selected ${scenario.name} workspace. ${analysed ? provenance : "Fictional baseline"}.`,
+        method,
+        "Open the risk register to inspect the underlying records and change the scenario assumptions.",
+      ),
+    );
   return (
     <>
-      <header className="xa-hero">
-        <p className="xa-eyebrow">X1 Academic · Learning through practice</p>
-        <h1>
-          Understand cybersecurity.
-          <br />
-          Master risk.
-          <br />
-          <em>Govern AI.</em>
-        </h1>
-        <p className="xa-intro">
-          Learn through interactive frameworks, realistic business scenarios,
-          practical assessments and evidence-based guidance — from foundational
-          concepts to executive decision-making.
-        </p>
-        <div className="xa-actions">
-          <Link className="xa-button primary" to={`${base}/learning`}>
-            Find your learning path <ArrowRight size={16} aria-hidden="true" />
-          </Link>
-          <Link className="xa-button secondary" to={`${base}/labs`}>
-            Explore the laboratories
-          </Link>
+      <div className="xa-overview-heading">
+        <div>
+          <p className="xa-eyebrow">YOUR CONNECTED ACADEMIC WORKSPACE</p>
+          <h1>
+            Learn the system.
+            <br />
+            <em>Make better decisions.</em>
+          </h1>
+          <p className="xa-intro">
+            Cybersecurity, governance and AI — connected through evidence,
+            experiments and real-world judgement.
+          </p>
         </div>
-      </header>
-      <div className="xa-search">
-        <Field label="Search lessons, frameworks, laboratories and resources">
-          <input
-            type="search"
-            value={query}
-            maxLength={240}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Try risk, incident response or model evaluation"
-          />
-        </Field>
-        {query && (
-          <div className="xa-panel" aria-live="polite">
-            {academicSearch(query).map((row) => (
-              <p key={`${row.path}-${row.title}`}>
-                <Link to={`${base}${row.path}`}>{row.title}</Link>
-                <br />
-                <small>
-                  {row.type} · {row.description}
-                </small>
-              </p>
-            ))}
-            {!academicSearch(query).length && (
-              <p>
-                No matches. Try a broader concept or explore the three pathways
-                below.
-              </p>
-            )}
+        <div className="xa-academy-emblem" aria-hidden="true">
+          <div>
+            <Fingerprint size={58} />
           </div>
-        )}
-      </div>
-      <section>
-        <div className="xa-section-heading">
-          <h2>Three disciplines. Connected practice.</h2>
+          <span>EXPLAIN · EXPERIMENT · APPLY</span>
         </div>
-        <div className="xa-grid">
-          {tracks.map((track, index) => {
-            const Icon = icons[index];
+      </div>
+      <div className="xa-data-banner">
+        <span className="xa-live-dot" />
+        <strong>{analysed ? provenance : "Fictional scenario baseline"}</strong>
+        <span>
+          {scenario.name} · as of {asOf}
+        </span>
+        <Link to={`${base}/case-studies`}>
+          Change context <ArrowUpRight size={13} />
+        </Link>
+      </div>
+      <div className="xa-kpi-grid">
+        <Kpi
+          label="Active risk exposure"
+          value={s.residual}
+          detail={`${s.total} active risks · ordinal index sum`}
+          onClick={() => select("Active risk exposure", riskMethod)}
+        />
+        <Kpi
+          label="Critical exposures"
+          value={s.distribution.Critical || 0}
+          detail="Residual index 17–25"
+          tone="rose"
+          onClick={() => select("Critical exposures", riskMethod)}
+        />
+        <Kpi
+          label="Evidence references"
+          value={`${s.withEvidence}/${s.total}`}
+          detail="Presence only · not verified"
+          tone="blue"
+          onClick={() =>
+            select(
+              "Evidence coverage",
+              "Count active risks with nonempty evidence references; no assessment evidence is invented.",
+            )
+          }
+        />
+        <Kpi
+          label="Overdue reviews"
+          value={s.overdue.length}
+          detail={`Review date before ${asOf}`}
+          tone="amber"
+          onClick={() =>
+            select(
+              "Overdue reviews",
+              "Active risk with a review date earlier than the analysis date. Missing dates require separate follow-up.",
+            )
+          }
+        />
+      </div>
+      <div className="xa-dashboard-grid">
+        <Panel
+          title="Cyber risk landscape"
+          subtitle="Residual likelihood × impact · select a cell"
+          action={
+            <Link to={`${base}/labs/risk-decision`}>
+              Open register <ArrowUpRight size={14} />
+            </Link>
+          }
+        >
+          <RiskMatrix
+            counts={(l, i) =>
+              s.active.filter(
+                (r) => r.residualLikelihood === l && r.residualImpact === i,
+              ).length
+            }
+            onSelect={(l, i) =>
+              select(
+                `Likelihood ${l} × impact ${i}`,
+                `Residual index = ${l * i}. ${s.active.filter((r) => r.residualLikelihood === l && r.residualImpact === i).length} active risks occupy this cell. ${riskMethod}`,
+              )
+            }
+          />
+        </Panel>
+        <Panel
+          title="Exposure distribution"
+          subtitle="Understand what needs attention"
+        >
+          <Donut
+            label="active risks"
+            segments={(["Critical", "High", "Medium", "Low"] as const).map(
+              (b) => ({
+                label: b,
+                value: s.distribution[b] || 0,
+                color: palette[b],
+              }),
+            )}
+            onSelect={(b) =>
+              select(
+                `${b} exposure`,
+                `${s.active.filter((r) => band(residualScore(r)) === b).length} active risk records in this residual category. ${riskMethod}`,
+              )
+            }
+          />
+        </Panel>
+      </div>
+      <div className="xa-grid two">
+        <Link
+          to={`${base}/labs/framework-explorer`}
+          className="xa-feature-card"
+        >
+          <div className="xa-feature-icon">
+            <ShieldCheck size={23} />
+            <span className="xa-pill">PRIORITY WORKSPACE</span>
+          </div>
+          <h2>
+            From framework
+            <br />
+            to defensible evidence.
+          </h2>
+          <p>
+            Navigate all six CSF Functions, assess 106 outcomes and build your
+            gap roadmap.
+          </p>
+          <div className="xa-mini-functions">
+            {["GV", "ID", "PR", "DE", "RS", "RC"].map((f, i) => (
+              <span className={`color-${i}`} key={f}>
+                {f}
+              </span>
+            ))}
+          </div>
+          <span>
+            Open Framework Explorer <ArrowRight size={15} />
+          </span>
+        </Link>
+        <Panel
+          title="Your decision chain"
+          subtitle="A connected view of risk, evidence and action"
+        >
+          <div className="xa-chain">
+            {[
+              ["Business objective", "process"],
+              ["Asset & exposure", "asset"],
+              ["Control & evidence", "control"],
+              ["Executive decision", "decision"],
+            ].map(([label, node], i) => (
+              <Link to={`${base}/knowledge-graph?node=${node}`} key={node}>
+                <span>0{i + 1}</span>
+                {label}
+                <ArrowUpRight size={14} />
+              </Link>
+            ))}
+          </div>
+          <Link to={`${base}/knowledge-graph`} className="xa-button secondary">
+            <Network size={15} /> Explore the knowledge graph
+          </Link>
+        </Panel>
+      </div>
+      <div className="xa-section-heading">
+        <h2>Choose your next experiment</h2>
+        <span className="xa-muted">Learn by making a decision</span>
+      </div>
+      <div className="xa-grid">
+        {labLinks
+          .filter((l) =>
+            ["cyber-incident", "ai-experiment", "ciso-boardroom"].includes(
+              l.id,
+            ),
+          )
+          .map((l, i) => {
+            const Icon = [ShieldCheck, BrainCircuit, FlaskConical][i];
             return (
-              <Link
-                className="xa-card"
-                key={track.id}
-                to={`${base}/${track.id}`}
-              >
-                <Icon
-                  size={25}
-                  aria-hidden="true"
-                  style={{
-                    color: index === 2 ? "#b6a8f4" : "var(--xa-accent)",
-                    marginBottom: "1.5rem",
-                  }}
-                />
-                <h3>{track.title}</h3>
-                <p>{track.summary}</p>
-                <span className="xa-card-link">Explore the academy →</span>
+              <Link key={l.id} to={`${base}/labs/${l.id}`} className="xa-card">
+                <Icon className="xa-accent" size={22} />
+                <h3>{l.title}</h3>
+                <p>{l.detail}</p>
+                <span className="xa-card-link">Enter workspace →</span>
               </Link>
             );
           })}
-        </div>
-      </section>
-      <section>
-        <div className="xa-section-heading">
-          <h2>Learn by making decisions</h2>
-          <Link to={`${base}/labs`}>All laboratories →</Link>
-        </div>
-        <div className="xa-grid two">
-          {labLinks.map((lab) => (
+      </div>
+      <div className="xa-grid two">
+        <Panel
+          title="Treatment ownership"
+          subtitle="Active risks by accountable owner"
+        >
+          <Bars
+            items={s.owners}
+            onSelect={(owner) =>
+              select(
+                owner,
+                `Count of active risk records assigned to ${owner}. Missing owners appear as Unassigned.`,
+              )
+            }
+          />
+        </Panel>
+        <Panel
+          title="Build your foundations"
+          subtitle="Explain → visualise → interact → apply"
+        >
+          {modules.map((m, i) => (
             <Link
-              className="xa-card"
-              key={lab.id}
-              to={`${base}/labs/${lab.id}`}
+              className="xa-lesson-row"
+              key={m.id}
+              to={`${base}/learning/${m.id}`}
             >
-              <div className="xa-tags">
-                <FlaskConical size={16} aria-hidden="true" />
-                <span>Interactive laboratory</span>
+              <span>0{i + 1}</span>
+              <div>
+                <strong>{m.title}</strong>
+                <small>Guided lesson · exercise · knowledge check</small>
               </div>
-              <h3 style={{ marginTop: ".8rem" }}>{lab.title}</h3>
-              <p>{lab.detail}</p>
-              <span className="xa-card-link">{lab.label} →</span>
+              <ArrowUpRight size={15} />
             </Link>
           ))}
-        </div>
-      </section>
-      <section>
-        <div className="xa-section-heading">
-          <h2>Start with a focused lesson</h2>
-          <Link to={`${base}/progress`}>Your progress →</Link>
-        </div>
-        <p className="xa-muted">
-          Discover a concept, practise in a laboratory, pass a knowledge check
-          and produce a deliverable. These three modules are complete. The wider
-          curriculum is labelled by publication status.
-        </p>
-        <div className="xa-grid">
-          {modules.map((module) => (
-            <Link
-              key={module.id}
-              to={`${base}/learning/${module.id}`}
-              className="xa-card"
-            >
-              <p className="xa-eyebrow">
-                {tracks.find((track) => track.id === module.discipline)!.title}
-              </p>
-              <h3>{module.title}</h3>
-              <span className="xa-card-link">Start the module →</span>
-            </Link>
-          ))}
-        </div>
-      </section>
-      <section className="xa-grid two">
-        <div className="xa-panel">
-          <h2>One case. Several perspectives.</h2>
-          <p>
-            Follow the same business service from risk and control evidence to
-            incident response and a board-level decision.
-          </p>
-          {scenarios.map((scenario) => (
-            <p key={scenario.id}>
-              <Link to={`${base}/case-studies`}>{scenario.name}</Link>
-              <br />
-              <small>
-                {scenario.sector} · Fictional educational organisation
-              </small>
-            </p>
-          ))}
-        </div>
-        <div className="xa-panel">
-          <h2>Build a professional capability</h2>
-          <p>
-            Explore existing role responsibilities, connect skills to published
-            modules and use exercises to practise the deliverables a role
-            requires.
-          </p>
-          <div className="xa-actions">
-            <Link className="xa-button" to={`${base}/security-map`}>
-              Roles & competencies
-            </Link>
-            <Link className="xa-button" to={`${base}/certifications`}>
-              Certification pathways
-            </Link>
-          </div>
-          <h3 style={{ marginTop: "1.5rem" }}>Knowledge navigator</h3>
-          <p>
-            A source-linked local search guide helps you find the next lesson.
-            It works without a paid AI service.
-          </p>
-          <Link to={`${base}/assistant`}>Ask the navigator →</Link>
-        </div>
-      </section>
-      <section>
-        <div className="xa-section-heading">
-          <h2>Go to the source</h2>
-          <Link to={`${base}/resources`}>Research & resources →</Link>
-        </div>
-        <div className="xa-grid">
-          {resources
-            .filter((row) => ["csf", "attack", "ai-rmf"].includes(row.id))
-            .map((resource) => (
-              <article className="xa-panel" key={resource.id}>
-                <h3>{resource.title}</h3>
-                <p>{resource.description}</p>
-                <Source href={resource.url}>{resource.publisher}</Source>
-              </article>
-            ))}
-        </div>
-        <p className="xa-muted" style={{ marginTop: "1rem" }}>
-          Educational content reviewed 20 November 2026. Framework release and
-          external-link verification status are documented with each source.
-          Original research is available through the{" "}
-          <Link to="/professional">professional gateway</Link>.
-        </p>
-      </section>
+          <Link to={`${base}/resources`}>
+            Authoritative resources & professional templates →
+          </Link>
+        </Panel>
+      </div>
     </>
   );
 }

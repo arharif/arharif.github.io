@@ -19,7 +19,7 @@ test("academy sections, route refresh, metadata and static teaching content", as
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto(base);
   await expect(page.getByRole("heading", { level: 1 })).toContainText(
-    "Understand cybersecurity",
+    "Learn the system.",
   );
   for (const route of [
     "learning",
@@ -56,10 +56,13 @@ test("framework hierarchy, evidence validation, assessment and gap export", asyn
   await page.goto(`${base}/labs/framework-explorer`);
   await page.getByRole("button", { name: /PR.AA-05/ }).click();
   await expect(
-    page.getByRole("heading", { name: "Review access permissions" }),
+    page.getByRole("heading", {
+      name: "Review access permissions",
+      exact: true,
+    }),
   ).toBeVisible();
   await page
-    .getByLabel("Assessment status")
+    .getByLabel("Assessment status", { exact: true })
     .selectOption("Implemented and evidenced");
   await page.getByRole("button", { name: "Save assessment" }).click();
   await expect(page.getByRole("status")).toContainText("evidence reference");
@@ -83,6 +86,9 @@ test("risk workflow exports actual decisions and imports context in boardroom", 
   page,
 }) => {
   await page.goto(`${base}/labs/risk-decision`);
+  await page
+    .getByRole("button", { name: "Decision simulator", exact: true })
+    .click();
   await page
     .getByLabel("Effectiveness evidence, limitations and uncertainty")
     .fill(
@@ -110,6 +116,7 @@ test("risk workflow exports actual decisions and imports context in boardroom", 
     page.getByRole("button", { name: "Export JSON" }),
   ).toBeDisabled();
   await page.goto(`${base}/labs/ciso-boardroom`);
+  await page.getByText("Import lab context (JSON)", { exact: true }).click();
   await page.getByLabel("Import case-state JSON").setInputFiles({
     name: "case.json",
     mimeType: "application/json",
@@ -308,6 +315,7 @@ for (const route of [
   "/labs/ciso-boardroom",
   "/learning/risk-assessment",
   "/resources",
+  "/knowledge-graph",
 ]) {
   test(`accessibility and 320px layout ${route || "home"}`, async ({
     page,
@@ -336,9 +344,13 @@ for (const route of [
         () => document.documentElement.scrollWidth <= window.innerWidth,
       ),
     ).toBe(true);
+    await page.getByRole("button", { name: "Menu", exact: true }).click();
+    await expect(
+      page.getByRole("navigation", { name: "Academic navigation" }),
+    ).toBeVisible();
     const first = await page.locator(".xa-sidebar a").nth(0).boundingBox();
     const second = await page.locator(".xa-sidebar a").nth(1).boundingBox();
-    expect(second!.x).toBeGreaterThanOrEqual(first!.x + first!.width);
+    expect(second!.y).toBeGreaterThanOrEqual(first!.y + first!.height);
     await page.setViewportSize({ width: 768, height: 1024 });
     expect(
       await page.evaluate(

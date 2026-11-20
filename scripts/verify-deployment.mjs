@@ -29,6 +29,7 @@ const routes = [
   '/',
   '/x1-academic',
   '/x1-academic/labs/framework-explorer',
+  '/x1-academic/knowledge-graph',
   '/x1-academic/labs/risk-decision',
   '/x1-academic/labs/cyber-incident',
   '/x1-academic/labs/ai-experiment',

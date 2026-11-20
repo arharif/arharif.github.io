@@ -45,6 +45,7 @@ const pages = [
     "frameworks",
     "resources",
     "security-map",
+    "knowledge-graph",
     "certifications",
     "case-studies",
     "assistant",
