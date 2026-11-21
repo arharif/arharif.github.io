@@ -57,6 +57,7 @@ These are explicitly simulated critical review passes by the implementation agen
 | GRC: actions and implementation could be mistaken for validated effectiveness | P1 | No automatic score change; validation prerequisites and separately reviewed control decisions | Negative and positive validation paths pass |
 | Application security: newly introduced vulnerable validator | P1 / high advisory | Upgrade to Zod 4.6.7 and migrate strict schemas | Audit zero high/critical; all schema tests pass |
 | Application security: XLSX bounds cannot trust metadata alone | P1 hardening | Header checks, bounded actual inflation, worker isolation/timeout, formula rejection | Real workbook round trip and malicious metadata rejection pass |
+| Application security: Firefox reported the validator JIT probe under strict CSP | P1 compatibility | Central interpreter-only schema configuration; retain the CSP and add event-level violation checks | Full cross-browser CI rerun is required; no console assertion was removed |
 | Application security: typed UI casts must not trust imported lab drafts | P1 | Strict per-lab draft schemas and recorded-record/reference validation | Malformed JSON rejection and unchanged-project assertion pass |
 | UX/accessibility: source-ID comma editing discarded trailing delimiters | P1 | Preserve typed delimiters and normalise on blur | Task/RACI/source edit workflow passes |
 | UX/accessibility: fresh projects showed a misleading unsaved-work warning | P2 | Initial-state digest and clear saved-copy/recovery labels | Overview screenshots and recovery workflow reviewed |
@@ -67,4 +68,4 @@ No unresolved critical/high change-specific finding remains in these review pass
 
 ## Local bundle and loading observations
 
-The latest production build emits the academy core at 228.74 kB minified / 71.67 kB gzip, a separately requested 2.87 MB NIST JSON asset (397 kB gzip), and lazy ExcelJS/parser-worker chunks around 940–944 kB. The build retains its large-chunk warning. The actual screenshot run observed 10 initial home resource requests, with no NIST catalogue, ExcelJS or worker request, and no page errors. These measurements are local build/loading evidence, not a production Core Web Vitals or Lighthouse score.
+The latest production build emits the academy core at 228.76 kB minified / 71.67 kB gzip, a separately requested 2.87 MB NIST JSON asset (397 kB gzip), and lazy ExcelJS/parser-worker chunks around 940–944 kB. The build retains its large-chunk warning. The actual screenshot run observed 10 initial home resource requests, with no NIST catalogue, ExcelJS or worker request, and no page errors. These measurements are local build/loading evidence, not a production Core Web Vitals or Lighthouse score.

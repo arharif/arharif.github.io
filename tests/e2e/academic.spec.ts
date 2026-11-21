@@ -9,6 +9,15 @@ test("academy sections, route refresh, metadata and static teaching content", as
   request,
 }) => {
   const errors: string[] = [];
+  const cspViolations: string[] = [];
+  await page.addInitScript(() => {
+    (window as any).__x1CspViolations = [];
+    window.addEventListener("securitypolicyviolation", (event) => {
+      (window as any).__x1CspViolations.push(
+        `${event.violatedDirective}: ${event.blockedURI}`,
+      );
+    });
+  });
   page.on("console", (message) => {
     if (message.type() === "error") errors.push(message.text());
   });
@@ -20,6 +29,9 @@ test("academy sections, route refresh, metadata and static teaching content", as
   await page.goto(base);
   await expect(page.getByRole("heading", { level: 1 })).toContainText(
     "Understand the standard.",
+  );
+  cspViolations.push(
+    ...(await page.evaluate(() => (window as any).__x1CspViolations)),
   );
   for (const route of [
     "learning",
@@ -37,6 +49,9 @@ test("academy sections, route refresh, metadata and static teaching content", as
   ]) {
     await page.goto(`${base}/${route}`);
     await expect(page.locator(".xa main h1")).toBeVisible();
+    cspViolations.push(
+      ...(await page.evaluate(() => (window as any).__x1CspViolations)),
+    );
   }
   await page.goto(`${base}/learning/risk-assessment`);
   await page.reload();
@@ -49,6 +64,7 @@ test("academy sections, route refresh, metadata and static teaching content", as
   expect(html).toContain("Write a cause");
   expect(html).toContain("application/ld+json");
   expect(errors).toEqual([]);
+  expect(cspViolations).toEqual([]);
 });
 test("framework hierarchy, evidence validation, assessment and gap export", async ({
   page,

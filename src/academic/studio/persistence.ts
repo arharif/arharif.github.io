@@ -5,7 +5,7 @@ import {
   validateTask,
   schedule,
 } from "./engines.ts";
-import { z } from "zod";
+import { z } from "./schema.ts";
 import {
   studioSchema,
   today,

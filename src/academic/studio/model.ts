@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "./schema.ts";
 import type { CaseId } from "../data/types.ts";
 export const stages = [
   "FRAME",
