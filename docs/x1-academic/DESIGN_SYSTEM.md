@@ -1,5 +1,7 @@
 # Academic workspace interface
 
+> Historical release record. The current connected-studio implementation, methods, sources, security findings and executed checks are documented in [v2/IMPLEMENTATION_REPORT.md](v2/IMPLEMENTATION_REPORT.md) and its linked reports. The older scope/retention statements below describe their original revision.
+
 The academy uses a navy/mint palette, slate panels, violet AI accents, semantic severity colours, a system sans-serif font and a parallel light theme. Styles remain scoped to `.xa`. All status categories have text and numeric labels; colour is supplementary.
 
 Desktop uses a persistent left navigation, central workspace and right contextual learning panel. Below 1190px the guide becomes an explicitly closable drawer; below 700px navigation opens from a Menu button. Mobile dashboards stack; KPIs use two readable columns, tables scroll inside their container, and the graph provides concept buttons plus a full outline. On desktop, SVG graph nodes have keyboard equivalents and do not interfere with canvas panning.

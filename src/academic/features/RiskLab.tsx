@@ -1,3 +1,4 @@
+import RiskEditor from "../components/editors/RiskEditor";
 import { useMemo, useState } from "react";
 import {
   Plus,
@@ -45,6 +46,7 @@ import RiskDecision from "./RiskDecision";
 import RiskHistory from "../workspace/RiskHistory";
 export default function RiskLab() {
   const scenario = useScenario();
+  const workspace = useWorkspace();
   const {
     rows,
     setRows,
@@ -59,8 +61,13 @@ export default function RiskLab() {
   } = useWorkspace();
   const { explain } = useInsight();
   const [tab, setTab] = useState("Register");
-  const [draft, setDraft] = useState<RiskRecord | null>(null),
-    [editing, setEditing] = useState<string | null>(null);
+  const {
+    riskDraft: draft,
+    setRiskDraft: setDraft,
+    riskEditing: editing,
+    setRiskEditing: setEditing,
+    analysedAsOf,
+  } = useWorkspace();
   const [message, setMessage] = useState(""),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
@@ -75,12 +82,18 @@ export default function RiskLab() {
       null,
     );
   const data = analysed ?? [];
-  const stats = useMemo(() => analyseRisks(data, asOf), [data, asOf]);
+  const reportDate = analysed ? analysedAsOf : asOf;
+  const stats = useMemo(
+    () => analyseRisks(data, analysedAsOf),
+    [data, analysedAsOf],
+  );
   const validation = importData
     ? validateRiskRows(importData.rows, mapping, mode === "Append" ? rows : [])
     : null;
   const dirty =
-    analysed !== null && JSON.stringify(analysed) !== JSON.stringify(rows);
+    analysed !== null &&
+    (JSON.stringify(analysed) !== JSON.stringify(rows) ||
+      analysedAsOf !== asOf);
   const visible = (analysed && !dirty ? analysed : rows).filter(
     (r) =>
       (!filter || filter.ids.includes(r.id)) &&
@@ -102,11 +115,21 @@ export default function RiskLab() {
     );
   };
   const change = (next: RiskRecord[]) => {
+    const linked = workspace.studio.findings.filter(
+      (f) => f.riskId && !next.some((r) => r.id === f.riskId),
+    );
+    if (linked.length) {
+      setError(
+        `This change would remove linked risk records (${linked.map((f) => f.riskId).join(", ")}). Unlink them in Assess before replacing or deleting them.`,
+      );
+      return false;
+    }
     setRows(next);
     setFilter(null);
     setMessage(
       "Register updated. Select Analyse risks to refresh the dashboard.",
     );
+    return true;
   };
   async function workbook(template = false) {
     try {
@@ -129,7 +152,7 @@ export default function RiskLab() {
               residualIndex: residualScore(r),
               category: band(residualScore(r)),
               provenance,
-              asOf,
+              asOf: reportDate,
             })),
         riskMethod,
       );
@@ -146,7 +169,7 @@ export default function RiskLab() {
     residualIndex: residualScore(r),
     category: band(residualScore(r)),
     provenance,
-    asOf,
+    asOf: reportDate,
   }));
   return (
     <>
@@ -180,7 +203,7 @@ export default function RiskLab() {
             </span>
             <button
               onClick={() => {
-                change(scenarioRisks(scenario.id));
+                if (!change(scenarioRisks(scenario.id))) return;
                 setProvenance("Fictional educational scenario");
                 setAnalysed(null);
                 setObservations([]);
@@ -243,6 +266,11 @@ export default function RiskLab() {
                 <Plus size={15} /> Add risk
               </button>
             </div>
+            <p className="xa-muted">
+              Use fictional data only. Do not import confidential banking,
+              personal or industrial information into this public teaching
+              application. Files are processed locally.
+            </p>
             <div className="xa-toolbar">
               <Field label="Import risk spreadsheet">
                 <input
@@ -370,11 +398,14 @@ export default function RiskLab() {
                     disabled={!validation || !!validation.errors.length}
                     onClick={() => {
                       if (!validation || validation.errors.length) return;
-                      change(
-                        mode === "Append"
-                          ? [...rows, ...validation.records]
-                          : validation.records,
-                      );
+                      if (
+                        !change(
+                          mode === "Append"
+                            ? [...rows, ...validation.records]
+                            : validation.records,
+                        )
+                      )
+                        return;
                       setProvenance(
                         mode === "Append"
                           ? "Mixed scenario / learner-supplied records"
@@ -397,102 +428,7 @@ export default function RiskLab() {
               </div>
             )}
           </section>
-          {draft && (
-            <section className="xa-panel" aria-label="Risk editor">
-              <h2>{editing ? "Edit risk" : "New risk"}</h2>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (!editing && rows.length >= 2000) {
-                    setError("Maximum 2000 risks per register.");
-                    return;
-                  }
-                  const v = validateRisk(
-                    draft as unknown as Record<string, unknown>,
-                    new Set(
-                      rows
-                        .filter((r) => r.id !== editing)
-                        .map((r) => r.id.toLowerCase()),
-                    ),
-                  );
-                  if (v.errors.length) {
-                    setError(v.errors.join("; "));
-                    return;
-                  }
-                  change(
-                    editing
-                      ? rows.map((r) => (r.id === editing ? v.record : r))
-                      : [...rows, v.record],
-                  );
-                  setProvenance(
-                    provenance === "Fictional educational scenario"
-                      ? "Fictional scenario with learner edits"
-                      : provenance,
-                  );
-                  setDraft(null);
-                  setError("");
-                }}
-              >
-                <div className="xa-grid">
-                  {riskFields.map((f) => (
-                    <Field key={f} label={riskFieldLabels[f]}>
-                      {" "}
-                      {f === "status" ? (
-                        <select
-                          value={draft.status}
-                          onChange={(e) =>
-                            setDraft({ ...draft, status: e.target.value })
-                          }
-                        >
-                          {riskStatuses.map((s) => (
-                            <option key={s}>{s}</option>
-                          ))}
-                        </select>
-                      ) : (
-                        <input
-                          value={draft[f]}
-                          required={[
-                            "id",
-                            "asset",
-                            "threat",
-                            "likelihood",
-                            "impact",
-                          ].includes(f)}
-                          type={
-                            f.includes("Date")
-                              ? "date"
-                              : typeof draft[f] === "number"
-                                ? "number"
-                                : "text"
-                          }
-                          min={typeof draft[f] === "number" ? 1 : undefined}
-                          max={typeof draft[f] === "number" ? 5 : undefined}
-                          maxLength={3000}
-                          onChange={(e) =>
-                            setDraft({
-                              ...draft,
-                              [f]:
-                                typeof draft[f] === "number"
-                                  ? Number(e.target.value)
-                                  : e.target.value,
-                            })
-                          }
-                        />
-                      )}
-                    </Field>
-                  ))}
-                </div>
-                <div className="xa-actions">
-                  <button className="primary" type="submit">
-                    Save risk
-                  </button>
-                  <button type="button" onClick={() => setDraft(null)}>
-                    Cancel edit
-                  </button>
-                </div>
-              </form>
-            </section>
-          )}
+          {draft && <RiskEditor onCommit={change} />}
           {error && <p role="alert">{error}</p>}
           <p role="status">{busy ? "Processing workbook locally…" : message}</p>
           {dirty && (
@@ -531,7 +467,7 @@ export default function RiskLab() {
                 <Kpi
                   label="Overdue reviews"
                   value={stats.overdue.length}
-                  detail={`Review date before ${asOf}`}
+                  detail={`Review date before ${reportDate}`}
                   tone="amber"
                   onClick={() =>
                     select(
@@ -630,7 +566,7 @@ export default function RiskLab() {
                 </Panel>
                 <Panel
                   title="Risk ageing"
-                  subtitle={`Opening dates to ${asOf}`}
+                  subtitle={`Opening dates to ${reportDate}`}
                 >
                   <Bars
                     items={stats.ageing.map((a) => ({
@@ -720,7 +656,7 @@ export default function RiskLab() {
                 </Panel>
                 <Panel
                   title="Executive brief"
-                  subtitle={`${scenario.name} · ${asOf}`}
+                  subtitle={`${scenario.name} · ${reportDate}`}
                 >
                   <p>
                     <strong>{stats.total}</strong> active risks carry a residual
@@ -894,7 +830,7 @@ export default function RiskLab() {
             >
               <h1>X1 Academic · Executive risk assessment</h1>
               <p>
-                {provenance} · analysis date {asOf} · scenario context{" "}
+                {provenance} · analysis date {reportDate} · scenario context{" "}
                 {scenario.name}
               </p>
               <p>
@@ -1010,7 +946,7 @@ export default function RiskLab() {
                         reviewDate: r.reviewDate,
                         evidence: r.evidence,
                         provenance,
-                        asOf,
+                        asOf: reportDate,
                       })),
                     ),
                     "text/csv;charset=utf-8",
@@ -1028,7 +964,7 @@ export default function RiskLab() {
                       {
                         methodology: riskMethod,
                         provenance,
-                        asOf,
+                        asOf: reportDate,
                         records: exports,
                         datedObservations: observations,
                       },
@@ -1049,8 +985,9 @@ export default function RiskLab() {
               <summary>Methodology & provenance</summary>
               <p>{riskMethod}</p>
               <p>
-                {provenance} · analysis date {asOf} · {data.length} records.
-                Data are session-only; export before closing.
+                {provenance} · analysis date {reportDate} · {data.length}{" "}
+                records. Save the fictional project explicitly or export before
+                closing.
               </p>
             </details>
           </section>

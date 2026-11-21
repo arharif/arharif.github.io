@@ -228,7 +228,7 @@ export default function Lesson() {
       <section className="xa-panel">
         <h2>Practise and produce</h2>
         <p>{module.activity}</p>
-        <Link className="xa-button primary" to={`${base}/labs/${module.lab}`}>
+        <Link className="xa-button primary" to={module.lab.startsWith("/")?`${base}${module.lab}`:`${base}/labs/${module.lab}`}>
           Open the related laboratory →
         </Link>
         <Field label="Activity reasoning · observations, assumptions and next action">

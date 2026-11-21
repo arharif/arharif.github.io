@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useLabState } from "../workspace/state";
 import { useScenario } from "../app/context";
 import {
   ExportPanel,
@@ -57,18 +57,24 @@ export default function IncidentLab() {
       relevant: true,
     },
   ];
-  const [filter, setFilter] = useState(""),
-    [marked, setMarked] = useState<string[]>([]);
-  const [hypothesis, setHypothesis] = useState("Undetermined"),
-    [classification, setClassification] = useState(
+  const [filter, setFilter] = useLabState("incident", "filter", ""),
+    [marked, setMarked] = useLabState<string[]>("incident", "marked", []);
+  const [hypothesis, setHypothesis] = useLabState(
+      "incident",
+      "hypothesis",
+      "Undetermined",
+    ),
+    [classification, setClassification] = useLabState(
+      "incident",
+      "classification",
       "Suspected account compromise",
     );
-  const [severity, setSeverity] = useState("High"),
-    [notes, setNotes] = useState("");
-  const [actions, setActions] = useState<ReturnType<typeof incidentFeedback>[]>(
-    [],
-  );
-  const [reviewed, setReviewed] = useState(false);
+  const [severity, setSeverity] = useLabState("incident", "severity", "High"),
+    [notes, setNotes] = useLabState("incident", "notes", "");
+  const [actions, setActions] = useLabState<
+    ReturnType<typeof incidentFeedback>[]
+  >("incident", "actions", []);
+  const [reviewed, setReviewed] = useLabState("incident", "reviewed", false);
   const count = marked.filter(
     (id) => events.find((event) => event.id === id)?.relevant,
   ).length;

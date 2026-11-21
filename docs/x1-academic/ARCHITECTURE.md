@@ -1,5 +1,7 @@
 # X1 Academic architecture
 
+> Historical release record. The current connected-studio implementation, methods, sources, security findings and executed checks are documented in [v2/IMPLEMENTATION_REPORT.md](v2/IMPLEMENTATION_REPORT.md) and its linked reports. The older scope/retention statements below describe their original revision.
+
 This increment introduces an isolated public academy under `/x1-academic/*`. The personal and professional site still mounts the existing Shell and AuthProvider. App.tsx selects the academic route boundary, then loads AcademicApp lazily. Academic CSS is scoped to `.xa`. Theme selection is independent of the personal site's themes.
 
 ## Feature boundaries

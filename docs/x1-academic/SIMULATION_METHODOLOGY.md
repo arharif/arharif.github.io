@@ -1,5 +1,7 @@
 # Educational simulation methods
 
+> Historical release record. The current connected-studio implementation, methods, sources, security findings and executed checks are documented in [v2/IMPLEMENTATION_REPORT.md](v2/IMPLEMENTATION_REPORT.md) and its linked reports. The older scope/retention statements below describe their original revision.
+
 All organisations, events, evidence samples and decisions are fictional educational scenarios. No lab performs a security action or predicts actual organisational outcomes.
 
 ## Framework assessment

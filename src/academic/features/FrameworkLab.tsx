@@ -1,3 +1,4 @@
+import AssessmentEditor from "../components/editors/AssessmentEditor";
 import { useEffect, useState } from "react";
 import { mappings } from "../data/controls";
 import {
@@ -42,8 +43,15 @@ export default function FrameworkLab() {
     controls.find((c) => c.framework === initial)!.id,
   );
   const [query, setQuery] = useState("");
-  const { assessments: register, setAssessments: setRegister } = useWorkspace();
-  const [draft, setDraft] = useState(() => register[selected] ?? blank());
+  const {
+    assessments: register,
+    setAssessments: setRegister,
+    assessmentDrafts,
+    setAssessmentDrafts,
+  } = useWorkspace();
+  const draft = assessmentDrafts[selected] ?? register[selected] ?? blank();
+  const setDraft = (value: ControlAssessment) =>
+    setAssessmentDrafts((previous) => ({ ...previous, [selected]: value }));
   const [message, setMessage] = useState("");
   const source = frameworkSources.find((item) => item.id === framework)!;
   const visible = controls.filter(
@@ -67,7 +75,6 @@ export default function FrameworkLab() {
   );
   const choose = (id: string) => {
     setSelected(id);
-    setDraft(register[id] ?? blank());
     setMessage("");
     const c = controls.find((c) => c.id === id)!;
     explain({
@@ -95,9 +102,6 @@ export default function FrameworkLab() {
       setFramework(id);
       setGroup("All");
       setSelected(controls.find((c) => c.framework === id)!.id);
-      setDraft(
-        register[controls.find((c) => c.framework === id)!.id] ?? blank(),
-      );
     }
   }, [params]);
   return (
@@ -397,98 +401,24 @@ export default function FrameworkLab() {
           ))}
           {!visible.length && <p>No controls match. Try a broader search.</p>}
         </nav>
-        <article className="xa-panel">
-          <p className="xa-eyebrow">{control.id}</p>
-          <h2>{control.title}</h2>
-          <p>{control.explanation}</p>
-          <dl className="xa-details">
-            <dt>Business objective</dt>
-            <dd>{control.objective}</dd>
-            <dt>Implementation</dt>
-            <dd>{control.implementation}</dd>
-            <dt>Roles & assets</dt>
-            <dd>
-              {control.roles}. {control.assets}
-            </dd>
-            <dt>Assessment methods</dt>
-            <dd>{control.methods}</dd>
-            <dt>Possible evidence</dt>
-            <dd>{control.evidence}</dd>
-            <dt>Common gaps</dt>
-            <dd>{control.gap}</dd>
-            <dt>Associated risk</dt>
-            <dd>{control.risk}</dd>
-          </dl>
-          <Source href={control.source}>Authoritative reference</Source>
-          <h3 style={{ marginTop: "1rem" }}>Assess this item</h3>
-          <p className="xa-muted">
-            “Evidenced” records your assertion and reference. Independent
-            effectiveness testing remains a follow-up activity.
-          </p>
-          <Field label="Assessment status">
-            <select
-              value={draft.status}
-              onChange={(e) =>
-                setDraft({
-                  ...draft,
-                  status: e.target.value as ControlAssessment["status"],
-                })
-              }
-            >
-              {statuses.map((status) => (
-                <option key={status}>{status}</option>
-              ))}
-            </select>
-          </Field>
-          <Field label="Action owner">
-            <input
-              value={draft.owner}
-              maxLength={120}
-              onChange={(e) => setDraft({ ...draft, owner: e.target.value })}
-            />
-          </Field>
-          <Field label="Evidence reference and assessment period">
-            <input
-              value={draft.evidence}
-              maxLength={500}
-              onChange={(e) => setDraft({ ...draft, evidence: e.target.value })}
-              placeholder="Fictional sample reference, scope and period"
-            />
-          </Field>
-          <Field label="Notes and next action">
-            <textarea
-              value={draft.notes}
-              maxLength={2000}
-              onChange={(e) => setDraft({ ...draft, notes: e.target.value })}
-            />
-          </Field>
-          {draft.status === "Not applicable" && (
-            <Field label="Scope exclusion justification">
-              <textarea
-                value={draft.justification}
-                maxLength={1000}
-                onChange={(e) =>
-                  setDraft({ ...draft, justification: e.target.value })
-                }
-              />
-            </Field>
-          )}
-          <button
-            className="primary"
-            onClick={() => {
-              const errors = validateAssessment(draft);
-              if (errors.length) {
-                setMessage(errors.join(" "));
-                return;
-              }
-              setRegister({ ...register, [selected]: { ...draft } });
-              setMessage("Assessment saved for this session.");
-            }}
-          >
-            Save assessment
-          </button>
-          <p role="status">{message}</p>
-        </article>
+        <AssessmentEditor
+          control={control}
+          draft={draft}
+          setDraft={setDraft}
+          message={message}
+          onSave={() => {
+            const errors = validateAssessment(draft);
+            if (errors.length) {
+              setMessage(errors.join(" "));
+              return;
+            }
+            setRegister((previous) => ({
+              ...previous,
+              [selected]: { ...draft },
+            }));
+            setMessage("Assessment saved for this session.");
+          }}
+        />
       </div>
       <section>
         <h2>Gap analysis & remediation register</h2>
@@ -564,6 +494,14 @@ export default function FrameworkLab() {
         methodology="CSF full Core; other frameworks use selected teaching scopes. Status counts describe learner assertions. Gaps require risk-based prioritisation and independent follow-up. No overall conformity conclusion."
         results={{
           summary,
+          records: controls
+            .filter((c) => c.framework === framework)
+            .map((c) => ({
+              id: c.id,
+              title: c.title,
+              ...blank(),
+              ...register[c.id],
+            })),
           assessmentRegister: Object.fromEntries(
             Object.entries(register).filter(
               ([id]) =>
@@ -576,18 +514,35 @@ export default function FrameworkLab() {
           followUp:
             "Validate scope, sample operating effectiveness and assign dated remediation milestones.",
         }}
-        rows={Object.entries(register)
-          .filter(([id]) => visible.some((c) => c.id === id))
-          .map(([id, row]) => ({ id, ...row }))}
+        rows={controls
+          .filter((c) => c.framework === framework)
+          .map((c) => ({
+            id: c.id,
+            title: c.title,
+            category: c.path.join(" / "),
+            ...blank(),
+            ...register[c.id],
+          }))}
         ready={controls.some(
           (c) => c.framework === framework && register[c.id],
         )}
       />
       <Reset
         onClick={() => {
-          setRegister({});
-          setDraft(blank());
-          setMessage("Assessment reset.");
+          const ids = new Set(
+            controls.filter((c) => c.framework === framework).map((c) => c.id),
+          );
+          setRegister((previous) =>
+            Object.fromEntries(
+              Object.entries(previous).filter(([id]) => !ids.has(id)),
+            ),
+          );
+          setAssessmentDrafts((previous) =>
+            Object.fromEntries(
+              Object.entries(previous).filter(([id]) => !ids.has(id)),
+            ),
+          );
+          setMessage("Assessment reset for the selected framework only.");
         }}
       />
     </>

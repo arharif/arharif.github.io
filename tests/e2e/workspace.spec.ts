@@ -321,6 +321,8 @@ test("mobile menu, risk analysis and explanation drawer remain operable", async 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(base);
   await page.getByRole("button", { name: "Menu", exact: true }).click();
+  if (!((await page.locator(".xs-tools-nav").getAttribute("open")) !== null))
+    await page.getByText("All workspaces", { exact: true }).click();
   await page
     .getByRole("navigation", { name: "Academic navigation" })
     .getByRole("link", { name: "Risk Register & Simulator", exact: true })
@@ -362,6 +364,8 @@ test("assessment decisions remain available when navigating from graph to boardr
   await page
     .getByRole("button", { name: "Save assessment", exact: true })
     .click();
+  if (!((await page.locator(".xs-tools-nav").getAttribute("open")) !== null))
+    await page.getByText("All workspaces", { exact: true }).click();
   await page
     .getByRole("navigation", { name: "Academic navigation" })
     .getByRole("link", { name: "CISO Boardroom", exact: true })
@@ -371,6 +375,8 @@ test("assessment decisions remain available when navigating from graph to boardr
       exact: true,
     }),
   ).toBeVisible();
+  if (!((await page.locator(".xs-tools-nav").getAttribute("open")) !== null))
+    await page.getByText("All workspaces", { exact: true }).click();
   await page
     .getByRole("navigation", { name: "Academic navigation" })
     .getByRole("link", { name: "Control & Framework Explorer", exact: true })

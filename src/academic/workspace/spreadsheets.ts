@@ -1,3 +1,4 @@
+import { inspectXlsxZip } from "../studio/zipSafety.ts";
 import { riskFields, riskFieldLabels } from "./risk.ts";
 export async function readSpreadsheet(
   file: File,
@@ -7,28 +8,34 @@ export async function readSpreadsheet(
   let grid: unknown[][];
   if (/\.csv$/i.test(file.name)) grid = parseCsv(await file.text());
   else if (/\.xlsx$/i.test(file.name)) {
-    const { Workbook } = await import("exceljs");
-    const workbook = new Workbook();
-    await workbook.xlsx.load(await file.arrayBuffer());
-    const sheet = workbook.worksheets[0];
-    if (!sheet) throw new Error("Workbook has no worksheets.");
-    if (sheet.rowCount > 2001 || sheet.columnCount > 80)
-      throw new Error("Maximum 2000 data rows and 80 columns.");
-    grid = [];
-    sheet.eachRow({ includeEmpty: true }, (row) => {
-      const cells: unknown[] = [];
-      for (let c = 1; c <= sheet.columnCount; c++) {
-        const value = row.getCell(c).value;
-        if (value instanceof Date) cells.push(value.toISOString().slice(0, 10));
-        else if (value && typeof value === "object") {
-          if ("formula" in value || "sharedFormula" in value)
-            throw new Error(
-              "Formula cells are not accepted. Paste values into a clean workbook.",
-            );
-          cells.push(row.getCell(c).text);
-        } else cells.push(value ?? "");
-      }
-      grid.push(cells);
+    const buffer = await file.arrayBuffer();
+    inspectXlsxZip(buffer);
+    grid = await new Promise<unknown[][]>((resolve, reject) => {
+      const worker = new Worker(
+        new URL("../studio/xlsx.worker.ts", import.meta.url),
+        { type: "module" },
+      );
+      const timer = setTimeout(() => {
+        worker.terminate();
+        reject(
+          new Error(
+            "Workbook parsing exceeded 10 seconds; use a smaller values-only file.",
+          ),
+        );
+      }, 10000);
+      worker.onmessage = (e) => {
+        clearTimeout(timer);
+        worker.terminate();
+        e.data.ok ? resolve(e.data.grid) : reject(new Error(e.data.error));
+      };
+      worker.onerror = () => {
+        clearTimeout(timer);
+        worker.terminate();
+        reject(
+          new Error("Workbook worker failed. Try a smaller values-only file."),
+        );
+      };
+      worker.postMessage(buffer, [buffer]);
     });
   } else throw new Error("Use .csv or .xlsx.");
   if (grid.length > 2001 || grid.some((r) => r.length > 80))
@@ -40,7 +47,12 @@ export async function readSpreadsheet(
   );
   if (
     !headers.length ||
-    headers.some((h) => !h) ||
+    headers.some(
+      (h) =>
+        !h ||
+        h.length > 240 ||
+        ["__proto__", "constructor", "prototype"].includes(h),
+    ) ||
     new Set(headers).size !== headers.length
   )
     throw new Error("Headers must be nonempty and unique.");
@@ -58,7 +70,10 @@ export function parseCsv(text: string): string[][] {
   let row: string[] = [],
     cell = "",
     quoted = false;
+  if (text.length > 3 * 1024 * 1024) throw new Error("CSV exceeds 3 MB.");
   for (let i = 0; i < text.length; i++) {
+    if (rows.length > 2000 || row.length > 79 || cell.length > 8000)
+      throw new Error("CSV exceeds row, column or cell limits.");
     const ch = text[i];
     if (ch === '"') {
       if (quoted && text[i + 1] === '"') {

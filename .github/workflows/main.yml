@@ -22,8 +22,10 @@ jobs:
       - run: npm run build
       - run: npm run lint
       - run: npm test
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install --with-deps chromium firefox webkit
       - run: npm run test:e2e
+        env:
+          X1_ALL_BROWSERS: '1'
       - name: Retain browser failure traces
         if: failure()
         uses: actions/upload-artifact@v4

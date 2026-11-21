@@ -1,3 +1,4 @@
+import { studioLessons } from "./studioLessons.ts";
 import type { Discipline, LearningModule } from "./types";
 export const tracks: {
   id: Discipline;
@@ -32,6 +33,7 @@ export const tracks: {
       "Connect business objectives to defensible risk decisions and assurance.",
     modules: [
       "Cybersecurity Governance Foundations",
+      "Privacy Risk and Governance",
       "Enterprise Risk and Cyber Risk Assessment",
       "NIST CSF 2.0",
       "NIST SP 800-53 and Control Assessment",
@@ -67,6 +69,7 @@ export const tracks: {
   },
 ];
 export const modules: LearningModule[] = [
+  ...studioLessons,
   {
     id: "incident-triage",
     discipline: "cybersecurity",
