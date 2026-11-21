@@ -2,6 +2,7 @@ import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { modules, tracks } from "../src/academic/data/curriculum.ts";
 import { labLinks } from "../src/academic/data/cases.ts";
 import { complianceFrameworks } from "../src/data/complianceFrameworks.ts";
+import { academicPolicy } from "./academic-policy.mjs";
 const base = "/x1-academic";
 const pages = [
   {
@@ -90,7 +91,7 @@ for (const page of pages) {
   let html = template
     .replace(
       "</head>",
-      "<meta name=\"x1-academic-policy\" content=\"v2\"><meta name=\"referrer\" content=\"no-referrer\"><meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'\">" +
+      `<meta name="x1-academic-policy" content="v2"><meta name="referrer" content="no-referrer"><meta http-equiv="Content-Security-Policy" content="${escape(academicPolicy(process.env.VITE_SUPABASE_URL))}">` +
         "</head>",
     )
     .replace(
