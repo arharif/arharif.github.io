@@ -33,7 +33,7 @@ export default function Resources() {
           metadata. The original published resource library remains available.
         </p>
       </Header>
-      <Link to="/academic-library">Browse the original library →</Link>
+      <a href="/academic-library">Browse the original library →</a>
       <Field label="Search resource catalogue">
         <input
           type="search"

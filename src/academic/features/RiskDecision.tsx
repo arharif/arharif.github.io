@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useScenario } from "../app/context";
 import {
   ExportPanel,
@@ -7,7 +6,7 @@ import {
   LabIntro,
   Reset,
 } from "../components/shared";
-import { useWorkspace } from "../workspace/state";
+import { useWorkspace, useLabState } from "../workspace/state";
 import { useInsight, metricInsight } from "../workspace/insights";
 import { Kpi } from "../workspace/charts";
 import { challengeResponse, riskCategory, riskValue } from "../utils/engines";
@@ -37,7 +36,7 @@ export default function RiskLab() {
   const scenario = useScenario();
   const { rows } = useWorkspace();
   const { explain } = useInsight();
-  const [comparisons, setComparisons] = useState<
+  const [comparisons, setComparisons] = useLabState<
     {
       label: string;
       inherent: number;
@@ -45,23 +44,47 @@ export default function RiskLab() {
       treatment: string;
       assumptions: string;
     }[]
-  >([]);
-  const [riskId, setRiskId] = useState("");
+  >("risk-decision", "comparisons", []);
+  const [riskId, setRiskId] = useLabState("risk-decision", "riskId", "");
   const initialStatement = `${scenario.exposure} ${scenario.threat} This could cause ${scenario.consequence.toLowerCase()}`;
-  const [statement, setStatement] = useState(initialStatement);
-  const [likelihood, setLikelihood] = useState(4),
-    [impact, setImpact] = useState(4);
-  const [residualL, setResidualL] = useState(3),
-    [residualI, setResidualI] = useState(4);
-  const [method, setMethod] = useState("product"),
-    [expert, setExpert] = useState(false);
-  const [selected, setSelected] = useState<string[]>([]),
-    [evidence, setEvidence] = useState("");
-  const [treatment, setTreatment] = useState("Mitigate"),
-    [reason, setReason] = useState("");
-  const [owner, setOwner] = useState(""),
-    [review, setReview] = useState("");
-  const [evaluated, setEvaluated] = useState(false);
+  const [statement, setStatement] = useLabState(
+    "risk-decision",
+    "statement",
+    initialStatement,
+  );
+  const [likelihood, setLikelihood] = useLabState(
+      "risk-decision",
+      "likelihood",
+      4,
+    ),
+    [impact, setImpact] = useLabState("risk-decision", "impact", 4);
+  const [residualL, setResidualL] = useLabState(
+      "risk-decision",
+      "residualL",
+      3,
+    ),
+    [residualI, setResidualI] = useLabState("risk-decision", "residualI", 4);
+  const [method, setMethod] = useLabState("risk-decision", "method", "product"),
+    [expert, setExpert] = useLabState("risk-decision", "expert", false);
+  const [selected, setSelected] = useLabState<string[]>(
+      "risk-decision",
+      "selected",
+      [],
+    ),
+    [evidence, setEvidence] = useLabState("risk-decision", "evidence", "");
+  const [treatment, setTreatment] = useLabState(
+      "risk-decision",
+      "treatment",
+      "Mitigate",
+    ),
+    [reason, setReason] = useLabState("risk-decision", "reason", "");
+  const [owner, setOwner] = useLabState("risk-decision", "owner", ""),
+    [review, setReview] = useLabState("risk-decision", "review", "");
+  const [evaluated, setEvaluated] = useLabState(
+    "risk-decision",
+    "evaluated",
+    false,
+  );
   const inherent = riskValue(likelihood, impact, method),
     residual = riskValue(residualL, residualI, method);
   const result = challengeResponse(reason);

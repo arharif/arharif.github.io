@@ -1,5 +1,7 @@
 # Interactive workspace verification — 20 November 2026
 
+> Historical release record. The current connected-studio implementation, methods, sources, security findings and executed checks are documented in [v2/IMPLEMENTATION_REPORT.md](v2/IMPLEMENTATION_REPORT.md) and its linked reports. The older scope/retention statements below describe their original revision.
+
 Tested source: `feat/x1-academy-interactive-workspace`, built from base `9403047` with the interactive workspace changes. Production deployment/commit identity is recorded by GitHub Actions and `deployment.json` after publication.
 
 | Check | Executed result |

@@ -1,5 +1,7 @@
 # Security and privacy review
 
+> Historical release record. The current connected-studio implementation, methods, sources, security findings and executed checks are documented in [v2/IMPLEMENTATION_REPORT.md](v2/IMPLEMENTATION_REPORT.md) and its linked reports. The older scope/retention statements below describe their original revision.
+
 Review performed across the implemented source and exercised browser workflows on 2026-11-20.
 
 | Finding | Severity | Action and result |

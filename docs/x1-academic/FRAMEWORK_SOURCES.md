@@ -1,5 +1,7 @@
 # Framework and source register
 
+> Historical release record. The current connected-studio implementation, methods, sources, security findings and executed checks are documented in [v2/IMPLEMENTATION_REPORT.md](v2/IMPLEMENTATION_REPORT.md) and its linked reports. The older scope/retention statements below describe their original revision.
+
 Workspace review: 20 November 2026. The earlier blocked seed-link sweep remains in LINK_REPORT.json as historical evidence; it is not a current source verification claim.
 
 | Assessment scope | Edition / source | Implemented scope |

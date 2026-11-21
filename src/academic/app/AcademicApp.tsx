@@ -14,6 +14,7 @@ import {
   Sun,
   Moon,
   Menu,
+  ListChecks,
   PanelRight,
   Activity,
   BriefcaseBusiness,
@@ -25,6 +26,19 @@ import { AcademicProvider, useAcademic } from "./context";
 import { base, CaseSelect } from "../components/shared";
 import { searchIndex } from "../data/search";
 import "./academic.css";
+import "../studio/studio.css";
+import GlobalSearch from "../studio/GlobalSearch";
+import ProjectControls from "../studio/ProjectControls";
+import Tutorial from "../studio/Tutorial";
+const AssessmentStudio = lazy(() => import("../studio/AssessmentStudio"));
+const StandardsAcademy = lazy(() => import("../studio/StandardsAcademy"));
+const NistImplementation = lazy(() => import("../studio/NistImplementation"));
+const PrivacyStudio = lazy(() => import("../studio/PrivacyStudio"));
+const ImplementationStudio = lazy(
+  () => import("../studio/ImplementationStudio"),
+);
+const ReportCenter = lazy(() => import("../studio/ReportCenter"));
+const Simulate = lazy(() => import("../studio/Simulate"));
 import {
   ExplanationPanel,
   InsightProvider,
@@ -63,47 +77,28 @@ const IncidentLab = lazy(() => import("../features/IncidentLab"));
 const AILab = lazy(() => import("../features/AILab"));
 const BoardroomLab = lazy(() => import("../features/BoardroomLab"));
 const navigation = [
-  { path: "", label: "Academic Overview", Icon: LayoutDashboard },
-  { path: "/cybersecurity", label: "Cybersecurity Academy", Icon: Shield },
-  { path: "/grc", label: "GRC & Risk Academy", Icon: BriefcaseBusiness },
-  {
-    path: "/artificial-intelligence",
-    label: "AI & Machine Learning",
-    Icon: BrainCircuit,
-  },
-  {
-    path: "/labs/framework-explorer",
-    label: "Control & Framework Explorer",
-    Icon: CheckCircle,
-  },
-  {
-    path: "/knowledge-graph",
-    label: "Interactive Knowledge Graph",
-    Icon: Network,
-  },
-  {
-    path: "/labs/risk-decision",
-    label: "Risk Register & Simulator",
-    Icon: Activity,
-  },
-  { path: "/labs/cyber-incident", label: "Cyber Incident Lab", Icon: Shield },
-  {
-    path: "/labs/ai-experiment",
-    label: "AI Experiment Studio",
-    Icon: FlaskConical,
-  },
-  {
-    path: "/labs/ciso-boardroom",
-    label: "CISO Boardroom",
-    Icon: BriefcaseBusiness,
-  },
-  { path: "/resources", label: "Learning Resources", Icon: Library },
-  { path: "/certifications", label: "Certifications", Icon: GraduationCap },
-  { path: "/progress", label: "Your progress", Icon: BookOpen },
+  { path: "/learning", label: "Learn", Icon: BookOpen },
+  { path: "/standards", label: "Explore Standards", Icon: Shield },
+  { path: "/simulate", label: "Simulate", Icon: FlaskConical },
+  { path: "/assess", label: "Assess", Icon: CheckCircle },
+  { path: "/implement", label: "Implement", Icon: ListChecks },
+  { path: "/report", label: "Report", Icon: BriefcaseBusiness },
+];
+const toolsNavigation = [
+  ["/labs/framework-explorer", "Control & Framework Explorer"],
+  ["/labs/risk-decision", "Risk Register & Simulator"],
+  ["/labs/cyber-incident", "Cyber Incident Lab"],
+  ["/labs/ai-experiment", "AI Experiment Studio"],
+  ["/labs/ciso-boardroom", "CISO Boardroom"],
+  ["/knowledge-graph", "Interactive Knowledge Graph"],
+  ["/resources", "Learning Resources"],
+  ["/certifications", "Certifications"],
+  ["/progress", "Your progress"],
 ];
 function Layout() {
   const location = useLocation();
-  const { open, setOpen } = useInsight();
+  const { open, setOpen, level, setLevel } = useInsight();
+  const [collapsed, setCollapsed] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const { caseId, storageError } = useAcademic();
   const mainRef = useRef<HTMLElement>(null);
@@ -118,6 +113,15 @@ function Layout() {
   });
   const relative = location.pathname.slice(base.length).replace(/\/$/, "");
   const isLab = relative.startsWith("/labs/");
+  const hasCase =
+    isLab ||
+    [
+      "/assess",
+      "/implement",
+      "/simulate/privacy",
+      "/standards/800-53",
+      "/report",
+    ].includes(relative);
   const title = relative
     ? (searchIndex.find((row) => row.path === relative)?.title ??
       navigation.find((row) => row.path === relative)?.label ??
@@ -155,7 +159,11 @@ function Layout() {
     mainRef.current?.focus({ preventScroll: true });
   }, [location.pathname, relative, title]);
   return (
-    <div className="xa" data-theme={theme}>
+    <div
+      className="xa xs-academy"
+      data-theme={theme}
+      data-sidebar={collapsed ? "collapsed" : "expanded"}
+    >
       <a className="skip-link" href="#academic-main">
         Skip to learning content
       </a>
@@ -167,11 +175,21 @@ function Layout() {
               ACADEMIC<small>THE CONNECTED ACADEMY</small>
             </span>
           </Link>
-          <div className="xa-top-context">
-            <span className="xa-live-dot" /> Learning workspace{" "}
-            <span className="xa-pill">LOCAL & PRIVATE</span>
-          </div>
+          <GlobalSearch />
           <div className="xa-actions" style={{ margin: 0 }}>
+            <label className="xs-mode">
+              <span>Explanation</span>
+              <select
+                aria-label="Academy explanation mode"
+                value={level}
+                onChange={(e) => setLevel(e.target.value)}
+              >
+                {["Beginner", "Practitioner", "Executive"].map((v) => (
+                  <option key={v}>{v}</option>
+                ))}
+              </select>
+            </label>
+            <Tutorial />
             <button
               className="xa-menu-toggle"
               aria-expanded={menuOpen}
@@ -187,9 +205,9 @@ function Layout() {
             >
               <PanelRight size={17} /> Explain
             </button>
-            <Link className="xa-button secondary" to="/">
+            <a className="xa-button secondary" href="/">
               Professional gateway <ArrowUpRight size={14} aria-hidden="true" />
-            </Link>
+            </a>
             <button
               aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
               onClick={() => {
@@ -216,36 +234,34 @@ function Layout() {
           id="academy-sidebar"
           className={`xa-sidebar ${menuOpen ? "is-open" : ""}`}
         >
-          <p className="xa-nav-label">WORKSPACE</p>
+          <button
+            className="xs-collapse"
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            onClick={() => setCollapsed(!collapsed)}
+          >
+            <Menu size={16} />
+            <span>Workspace</span>
+          </button>
+          <NavLink className="xs-overview-link" to={base} end>
+            <LayoutDashboard size={17} />
+            <span className="xs-nav-text">Academy Overview</span>
+          </NavLink>
+          <p className="xa-nav-label">YOUR WORKFLOW</p>
           <nav aria-label="Academic navigation">
             {navigation.map(({ path, label, Icon }) => (
-              <div key={path}>
-                <NavLink key={path} to={`${base}${path}`} end={!path}>
-                  <Icon size={17} aria-hidden="true" />
-                  {label}
-                </NavLink>
-                {path === "/labs/framework-explorer" && (
-                  <div className="xa-subnav">
-                    {[
-                      ["nist-csf-2", "NIST CSF 2.0"],
-                      ["nist-800-53", "NIST SP 800-53"],
-                      ["iso-27001", "ISO/IEC 27001"],
-                      ["pci-dss", "PCI DSS"],
-                    ].map(([id, name]) => (
-                      <Link
-                        key={id}
-                        to={`${base}/labs/framework-explorer?framework=${id}`}
-                      >
-                        {name}
-                      </Link>
-                    ))}
-                    <Link to={`${base}/frameworks`}>
-                      Other frameworks <ArrowRight size={12} />
-                    </Link>
-                  </div>
-                )}
-              </div>
+              <NavLink key={path} to={`${base}${path}`} aria-label={label}>
+                <Icon size={17} aria-hidden="true" />
+                <span className="xs-nav-text">{label}</span>
+              </NavLink>
             ))}
+            <details className="xs-tools-nav">
+              <summary>All workspaces</summary>
+              {toolsNavigation.map(([path, label]) => (
+                <Link key={path} to={`${base}${path}`}>
+                  {label}
+                </Link>
+              ))}
+            </details>
           </nav>
           <div className="xa-sidebar-note">
             <GraduationCap size={22} />
@@ -276,7 +292,8 @@ function Layout() {
               before closing this session.
             </p>
           )}
-          {isLab && <CaseSelect />}
+          <ProjectControls />
+          {hasCase && <CaseSelect />}
           <Suspense
             fallback={
               <div className="xa-panel" role="status">
@@ -286,6 +303,13 @@ function Layout() {
           >
             <Routes>
               <Route index element={<Home />} />
+              <Route path="standards" element={<StandardsAcademy />} />
+              <Route path="standards/800-53" element={<NistImplementation />} />
+              <Route path="simulate" element={<Simulate />} />
+              <Route path="simulate/privacy" element={<PrivacyStudio />} />
+              <Route path="assess" element={<AssessmentStudio />} />
+              <Route path="implement" element={<ImplementationStudio />} />
+              <Route path="report" element={<ReportCenter />} />
               <Route path="learning" element={<Catalogue />} />
               <Route
                 path="learning/:id"

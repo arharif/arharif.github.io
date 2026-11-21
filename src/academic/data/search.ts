@@ -3,6 +3,46 @@ import { labLinks } from "./cases";
 import { resources } from "./resources";
 import { frameworkSources } from "./controls";
 export const searchIndex = [
+  {
+    title: "Guided CSF Current / Target Profile and X1 Maturity",
+    description: "Scope, evidence, gaps, Tier exercise and improvement roadmap",
+    path: "/assess",
+    type: "Assessment",
+  },
+  {
+    title: "Standards Academy",
+    description: "NIST, ISO, PCI, privacy and implementation sources",
+    path: "/standards",
+    type: "Standards",
+  },
+  {
+    title: "NIST System Implementation",
+    description: "800-53, 800-53A objectives and 800-53B baselines",
+    path: "/standards/800-53",
+    type: "Simulation",
+  },
+  {
+    title: "Privacy Risk & Governance",
+    description:
+      "Processing, individual harms, DPIA-style assessment and minimisation",
+    path: "/simulate/privacy",
+    type: "Simulation",
+  },
+  {
+    title: "Implementation Studio",
+    description:
+      "Seven stages, RACI, Gantt, resources, dependencies and validation",
+    path: "/implement",
+    type: "Project",
+  },
+  {
+    title: "Programme Reports",
+    description:
+      "Immutable practitioner and executive snapshots with source records",
+    path: "/report",
+    type: "Reporting",
+  },
+
   ...modules.map((row) => ({
     title: row.title,
     description: row.objectives.join(" · "),

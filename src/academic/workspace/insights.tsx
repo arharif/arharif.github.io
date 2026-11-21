@@ -49,18 +49,39 @@ export const initialInsight: Insight = {
   path: "/learning/risk-assessment",
 };
 const Context = createContext<{
+  level: string;
+  setLevel: (value: string) => void;
   insight: Insight;
   explain: (insight: Insight) => void;
   open: boolean;
   setOpen: (value: boolean) => void;
 } | null>(null);
 export function InsightProvider({ children }: { children: ReactNode }) {
+  const [level, updateLevel] = useState(() => {
+    try {
+      const value = localStorage.getItem("x1-explanation-mode");
+      return ["Beginner", "Practitioner", "Executive"].includes(value || "")
+        ? value!
+        : "Beginner";
+    } catch {
+      return "Beginner";
+    }
+  });
+  const setLevel = (value: string) => {
+    if (!["Beginner", "Practitioner", "Executive"].includes(value)) return;
+    updateLevel(value);
+    try {
+      localStorage.setItem("x1-explanation-mode", value);
+    } catch {}
+  };
   const [insight, setInsight] = useState(initialInsight),
     [open, setOpen] = useState(false);
   return (
     <Context.Provider
       value={{
         insight,
+        level,
+        setLevel,
         explain: (value) => {
           setInsight(value);
           setOpen(true);
@@ -79,8 +100,7 @@ export function useInsight() {
   return value;
 }
 export function ExplanationPanel() {
-  const { insight: i, open, setOpen } = useInsight();
-  const [level, setLevel] = useState("Beginner");
+  const { insight: i, open, setOpen, level, setLevel } = useInsight();
   return (
     <aside
       className={`xa-insight ${open ? "is-open" : ""}`}

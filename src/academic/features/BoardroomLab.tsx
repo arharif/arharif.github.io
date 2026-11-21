@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useAcademic, useScenario } from "../app/context";
 import {
   ExportPanel,
@@ -8,7 +7,7 @@ import {
   Reset,
 } from "../components/shared";
 import { Kpi, Panel, Bars, ProgressBar } from "../workspace/charts";
-import { useWorkspace } from "../workspace/state";
+import { useWorkspace, useLabState } from "../workspace/state";
 import { analyseRisks, scenarioRisks, riskMethod } from "../workspace/risk";
 import { metricInsight, useInsight } from "../workspace/insights";
 import { budgetResult, challengeResponse, initiatives } from "../utils/engines";
@@ -65,18 +64,43 @@ const situations = [
 export default function BoardroomLab() {
   const scenario = useScenario();
   const { explain } = useInsight();
-  const { analysed, provenance, asOf, assessments } = useWorkspace();
-  const riskStats = analyseRisks(analysed ?? scenarioRisks(scenario.id), asOf);
-  const [budget, setBudget] = useState(scenario.budget);
+  const { analysed, provenance, asOf, analysedAsOf, assessments } =
+    useWorkspace();
+  const reportDate = analysed ? analysedAsOf : asOf;
+  const riskStats = analyseRisks(
+    analysed ?? scenarioRisks(scenario.id),
+    reportDate,
+  );
+  const [budget, setBudget] = useLabState(
+    "boardroom",
+    "budget",
+    scenario.budget,
+  );
   const { imported } = useAcademic();
-  const [situation, setSituation] = useState(0),
-    [selected, setSelected] = useState<string[]>([]);
-  const [owner, setOwner] = useState(""),
-    [strategy, setStrategy] = useState("Stage delivery with explicit gates");
-  const [assurance, setAssurance] = useState("Independent risk-based sampling"),
-    [decision, setDecision] = useState("Escalate material residual exposure");
-  const [brief, setBrief] = useState(""),
-    [evaluated, setEvaluated] = useState(false);
+  const [situation, setSituation] = useLabState("boardroom", "situation", 0),
+    [selected, setSelected] = useLabState<string[]>(
+      "boardroom",
+      "selected",
+      [],
+    );
+  const [owner, setOwner] = useLabState("boardroom", "owner", ""),
+    [strategy, setStrategy] = useLabState(
+      "boardroom",
+      "strategy",
+      "Stage delivery with explicit gates",
+    );
+  const [assurance, setAssurance] = useLabState(
+      "boardroom",
+      "assurance",
+      "Independent risk-based sampling",
+    ),
+    [decision, setDecision] = useLabState(
+      "boardroom",
+      "decision",
+      "Escalate material residual exposure",
+    );
+  const [brief, setBrief] = useLabState("boardroom", "brief", ""),
+    [evaluated, setEvaluated] = useLabState("boardroom", "evaluated", false);
   const result = budgetResult(selected, budget),
     context = situations[situation];
   const ready =
@@ -115,8 +139,8 @@ export default function BoardroomLab() {
         <span className="xa-live-dot" />
         <strong>{analysed ? provenance : "Fictional scenario baseline"}</strong>
         <span>
-          Risk snapshot as of {asOf}. Portfolio assumptions are independent of
-          register ratings.
+          Risk snapshot as of {reportDate}. Portfolio assumptions are
+          independent of register ratings.
         </span>
       </div>
       <div className="xa-kpi-grid">
@@ -154,7 +178,7 @@ export default function BoardroomLab() {
         <Kpi
           label="Review actions overdue"
           value={riskStats.overdue.length}
-          detail={`Before ${asOf}`}
+          detail={`Before ${reportDate}`}
           tone="amber"
           onClick={() =>
             explain(
@@ -508,7 +532,7 @@ export default function BoardroomLab() {
           learnerControlAssessments: assessments,
           riskSnapshot: {
             provenance: analysed ? provenance : "Fictional baseline",
-            asOf,
+            asOf: reportDate,
             activeRisks: riskStats.total,
             residualIndexSum: riskStats.residual,
             overdue: riskStats.overdue.length,

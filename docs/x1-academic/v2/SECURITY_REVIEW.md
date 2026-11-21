@@ -1,0 +1,45 @@
+# Academy application security review
+
+Review scope: `/x1-academic`, its import/export/persistence boundaries, direct-route build output, relevant dependencies and GitHub Actions. No intrusive tests against unrelated systems were performed. This is a code/dependency and functional defensive review, not a penetration-test certificate or a claim of complete security.
+
+## Findings and remediation
+
+| ID / severity | Evidence and reproduction conditions | Risk and correction | Validation / final status |
+| --- | --- | --- | --- |
+| S1 / High dependency advisory | Initial `zod@3.25.76`; npm reported GHSA-mrhx-c7xc-m3w5, oversized constrained-collection validation | Memory exhaustion in the affected dependency. Upgraded the newly introduced parser dependency to patched `4.6.7`; migrated record schemas to v4 | npm audit full and production scope: zero high/critical; schema, boundary and round-trip tests pass. Resolved |
+| S2 / Moderate inherited dependency records | `react-router` and transitive `react-router-dom`: GHSA-wrjc-x8rr-h8h6 and GHSA-337j-9hxr-rhxg | Router open-redirect handling and SSR hydration constructor injection advisories. Academy uses client rendering, no untrusted SSR hydration and fixed/prefixed local link targets; no exploitable academy path was established. Broad major migration would affect unrelated pages | Two moderate audit records remain, no high/critical. Track an independently tested whole-site Router upgrade. This is not a claim that the package advisory is removed |
+| S3 / Moderate hardening gap, not a demonstrated exploit | Original `workspace/spreadsheets.ts` parsed compressed XLSX on the UI thread with only a file-size limit | Resource exhaustion was insufficiently bounded. Added ZIP directory/local-header consistency, size/ratio/entry/path checks, actual streaming expansion checks, a dedicated parser worker and 10-second termination | Tests reject malformed directories, oversized entries and falsified expansion sizes; real Excel template/import/export round trip passes. Hardening implemented; no attack against a live system |
+| S4 / Integrity defect | Original framework reset cleared the shared register; visible-filter CSV could lose scope; date was fixed | Loss/misrepresentation of educational records. Scoped resets/drafts, full-scope exports and a separate analysed date | Browser regressions reproduce isolation, 106 exported outcomes and date/snapshot consistency. Resolved |
+| S5 / Integrity defect found during review | Report chart weighting/currency read live project settings after snapshot creation | A report could combine source data with later metadata. Snapshot now includes rubric, currency, resources, calendar and dates; views/export use it | Immutable source-mutation tests and reconciling report/recovery workflow pass. Resolved |
+| S6 / Storage trust boundary | Imported project JSON previously did not exist; new shared drafts must not trust arbitrary type casts | Strict schema/version, bounded traversal, hostile-key rejection, typed lab draft schemas, unique/reference checks, valid recorded evidence/task prerequisites and schedule validation | Malformed versions/shapes/prototypes/oversize/missing references are rejected atomically. Invalid import leaves current project unchanged |
+
+## Input/output controls
+
+- All data processing stays in the browser. Spreadsheet workflow monitoring observed no POST/PUT uploads. No academy analytics, upload endpoint or backend evidence store was introduced.
+- Spreadsheet files are limited to 3 MiB, 2,000 data rows and 80 columns. CSV parsing checks limits incrementally; bounded fields and unique safe headers are required. Row-level validation occurs before atomic apply, with column mapping and downloadable errors.
+- XLSX preflight accepts standard stored/deflate ZIP entries, rejects encryption/unsupported methods, ZIP64/multidisk, unsafe/duplicate paths, inconsistent local/central headers and overlapping data. Limits: 500 entries, 8 MiB per expanded entry, 16 MiB total, and ratio 200 for entries over 1 MiB. Actual decompression is streamed and checked against declared bounds before ExcelJS. The worker is terminated after ten seconds. This is not an operating-system memory quota; adversarial parser complexity has not been exhaustively fuzz-tested. Native `DecompressionStream('deflate-raw')` support is required for this protected path; unsupported browsers get a parsing error, not an unbounded fallback.
+- Formula/shared-formula cells are rejected; external workbook content is not fetched or executed. Exported Excel values are strings/numbers rather than executable formula objects. CSV formula-triggering prefixes are neutralised and content is quoted.
+- Project JSON is capped at 3,000,000 characters/bytes at the UI file boundary, 14 nesting levels, 150,000 nodes, bounded collections/strings, strict record fields and explicit `schemaVersion: 2`. `__proto__`, `prototype` and `constructor` are rejected. Stable IDs, organisation consistency, source/dependency links and domain bounds are validated. Unknown versions are not partially applied.
+- JSX text escapes learner content. There is no new unsafe DOM/HTML rendering. Evidence references are text, not automatically followed URLs. Resource links are publisher-curated; imported documents cannot provide an executable link destination. Download names are fixed by the application.
+
+## Browser, privacy and storage
+
+Directly generated academy HTML has a scoped CSP meta policy: scripts/connect/fonts/workers self, no objects, restricted base/form targets, images self/data/blob. Inline style permission supports React chart/layout values. Referrer policy is `no-referrer`. These are document policies, not HTTP response headers. GitHub Pages does not offer an application-controlled response-header layer here; frame-ancestors, HSTS and other response-header controls require hosting/CDN support. Entry from an already-loaded legacy SPA document does not retroactively acquire the direct-route document policy. This boundary is a documented hardening limitation rather than a false claim of whole-site CSP coverage.
+
+Academy-to-legacy gateway links that would otherwise retain a document's CSP now navigate as normal document links. No external scripts/fonts/CDN chart runtime were added. The static NIST asset is part of the build. No new cross-origin messaging or sensitive logging was introduced.
+
+Only explicit fictional project saves persist assessment data. Consent describes origin-wide script visibility, expiry and user deletion. Storage is per organisation; expiry is checked on academy load/restore, so an offline browser cannot guarantee deletion at an exact wall-clock instant. A browser-clock change affects local expiry. Imported evidence/verification is always a learner assertion. localStorage supplies neither authentication, integrity against same-origin scripts nor an audit trail. Existing learning/theme preferences remain separate. No service-role key or secret was added to the client.
+
+## Dependency and supply-chain checks
+
+`npm ci` checks the committed lockfile. Full and production-only npm audits were executed; patched Zod removed the high finding. Two inherited moderate Router records remain as above. A pattern-based source scan covered academy code, workflows and the standards importer for private keys, GitHub/AWS/OpenAI token forms; it found no matches. This is a limited scan, not proof that no secret can exist.
+
+CI has `contents: read`; Pages has the existing contents-read/pages-write/id-token-write scope and deploys from main or an authorised manual dispatch. No `pull_request_target` execution or new secret exposure was introduced. Action references use existing major tags: full-SHA pinning and automated update review remain supply-chain hardening recommendations. Existing unrelated public Supabase configuration is unchanged and is not represented as an academy authentication boundary.
+
+## OWASP and future authenticated architecture
+
+Review themes align with OWASP input-validation, file-upload, CSV-injection, XSS, HTML5 storage and secrets guidance, and relevant ASVS validation/file handling/data protection/configuration principles. No full ASVS compliance assertion is made.
+
+Before accepting confidential or multi-user records, implement a separate approved backend with real authentication and secure sessions; server-side authorisation on every object; tenant isolation and database row-level policies where appropriate; server-side schema/rate/size limits; private upload storage, malware scanning and authorised download URLs; immutable/auditable actions and protected logs; managed secret rotation; backups, tested recovery and retention/deletion controls. Audit-log integrity, API abuse, session handling and tenant isolation are not tested features of this static local academy, because no such backend was introduced.
+
+No unresolved critical/high finding remains in the reviewed academy changes after remediation. Remaining dependency/header limitations are explicitly tracked and should be reassessed when the hosting model or threat boundary changes.

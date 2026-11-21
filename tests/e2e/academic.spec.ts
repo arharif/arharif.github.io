@@ -19,7 +19,7 @@ test("academy sections, route refresh, metadata and static teaching content", as
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto(base);
   await expect(page.getByRole("heading", { level: 1 })).toContainText(
-    "Learn the system.",
+    "Understand the standard.",
   );
   for (const route of [
     "learning",

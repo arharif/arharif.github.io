@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useLabState } from "../workspace/state";
+import { useMemo } from "react";
 import { useAcademic } from "../app/context";
 import type { AIConfiguration } from "../data/types";
 import { Kpi, Panel, Curve } from "../workspace/charts";
@@ -72,14 +73,16 @@ const percent = (value: number) => `${(value * 100).toFixed(1)}%`;
 export default function AILab() {
   const { explain } = useInsight();
   const { progress, setProgress } = useAcademic();
-  const [config, setConfig] = useState<AIConfiguration>(
+  const [config, setConfig] = useLabState<AIConfiguration>(
+    "ai",
+    "config",
     progress.savedExperiment ?? baseline,
   );
-  const [experiment, setExperiment] = useState(0);
-  const [comparison, setComparison] = useState<
+  const [experiment, setExperiment] = useLabState("ai", "experiment", 0);
+  const [comparison, setComparison] = useLabState<
     { config: AIConfiguration; result: ReturnType<typeof metrics> }[]
-  >([]);
-  const [message, setMessage] = useState("");
+  >("ai", "comparison", []);
+  const [message, setMessage] = useLabState("ai", "message", "");
   const data = useMemo(() => predictions(config), [config]);
   const result = metrics(data, config.threshold);
   const curve = Array.from({ length: 21 }, (_, i) => ({

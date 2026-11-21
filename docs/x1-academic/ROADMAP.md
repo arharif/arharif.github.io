@@ -1,5 +1,7 @@
 # Precise implementation backlog
 
+> Historical release record. The current connected-studio implementation, methods, sources, security findings and executed checks are documented in [v2/IMPLEMENTATION_REPORT.md](v2/IMPLEMENTATION_REPORT.md) and its linked reports. The older scope/retention statements below describe their original revision.
+
 ## Interactive workspace update (20 November 2026)
 
 The dashboard shell, multi-record Excel/CSV register, full CSF Core, graph, contextual learning guide, ROC/PR curves and connected boardroom have now been implemented. See [the implementation report](INTERACTIVE_WORKSPACE_REPORT.md). The older increment notes below are retained with updated backlog wording.

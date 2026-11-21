@@ -172,9 +172,10 @@ test("published content, frameworks and case identifiers are coherent", () => {
   assert.equal(tracks.length, 3);
   assert.equal(
     tracks.reduce((sum, row) => sum + row.modules.length, 0),
-    36,
+    37,
   );
-  assert.equal(modules.length, 3);
+  assert.equal(modules.length, 7);
+  assert.equal(new Set(modules.map(m=>m.id)).size,7);
   assert.equal(scenarios.length, 3);
   assert.equal(new Set(controls.map((row) => row.id)).size, controls.length);
   modules.forEach((row) => {

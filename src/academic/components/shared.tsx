@@ -113,8 +113,7 @@ export function CaseSelect() {
       </div>
       {error && <p role="alert">{error}</p>}
       <p className="xa-disclaimer">
-        {disclaimer} Changing organisation starts a fresh lab workspace. Export
-        your work before switching.
+        {disclaimer} Switching organisation preserves its open project in this tab. Save or export before refreshing.
       </p>
       <details>
         <summary>{scenario.process} · Business context</summary>
@@ -187,7 +186,7 @@ export function ExportPanel({
     disclaimer,
   };
   const table = (
-    rows?.length
+    rows !== undefined
       ? rows
       : Object.entries(results).map(([item, result]) => ({ item, result }))
   ).map((row) => ({
