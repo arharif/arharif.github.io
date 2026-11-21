@@ -111,15 +111,21 @@ try {
       });
       records.push({ screenshot, path, theme, ...data });
       console.log(`${screenshot} · ${data.documentWidth}/${data.viewport}px`);
+      if (label === "implementation-nist-csf-2" && name === "desktop") {
+        await page.setViewportSize({ width: 1440, height: 1310 });
+        await page.screenshot({
+          path: resolve(output, "pmo-dashboard-detail.png"),
+          animations: "disabled",
+        });
+        await page.setViewportSize(viewport);
+      }
       if (label === "results-nist-csf-2" && theme === "dark") {
         await page
           .getByRole("button", { name: "Governance", exact: true })
           .click();
-        await page
-          .locator(".xa-governance-panel")
-          .screenshot({
-            path: resolve(output, `governance-radar-${name}.png`),
-          });
+        await page.locator(".xa-governance-panel").screenshot({
+          path: resolve(output, `governance-radar-${name}.png`),
+        });
       }
     }
     await page.close();

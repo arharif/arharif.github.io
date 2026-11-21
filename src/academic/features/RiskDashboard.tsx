@@ -49,7 +49,16 @@ function Trend({
   const buckets = dates.map((date) =>
     entries.filter((entry) => entry.date === date),
   );
-  const max = Math.max(1, ...buckets.map((rows) => rows.length));
+  const series = severity.map(({ name }) => ({
+    name,
+    values: buckets.map((rows) =>
+      rows.filter((row) => band(row.likelihood * row.impact) === name),
+    ),
+  }));
+  const max = Math.max(
+    1,
+    ...series.flatMap(({ values }) => values.map((rows) => rows.length)),
+  );
   const start = Date.parse(dates[0]);
   const span = Date.parse(dates[dates.length - 1]!) - start;
   const x = (index: number) =>
@@ -72,10 +81,7 @@ function Trend({
             strokeDasharray="2 4"
           />
         ))}
-        {severity.map(({ name }) => {
-          const values = buckets.map((rows) =>
-            rows.filter((row) => band(row.likelihood * row.impact) === name),
-          );
+        {series.map(({ name, values }) => {
           return (
             <g key={name}>
               <polyline

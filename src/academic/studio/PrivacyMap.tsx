@@ -156,6 +156,7 @@ export default function PrivacyMap({
                         style={
                           {
                             "--flow-offset": `${((index + rowIndex * 2) % 4) * 10}px`,
+                            "--edge-offset": `${(((index + rowIndex * 2) % 4) + ((index + rowIndex * 2 + 1) % 4)) * 5}px`,
                           } as React.CSSProperties
                         }
                       >

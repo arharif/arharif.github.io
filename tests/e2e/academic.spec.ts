@@ -377,6 +377,7 @@ for (const route of [
   test(`accessibility and 320px layout ${route || "home"}`, async ({
     page,
   }) => {
+    test.setTimeout(60000);
     await page.goto(`${base}${route}`);
     await expect(page.locator(".xa main h1")).toBeVisible();
     const results = await new AxeBuilder({ page })

@@ -1199,7 +1199,7 @@
 .xa-privacy-lane-node {
   position: relative;
   padding: 5px 12px 9px 8px;
-  --privacy-node: #397cba;
+  --privacy-node: #2f6599;
 }
 .xa-privacy-lane-node[data-lane="sharing"] {
   --privacy-node: #467c84;
@@ -1745,7 +1745,7 @@
   z-index: 1;
 }
 .xa .xa-privacy-connection {
-  top: calc(var(--flow-offset, 0px) + 24px);
+  top: calc(var(--edge-offset, 0px) + 18px);
 }
 @media (max-width: 700px) {
   .xa .xa-context-bar {
@@ -1783,5 +1783,37 @@
     min-height: 32px;
     padding: 4px 6px;
     font-size: 0.68rem;
+  }
+}
+
+@media (min-width: 1000px) {
+  .xa .xa-pmo-workspace .xa-pmo-gantt-panel {
+    position: relative;
+  }
+  .xa .xa-pmo-workspace .xa-pmo-gantt-panel .xa-gantt-tools {
+    position: absolute;
+    top: 10px;
+    right: 178px;
+  }
+  .xa .xa-pmo-workspace .xa-pmo-gantt-panel .xa-panel-heading {
+    min-height: 48px;
+  }
+  .xa .xa-pmo-workspace .xa-pmo-gantt-panel > p {
+    font-size: 0.76rem;
+    margin-block: 4px;
+  }
+}
+@media (max-width: 700px) {
+  .xa .xa-assessment-views,
+  .xa .xa-assess-dashboard .xa-assessment-views {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .xa .xa-assessment-views > button {
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.2;
+    min-height: 36px;
   }
 }

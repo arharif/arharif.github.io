@@ -264,6 +264,34 @@ test("loaded NIST and privacy dashboards meet automated accessibility checks", a
   for (const route of ["/assess?standard=nist-csf-2", "/simulate/privacy"]) {
     await page.goto(base + route);
     await loadDemo(page);
+    if (route.includes("nist-csf-2")) {
+      await page.setViewportSize({ width: 390, height: 844 });
+      const bounds = await page
+        .locator(".xa-assessment-views button")
+        .evaluateAll((tabs) =>
+          tabs.map((tab) => {
+            const { left, right, top, bottom } = tab.getBoundingClientRect();
+            return { left, right, top, bottom };
+          }),
+        );
+      expect(
+        bounds.every(
+          (tab, index) =>
+            tab.left >= 0 &&
+            tab.right <= 390 &&
+            bounds
+              .slice(index + 1)
+              .every(
+                (next) =>
+                  tab.right <= next.left ||
+                  next.right <= tab.left ||
+                  tab.bottom <= next.top ||
+                  next.bottom <= tab.top,
+              ),
+        ),
+      ).toBe(true);
+      await page.setViewportSize({ width: 1280, height: 720 });
+    }
     const results = await new AxeBuilder({ page })
       .include(".xa")
       .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
