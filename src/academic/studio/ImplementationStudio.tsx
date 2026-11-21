@@ -13,17 +13,19 @@ import {
 } from "./model";
 import { schedule, validateTask, referenceErrors } from "./engines";
 import { standards } from "./standards";
-import { generateImplementation } from "./planning";
+import { generateImplementation, tasksForStandard } from "./planning";
 import { csv } from "../utils/engines";
 import { Panel, Method, Empty } from "./visuals";
 import { Bars, Kpi, ProgressBar } from "../workspace/charts";
 import { metricInsight, useInsight } from "../workspace/insights";
 import Gantt from "./Gantt";
+import ProjectDashboard from "./ProjectDashboard";
+import { isPriority } from "./priorities";
 export default function ImplementationStudio() {
   const { studio: s, setStudio } = useWorkspace(),
     scenario = useScenario(),
     { explain } = useInsight(),
-    [params] = useSearchParams(),
+    [params, setParams] = useSearchParams(),
     [draft, setDraft] = useLabState<Task | null>(
       "implementation",
       "draft",
@@ -43,10 +45,32 @@ export default function ImplementationStudio() {
     owner: "",
     action: "",
   });
+  const requestedStandard = params.get("standard");
+  const scoped = isPriority(requestedStandard);
+  const plannedTasks = scoped
+    ? tasksForStandard(s, requestedStandard)
+    : s.tasks;
   const { plan, planError } = useMemo(() => {
     try {
+      const full = schedule(s.tasks, s.resources, s.scope.start, s.calendar);
+      const ids = new Set(
+        (isPriority(requestedStandard)
+          ? tasksForStandard(s, requestedStandard)
+          : s.tasks
+        ).map((task) => task.id),
+      );
+      const rows = full.rows.filter((row) => ids.has(row.task.id));
       return {
-        plan: schedule(s.tasks, s.resources, s.scope.start, s.calendar),
+        plan: {
+          ...full,
+          rows,
+          cost: rows.reduce((total, row) => total + row.cost, 0),
+          finish:
+            rows
+              .map((row) => row.end)
+              .sort()
+              .pop() ?? s.scope.start,
+        },
         planError: "",
       };
     } catch (e) {
@@ -55,7 +79,14 @@ export default function ImplementationStudio() {
         planError: e instanceof Error ? e.message : "Invalid plan.",
       };
     }
-  }, [s.tasks, s.resources, s.scope.start, s.calendar]);
+  }, [
+    s.tasks,
+    s.findings,
+    s.resources,
+    s.scope.start,
+    s.calendar,
+    requestedStandard,
+  ]);
   useEffect(() => {
     const task = params.get("task");
     if (task) {
@@ -77,6 +108,11 @@ export default function ImplementationStudio() {
     const t = s.tasks.find((t) => t.id === id);
     if (!t) return;
     setDraft({ ...t });
+    requestAnimationFrame(() =>
+      document
+        .getElementById("xa-implementation-editor")
+        ?.scrollIntoView({ block: "start" }),
+    );
     explain({
       ...metricInsight(
         t.title,
@@ -112,18 +148,14 @@ export default function ImplementationStudio() {
     }
   }
   const baselineCost = s.baseline.reduce((n, b) => n + b.cost, 0),
-    done = s.tasks.filter((t) => t.progress === 100).length;
+    done = plannedTasks.filter((t) => t.progress === 100).length;
   return (
-    <>
+    <div className="xa-pmo-workspace">
       <Header
         eyebrow="IMPLEMENT / STANDARDS IMPLEMENTATION STUDIO"
-        title="Turn a gap into a deliverable plan."
+        title="Implementation project dashboard"
       >
-        <p>
-          Scope, RACI, dependencies, working calendars and validation belong
-          together. Every action retains its requirement, finding or objective
-          trace.
-        </p>
+        <p>Track phases, ownership, scheduling and approval gates.</p>
       </Header>
       <div className="xa-toolbar">
         <Field label="Implementation standard">
@@ -131,6 +163,11 @@ export default function ImplementationStudio() {
             value={s.framework}
             onChange={(e) => {
               const std = standards.find((x) => x.id === e.target.value)!;
+              setParams((previous) => {
+                const next = new URLSearchParams(previous);
+                next.set("standard", std.id);
+                return next;
+              });
               setStudio((p) => ({
                 ...p,
                 framework: std.id,
@@ -138,17 +175,26 @@ export default function ImplementationStudio() {
               }));
             }}
           >
-            {standards.map((x) => (
-              <option key={x.id} value={x.id}>
-                {x.name} · {x.edition}
-              </option>
-            ))}
+            {standards
+              .filter((x) => !scoped || isPriority(x.id))
+              .map((x) => (
+                <option key={x.id} value={x.id}>
+                  {x.name} · {x.edition}
+                </option>
+              ))}
           </select>
         </Field>
         <button className="primary" onClick={generate}>
           Generate seven-stage project
         </button>
-        <button onClick={() => setDraft(newTask())}>
+        <button
+          onClick={() =>
+            setDraft({
+              ...newTask(),
+              standard: scoped ? requestedStandard : undefined,
+            })
+          }
+        >
           Add implementation task
         </button>
       </div>
@@ -159,53 +205,109 @@ export default function ImplementationStudio() {
           </button>
         ))}
       </div>
-      <div className="xa-kpi-grid">
-        <Kpi
-          label="Planned effort"
-          value={s.tasks.reduce((n, t) => n + t.effort, 0)}
-          detail="Entered work hours"
-          onClick={() =>
-            explain(
-              metricInsight(
-                "Planned effort",
-                "Sum of task work-hour estimates.",
-                "Σ entered effort hours. Zero-effort milestones do not consume capacity.",
-                "These are editable fictional estimates, not measured costs or supplier commitments.",
-              ),
-            )
-          }
-        />
-        <Kpi
-          label="Estimated cost"
-          value={plan ? plan.cost.toLocaleString() : "—"}
-          detail={s.currency}
-          onClick={() =>
-            explain(
-              metricInsight(
-                "Estimated programme cost",
-                "Entered task effort multiplied by configured resource rates.",
-                "Σ(task effort × assigned hourly rate). No supplier quote or currency conversion.",
-                "Validate rates, tax/contingency and delivery uncertainty before committing real funds.",
-              ),
-            )
-          }
-        />
-        <Kpi
-          label="Implemented / validated"
-          value={`${done} / ${s.tasks.filter((t) => t.status === "Validated").length}`}
-          detail={`${s.tasks.length} tasks incl. milestones`}
-          onClick={() => setView("Tasks & RACI")}
-        />
-        <Kpi
-          label="Late / resource delayed"
-          value={`${plan?.rows.filter((r) => r.late).length ?? "—"} / ${plan?.rows.filter((r) => r.resourceDelay > 0).length ?? "—"}`}
-          detail="Compared with entered deadlines"
-          tone="amber"
-          onClick={() => setView("Plan")}
-        />
-      </div>
       {view === "Plan" && (
         <>
+          <Panel
+            title="Implementation Gantt"
+            className="xa-pmo-gantt-panel"
+            subtitle={
+              plan
+                ? `${plannedTasks.length} tasks · finish ${plan.finish}`
+                : "Resolve schedule errors before relying on dates"
+            }
+            action={
+              <button
+                disabled={!plan || !plannedTasks.length}
+                onClick={() => {
+                  if (plan)
+                    setStudio((p) => ({
+                      ...p,
+                      baseline: [
+                        ...p.baseline.filter(
+                          (item) =>
+                            !plan.rows.some((row) => row.task.id === item.id),
+                        ),
+                        ...plan.rows.map((r) => ({
+                          id: r.task.id,
+                          start: r.start,
+                          end: r.end,
+                          cost: r.cost,
+                        })),
+                      ],
+                    }));
+                  setMessage(
+                    "Schedule/cost baseline captured. Future edits do not overwrite it.",
+                  );
+                }}
+              >
+                Capture plan baseline
+              </button>
+            }
+          >
+            {plan ? (
+              <Gantt plan={plan} onSelect={choose} />
+            ) : (
+              <p role="alert">{planError}</p>
+            )}
+            {!!s.baseline.length && (
+              <p>
+                Baseline estimate {baselineCost.toLocaleString()} {s.currency};
+                current difference{" "}
+                {plan
+                  ? `${(plan.cost - baselineCost).toLocaleString()} ${s.currency}`
+                  : "unknown"}
+                .
+              </p>
+            )}
+          </Panel>
+          {plan && plan.rows.length > 0 && (
+            <ProjectDashboard plan={plan} studio={s} onSelect={choose} />
+          )}
+          <div className="xa-kpi-grid">
+            <Kpi
+              label="Planned effort"
+              value={plannedTasks.reduce((n, t) => n + t.effort, 0)}
+              detail="Entered work hours"
+              onClick={() =>
+                explain(
+                  metricInsight(
+                    "Planned effort",
+                    "Sum of task work-hour estimates.",
+                    "Σ entered effort hours. Zero-effort milestones do not consume capacity.",
+                    "These are editable fictional estimates, not measured costs or supplier commitments.",
+                  ),
+                )
+              }
+            />
+            <Kpi
+              label="Estimated cost"
+              value={plan ? plan.cost.toLocaleString() : "—"}
+              detail={s.currency}
+              onClick={() =>
+                explain(
+                  metricInsight(
+                    "Estimated programme cost",
+                    "Entered task effort multiplied by configured resource rates.",
+                    "Σ(task effort × assigned hourly rate). No supplier quote or currency conversion.",
+                    "Validate rates, tax/contingency and delivery uncertainty before committing real funds.",
+                  ),
+                )
+              }
+            />
+            <Kpi
+              label="Implemented / validated"
+              value={`${done} / ${plannedTasks.filter((t) => t.status === "Validated").length}`}
+              detail={`${plannedTasks.length} tasks incl. milestones`}
+              onClick={() => setView("Tasks & RACI")}
+            />
+            <Kpi
+              label="Late / resource delayed"
+              value={`${plan?.rows.filter((r) => r.late).length ?? "—"} / ${plan?.rows.filter((r) => r.resourceDelay > 0).length ?? "—"}`}
+              detail="Compared with entered deadlines"
+              tone="amber"
+              onClick={() => setView("Plan")}
+            />
+          </div>
           <Panel
             title="Planning assumptions & resource calendar"
             subtitle="UTC dates · explicit resources · no hidden parallel-capacity assumption"
@@ -410,52 +512,6 @@ export default function ImplementationStudio() {
               resource availability can delay delivery.
             </p>
           </Panel>
-          <Panel
-            title="Implementation Gantt"
-            subtitle={
-              plan
-                ? `${s.tasks.length} tasks · finish ${plan.finish}`
-                : "Resolve schedule errors before relying on dates"
-            }
-            action={
-              <button
-                disabled={!plan || !s.tasks.length}
-                onClick={() => {
-                  if (plan)
-                    setStudio((p) => ({
-                      ...p,
-                      baseline: plan!.rows.map((r) => ({
-                        id: r.task.id,
-                        start: r.start,
-                        end: r.end,
-                        cost: r.cost,
-                      })),
-                    }));
-                  setMessage(
-                    "Schedule/cost baseline captured. Future edits do not overwrite it.",
-                  );
-                }}
-              >
-                Capture plan baseline
-              </button>
-            }
-          >
-            {plan ? (
-              <Gantt plan={plan} onSelect={choose} />
-            ) : (
-              <p role="alert">{planError}</p>
-            )}
-            {!!s.baseline.length && (
-              <p>
-                Baseline estimate {baselineCost.toLocaleString()} {s.currency};
-                current difference{" "}
-                {plan
-                  ? `${(plan.cost - baselineCost).toLocaleString()} ${s.currency}`
-                  : "unknown"}
-                .
-              </p>
-            )}
-          </Panel>
           {plan && (
             <Panel
               title="Schedule, milestones & baseline comparison"
@@ -520,255 +576,266 @@ export default function ImplementationStudio() {
         </>
       )}
       {draft && (
-        <Panel
-          title="Implementation task editor"
-          subtitle="Edits remain a draft until recorded; validation remains separate"
-        >
-          <div className="xa-grid two">
-            <Field label="Implementation task title">
+        <div id="xa-implementation-editor">
+          <Panel
+            title="Implementation task editor"
+            subtitle="Edits remain a draft until recorded; validation remains separate"
+          >
+            <Field label="Subphase">
               <input
-                value={draft.title}
+                value={draft.subphase ?? ""}
                 maxLength={240}
-                onChange={(e) => patch({ title: e.target.value })}
+                onChange={(e) => patch({ subphase: e.target.value })}
               />
             </Field>
-            <Field label="Implementation stage">
-              <select
-                value={draft.stage}
+            <div className="xa-grid two">
+              <Field label="Implementation task title">
+                <input
+                  value={draft.title}
+                  maxLength={240}
+                  onChange={(e) => patch({ title: e.target.value })}
+                />
+              </Field>
+              <Field label="Implementation stage">
+                <select
+                  value={draft.stage}
+                  onChange={(e) =>
+                    patch({ stage: e.target.value as Task["stage"] })
+                  }
+                >
+                  {stages.map((v) => (
+                    <option key={v}>{v}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Responsible owner">
+                <input
+                  value={draft.owner}
+                  maxLength={240}
+                  onChange={(e) => patch({ owner: e.target.value })}
+                />
+              </Field>
+              <Field label="Accountable role">
+                <input
+                  value={draft.accountable}
+                  maxLength={240}
+                  onChange={(e) => patch({ accountable: e.target.value })}
+                />
+              </Field>
+              <Field label="Consulted roles">
+                <input
+                  value={draft.consulted}
+                  maxLength={240}
+                  onChange={(e) => patch({ consulted: e.target.value })}
+                />
+              </Field>
+              <Field label="Informed roles">
+                <input
+                  value={draft.informed}
+                  maxLength={240}
+                  onChange={(e) => patch({ informed: e.target.value })}
+                />
+              </Field>
+              <Field label="Assigned resource">
+                <select
+                  value={draft.resourceId}
+                  onChange={(e) => patch({ resourceId: e.target.value })}
+                >
+                  {s.resources.map((r) => (
+                    <option value={r.id} key={r.id}>
+                      {r.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Estimated effort hours">
+                <input
+                  type="number"
+                  min="0"
+                  max="10000"
+                  value={draft.effort}
+                  disabled={draft.milestone}
+                  onChange={(e) => patch({ effort: +e.target.value })}
+                />
+              </Field>
+              <Field label="Entered working-day duration">
+                <input
+                  type="number"
+                  min={draft.milestone ? 0 : 1}
+                  max="730"
+                  value={draft.duration}
+                  disabled={draft.milestone}
+                  onChange={(e) => patch({ duration: +e.target.value })}
+                />
+              </Field>
+              <Field label="Earliest requested start">
+                <input
+                  type="date"
+                  value={draft.requestedStart}
+                  onChange={(e) => patch({ requestedStart: e.target.value })}
+                />
+              </Field>
+              <Field label="Target deadline">
+                <input
+                  type="date"
+                  value={draft.deadline}
+                  onChange={(e) => patch({ deadline: e.target.value })}
+                />
+              </Field>
+              <Field label="Task status">
+                <select
+                  value={draft.status}
+                  onChange={(e) =>
+                    patch({ status: e.target.value as Task["status"] })
+                  }
+                >
+                  {[
+                    "Planned",
+                    "In progress",
+                    "Blocked",
+                    "Implemented",
+                    "Validated",
+                  ].map((v) => (
+                    <option key={v}>{v}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Implementation progress (0–100)">
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={draft.progress}
+                  onChange={(e) => patch({ progress: +e.target.value })}
+                />
+              </Field>
+              <Field label="Validation result">
+                <select
+                  value={draft.validation}
+                  onChange={(e) =>
+                    patch({ validation: e.target.value as Task["validation"] })
+                  }
+                >
+                  {["Not tested", "Failed", "Passed"].map((v) => (
+                    <option key={v}>{v}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Validation reviewer">
+                <input
+                  value={draft.reviewer}
+                  maxLength={240}
+                  onChange={(e) => patch({ reviewer: e.target.value })}
+                />
+              </Field>
+              <Field label="Validation evidence reference">
+                <input
+                  value={draft.evidence}
+                  maxLength={4000}
+                  onChange={(e) => patch({ evidence: e.target.value })}
+                />
+              </Field>
+            </div>
+            <label className="xa-check">
+              <input
+                type="checkbox"
+                checked={draft.milestone}
                 onChange={(e) =>
-                  patch({ stage: e.target.value as Task["stage"] })
+                  patch({
+                    milestone: e.target.checked,
+                    effort: e.target.checked ? 0 : 8,
+                    duration: e.target.checked ? 0 : 1,
+                  })
                 }
-              >
-                {stages.map((v) => (
-                  <option key={v}>{v}</option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Responsible owner">
-              <input
-                value={draft.owner}
-                maxLength={240}
-                onChange={(e) => patch({ owner: e.target.value })}
               />
-            </Field>
-            <Field label="Accountable role">
+              Zero-effort approval milestone
+            </label>
+            <Field label="Requirement, finding or objective source IDs (comma separated)">
               <input
-                value={draft.accountable}
-                maxLength={240}
-                onChange={(e) => patch({ accountable: e.target.value })}
-              />
-            </Field>
-            <Field label="Consulted roles">
-              <input
-                value={draft.consulted}
-                maxLength={240}
-                onChange={(e) => patch({ consulted: e.target.value })}
-              />
-            </Field>
-            <Field label="Informed roles">
-              <input
-                value={draft.informed}
-                maxLength={240}
-                onChange={(e) => patch({ informed: e.target.value })}
-              />
-            </Field>
-            <Field label="Assigned resource">
-              <select
-                value={draft.resourceId}
-                onChange={(e) => patch({ resourceId: e.target.value })}
-              >
-                {s.resources.map((r) => (
-                  <option value={r.id} key={r.id}>
-                    {r.name}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Estimated effort hours">
-              <input
-                type="number"
-                min="0"
-                max="10000"
-                value={draft.effort}
-                disabled={draft.milestone}
-                onChange={(e) => patch({ effort: +e.target.value })}
-              />
-            </Field>
-            <Field label="Entered working-day duration">
-              <input
-                type="number"
-                min={draft.milestone ? 0 : 1}
-                max="730"
-                value={draft.duration}
-                disabled={draft.milestone}
-                onChange={(e) => patch({ duration: +e.target.value })}
-              />
-            </Field>
-            <Field label="Earliest requested start">
-              <input
-                type="date"
-                value={draft.requestedStart}
-                onChange={(e) => patch({ requestedStart: e.target.value })}
-              />
-            </Field>
-            <Field label="Target deadline">
-              <input
-                type="date"
-                value={draft.deadline}
-                onChange={(e) => patch({ deadline: e.target.value })}
-              />
-            </Field>
-            <Field label="Task status">
-              <select
-                value={draft.status}
-                onChange={(e) =>
-                  patch({ status: e.target.value as Task["status"] })
-                }
-              >
-                {[
-                  "Planned",
-                  "In progress",
-                  "Blocked",
-                  "Implemented",
-                  "Validated",
-                ].map((v) => (
-                  <option key={v}>{v}</option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Implementation progress (0–100)">
-              <input
-                type="number"
-                min="0"
-                max="100"
-                value={draft.progress}
-                onChange={(e) => patch({ progress: +e.target.value })}
-              />
-            </Field>
-            <Field label="Validation result">
-              <select
-                value={draft.validation}
-                onChange={(e) =>
-                  patch({ validation: e.target.value as Task["validation"] })
-                }
-              >
-                {["Not tested", "Failed", "Passed"].map((v) => (
-                  <option key={v}>{v}</option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Validation reviewer">
-              <input
-                value={draft.reviewer}
-                maxLength={240}
-                onChange={(e) => patch({ reviewer: e.target.value })}
-              />
-            </Field>
-            <Field label="Validation evidence reference">
-              <input
-                value={draft.evidence}
+                value={draft.sourceIds.join(",")}
                 maxLength={4000}
-                onChange={(e) => patch({ evidence: e.target.value })}
+                onChange={(e) =>
+                  patch({
+                    sourceIds: e.target.value.split(","),
+                  })
+                }
+                onBlur={() =>
+                  patch({
+                    sourceIds: draft.sourceIds
+                      .map((s) => s.trim())
+                      .filter(Boolean),
+                  })
+                }
               />
             </Field>
-          </div>
-          <label className="xa-check">
-            <input
-              type="checkbox"
-              checked={draft.milestone}
-              onChange={(e) =>
-                patch({
-                  milestone: e.target.checked,
-                  effort: e.target.checked ? 0 : 8,
-                  duration: e.target.checked ? 0 : 1,
-                })
-              }
-            />
-            Zero-effort approval milestone
-          </label>
-          <Field label="Requirement, finding or objective source IDs (comma separated)">
-            <input
-              value={draft.sourceIds.join(",")}
-              maxLength={4000}
-              onChange={(e) =>
-                patch({
-                  sourceIds: e.target.value.split(","),
-                })
-              }
-              onBlur={() =>
-                patch({
-                  sourceIds: draft.sourceIds
-                    .map((s) => s.trim())
-                    .filter(Boolean),
-                })
-              }
-            />
-          </Field>
-          <details>
-            <summary>Finish-to-start dependencies</summary>
-            {s.tasks
-              .filter((t) => t.id !== draft.id)
-              .map((t) => (
-                <label className="xa-check" key={t.id}>
-                  <input
-                    type="checkbox"
-                    checked={draft.dependencies.includes(t.id)}
-                    onChange={(e) =>
-                      patch({
-                        dependencies: e.target.checked
-                          ? [...draft.dependencies, t.id]
-                          : draft.dependencies.filter((id) => id !== t.id),
-                      })
-                    }
-                  />
-                  {t.title}
-                </label>
-              ))}
-            {s.tasks.length === 0 && (
-              <p>Create another task before selecting a dependency.</p>
-            )}
-          </details>
-          <div className="xa-actions">
-            <button
-              className="primary"
-              onClick={() => {
-                const parsed = taskSchema.safeParse(draft);
-                const errors = parsed.success
-                  ? validateTask(draft)
-                  : parsed.error.issues.map(
-                      (i) => i.path.join(".") + ": " + i.message,
+            <details>
+              <summary>Finish-to-start dependencies</summary>
+              {s.tasks
+                .filter((t) => t.id !== draft.id)
+                .map((t) => (
+                  <label className="xa-check" key={t.id}>
+                    <input
+                      type="checkbox"
+                      checked={draft.dependencies.includes(t.id)}
+                      onChange={(e) =>
+                        patch({
+                          dependencies: e.target.checked
+                            ? [...draft.dependencies, t.id]
+                            : draft.dependencies.filter((id) => id !== t.id),
+                        })
+                      }
+                    />
+                    {t.title}
+                  </label>
+                ))}
+              {s.tasks.length === 0 && (
+                <p>Create another task before selecting a dependency.</p>
+              )}
+            </details>
+            <div className="xa-actions">
+              <button
+                className="primary"
+                onClick={() => {
+                  const parsed = taskSchema.safeParse(draft);
+                  const errors = parsed.success
+                    ? validateTask(draft)
+                    : parsed.error.issues.map(
+                        (i) => i.path.join(".") + ": " + i.message,
+                      );
+                  if (errors.length) {
+                    setError(errors.join(" "));
+                    return;
+                  }
+                  const tasks = s.tasks.some((t) => t.id === draft.id)
+                    ? s.tasks.map((t) => (t.id === draft.id ? draft : t))
+                    : [...s.tasks, draft];
+                  const refs = referenceErrors({ ...s, tasks });
+                  if (refs.length) {
+                    setError(refs.join(" "));
+                    return;
+                  }
+                  try {
+                    schedule(tasks, s.resources, s.scope.start, s.calendar);
+                  } catch (e) {
+                    setError(
+                      e instanceof Error ? e.message : "Invalid schedule",
                     );
-                if (errors.length) {
-                  setError(errors.join(" "));
-                  return;
-                }
-                const tasks = s.tasks.some((t) => t.id === draft.id)
-                  ? s.tasks.map((t) => (t.id === draft.id ? draft : t))
-                  : [...s.tasks, draft];
-                const refs = referenceErrors({ ...s, tasks });
-                if (refs.length) {
-                  setError(refs.join(" "));
-                  return;
-                }
-                try {
-                  schedule(tasks, s.resources, s.scope.start, s.calendar);
-                } catch (e) {
-                  setError(e instanceof Error ? e.message : "Invalid schedule");
-                  return;
-                }
-                setStudio((p) => ({ ...p, tasks }));
-                setDraft(null);
-                setError("");
-                setMessage(
-                  "Task recorded; schedule and reports recalculate from the saved task data.",
-                );
-              }}
-            >
-              Record implementation task
-            </button>
-            <button onClick={() => setDraft(null)}>Close task draft</button>
-          </div>
-        </Panel>
+                    return;
+                  }
+                  setStudio((p) => ({ ...p, tasks }));
+                  setDraft(null);
+                  setError("");
+                  setMessage(
+                    "Task recorded; schedule and reports recalculate from the saved task data.",
+                  );
+                }}
+              >
+                Record implementation task
+              </button>
+              <button onClick={() => setDraft(null)}>Close task draft</button>
+            </div>
+          </Panel>
+        </div>
       )}
       {view === "Tasks & RACI" && (
         <Panel
@@ -790,7 +857,7 @@ export default function ImplementationStudio() {
                 </tr>
               </thead>
               <tbody>
-                {s.tasks.map((t) => (
+                {plannedTasks.map((t) => (
                   <tr key={t.id}>
                     <td>
                       <button
@@ -1045,7 +1112,10 @@ export default function ImplementationStudio() {
           >
             Export POA&M / RACI CSV
           </button>
-          <Link className="xa-button primary" to={`${base}/report`}>
+          <Link
+            className="xa-button primary"
+            to={`${base}/report${scoped ? `?standard=${requestedStandard}` : ""}`}
+          >
             Generate executive report →
           </Link>
         </div>
@@ -1071,6 +1141,6 @@ export default function ImplementationStudio() {
           separate validation and reassessment decision.
         </p>
       </details>
-    </>
+    </div>
   );
 }

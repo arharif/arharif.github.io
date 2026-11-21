@@ -2,30 +2,30 @@ import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { readFile } from "node:fs/promises";
 const base = "/x1-academic";
-test("four overview workspaces expand, preserve contextual lessons and use the official logo", async ({
+test("three overview workspaces expand, preserve resource links and use the X1 logo", async ({
   page,
 }) => {
   await page.goto(base);
   await expect(
-    page.getByRole("heading", { name: "Explore. Assess. Implement." }),
+    page.getByRole("heading", { name: "X1 Academic", exact: true }),
   ).toBeVisible();
+  await expect(page.locator(".xa-home-workspace")).toHaveCount(3);
   for (const title of [
     "Explore Standards",
     "Assess & Simulate",
-    "Implement",
-    "Security Mindmap",
+    "Implement & Plan",
   ])
     await expect(
-      page.locator(".xa-workspace-bubble>button").filter({ hasText: title }),
-    ).toBeVisible();
-  await page
-    .locator(".xa-workspace-bubble>button")
-    .filter({ hasText: "Implement" })
-    .click();
-  await page
-    .getByRole("link", { name: "Implementation Gantt", exact: true })
-    .click();
-  await expect(page).toHaveURL(/\/implement$/);
+      page.getByRole("button", { name: new RegExp(title) }),
+    ).toHaveAttribute("aria-expanded", "false");
+  await expect(
+    page
+      .getByRole("navigation", { name: "Academic resources" })
+      .getByRole("link"),
+  ).toHaveCount(3);
+  await page.getByRole("button", { name: /Implement & Plan/ }).click();
+  await page.getByRole("link", { name: "NIST CSF 2.0", exact: true }).click();
+  await expect(page).toHaveURL(/implement\?standard=nist-csf-2$/);
   await page
     .getByRole("link", { name: "X1 Academic overview", exact: true })
     .click();
@@ -55,7 +55,7 @@ test("standards architecture differs by source and CSF category drill-down reach
   await expect(
     page.getByRole("complementary", { name: "Contextual explanation" }),
   ).toContainText("Context & accountability");
-  await page.getByLabel("Standard edition").selectOption("dora");
+  await page.goto(`${base}/standards?framework=dora`);
   await expect(page.locator(".xa-architecture")).toHaveClass(/is-pillars/);
   await page
     .locator(".xa-architecture-node")
@@ -79,7 +79,7 @@ test("completed CSF demo contains 106 real outcomes and preserves learner edits 
 }) => {
   await page.goto(`${base}/standards`);
   await page.getByLabel("Search standards", { exact: true }).fill("NIST");
-  await page.getByRole("button", { name: "Try Completed Demo" }).click();
+  await page.getByRole("button", { name: "Load Completed Demo" }).click();
   await expect(
     page.getByRole("button", { name: /Profile records.*106/ }),
   ).toBeVisible();
@@ -95,7 +95,8 @@ test("completed CSF demo contains 106 real outcomes and preserves learner edits 
   await page
     .getByRole("button", { name: "Save profile finding", exact: true })
     .click();
-  await page.getByRole("button", { name: "Try Completed Demo" }).click();
+  await page.getByRole("button", { name: "Return to my project" }).click();
+  await page.getByRole("button", { name: "Load Completed Demo" }).click();
   await expect(
     page.getByRole("button", { name: /Profile records.*106/ }),
   ).toBeVisible();
@@ -110,6 +111,7 @@ test("completed CSF demo contains 106 real outcomes and preserves learner edits 
     .click();
   const raw = await readFile((await (await pending).path())!, "utf8");
   expect(JSON.parse(raw).data.studio.findings).toHaveLength(106);
+  expect(JSON.parse(raw).demoId).toBe("nist-csf-2");
   await page.getByLabel("Import project JSON", { exact: true }).setInputFiles({
     name: "fictional-assessment.json",
     mimeType: "application/json",
@@ -142,7 +144,17 @@ test("framework-specific roadmap includes themed implementation and validation t
   await expect(
     page.locator(".xe-phase-group").filter({ hasText: "IMPLEMENT ·" }),
   ).toHaveAttribute("aria-expanded", "false");
-  await page.getByRole("button", { name: "Expand all phases" }).click();
+  const expand = page.getByRole("button", { name: "Expand all phases" });
+  const overlapsTimeline = await expand.evaluate((button) => {
+    const timeline = document.querySelector(".xa-pmo-gantt");
+    return (
+      !!timeline &&
+      button.getBoundingClientRect().bottom >
+        timeline.getBoundingClientRect().top
+    );
+  });
+  expect(overlapsTimeline).toBe(false);
+  await expand.click();
   await expect(
     page.locator(".xe-phase-group").filter({ hasText: "IMPLEMENT ·" }),
   ).toHaveAttribute("aria-expanded", "true");
@@ -171,6 +183,9 @@ for (const theme of ["dark", "light"])
     page,
   }) => {
     await page.goto(`${base}/standards`);
+    await expect(
+      page.getByRole("heading", { name: "Explore Standards", exact: true }),
+    ).toBeVisible();
     if (theme === "light")
       await page.getByRole("button", { name: "Switch to light theme" }).click();
     const result = await new AxeBuilder({ page })

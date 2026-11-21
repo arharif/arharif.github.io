@@ -1,11 +1,17 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Lightbulb, GitBranch, ArrowRight } from "lucide-react";
+import { GitBranch, ArrowRight } from "lucide-react";
 import { base, Header, Field, Source, download } from "../components/shared";
 import { useScenario } from "../app/context";
 import { useWorkspace } from "../workspace/state";
 import { standards, architectureFor, type Standard } from "./standards";
-import { newFinding, findingErrors, type Finding } from "./model";
+import {
+  evidenceStates,
+  newFinding,
+  newTask,
+  findingErrors,
+  type Finding,
+} from "./model";
 import { recordFinding } from "./engines";
 import { controls as officialControls } from "../workspace/frameworks";
 import { metricInsight, useInsight } from "../workspace/insights";
@@ -13,19 +19,37 @@ import { Panel, Kpi, Bars, Donut, palette } from "../workspace/charts";
 import { csv } from "../utils/engines";
 import { relationships, type StandardNode } from "../data/standards";
 import ArchitectureDiagram from "../features/standards/ArchitectureDiagram";
-export default function StandardsAcademy() {
+import AssessmentSummary from "./AssessmentSummary";
+import AssessmentScope from "./AssessmentScope";
+import GovernanceDashboard from "./GovernanceDashboard";
+import DemoButton from "./DemoButton";
+import { assessmentItems, type AssessmentItem } from "./assessmentCatalog";
+import { isPriority } from "./priorities";
+export default function StandardsAcademy({
+  assessment = false,
+}: {
+  assessment?: boolean;
+}) {
   const [params, setParams] = useSearchParams(),
-    { studio, setStudio } = useWorkspace(),
+    { studio, setStudio, demoId, provenance } = useWorkspace(),
     scenario = useScenario(),
     { explain, open, setOpen } = useInsight();
-  const selected = params.get("framework") ?? "nist-csf-2",
+  const selected =
+      params.get(assessment ? "standard" : "framework") ?? "nist-csf-2",
     s = standards.find((row) => row.id === selected) ?? standards[0],
     model = architectureFor(s.id);
+  const primary = isPriority(s.id);
+  const initialView =
+    params.get("view") ??
+    (assessment ? "overview" : demoId === s.id ? "results" : "architecture");
+  const [controlQuery, setControlQuery] = useState("");
+  const [controlGroup, setControlGroup] = useState("");
+  const [page, setPage] = useState(0);
   const [query, setQuery] = useState(""),
     [recordQuery, setRecordQuery] = useState(""),
     [groupId, setGroupId] = useState(""),
     [category, setCategory] = useState(""),
-    [view, setView] = useState(params.get("view") ?? "architecture"),
+    [view, setView] = useState(initialView),
     [status, setStatus] = useState("All"),
     [message, setMessage] = useState(""),
     [editing, setEditing] = useState<Finding | null>(null);
@@ -40,21 +64,52 @@ export default function StandardsAcademy() {
         row.applicability === "Applicable" &&
         (row.current === null || row.current < row.target),
     );
-  const topics =
-    s.id === "nist-csf-2"
-      ? officialControls
-          .filter((row) => row.framework === "nist-csf-2")
-          .map((row) => ({ id: row.id, title: row.title, group: row.path[0] }))
-      : (model?.nodes.flatMap((node) =>
-          (node.children?.length
-            ? node.children
-            : [{ id: `X1-${node.id}`, title: node.title }]
-          ).map((child) => ({
-            id: child.id,
-            title: child.title,
-            group: node.title,
-          })),
-        ) ?? []);
+  const topics = assessmentItems(s.id);
+  const controlGroups = [...new Set(topics.map((item) => item.group))];
+  const filteredTopics = topics.filter(
+    (item) =>
+      (!controlGroup || item.group === controlGroup) &&
+      `${item.id} ${item.title} ${item.explanation}`
+        .toLowerCase()
+        .includes(controlQuery.toLowerCase()),
+  );
+  const editItem = (item: AssessmentItem) => {
+    setEditing(
+      profile.find((row) => row.controlId === item.id) ??
+        newFinding(item.id, item.title, item.group, s.id, s.edition),
+    );
+    setMessage("");
+  };
+  function addRemediation(finding: Finding) {
+    if (finding.taskId) return;
+    const task = {
+      ...newTask(
+        `finding:${finding.id}`,
+        `Remediate ${finding.controlId}: ${finding.title}`.slice(0, 240),
+      ),
+      standard: s.id,
+      subphase: "Assessment remediation",
+      owner: finding.owner || scenario.owner,
+      accountable: scenario.owner,
+    };
+    setStudio((previous) =>
+      previous.findings.some((row) => row.id === finding.id && !row.taskId)
+        ? {
+            ...previous,
+            tasks: [...previous.tasks, task],
+            findings: previous.findings.map((row) =>
+              row.id === finding.id ? { ...row, taskId: task.id } : row,
+            ),
+          }
+        : previous,
+    );
+    setMessage(`Implementation action created for ${finding.controlId}.`);
+  }
+  const showRecords = (filter: string) => {
+    setRecordQuery("");
+    setStatus(filter);
+    setView("results");
+  };
   const choose = (node: StandardNode, standard: Standard = s) => {
     setGroupId(node.id);
     setCategory(node.children?.[0]?.id ?? "");
@@ -84,61 +139,18 @@ export default function StandardsAcademy() {
     // Search links can change the framework without remounting this route.
     setEditing(null);
     setRecordQuery("");
-    setView(params.get("view") ?? "architecture");
+    setView(initialView);
     if (model?.nodes[0]) {
       choose(model.nodes[0]);
       setOpen(open); // Refresh context without opening an unsolicited drawer.
     }
   }, [s.id, scenario.id]);
-  const completeDemo = () => {
-    const findings = topics.map((topic, index) => ({
-      ...newFinding(topic.id, topic.title, topic.group, s.id, s.edition),
-      current: index % 5,
-      target: 3,
-      owner: scenario.owner,
-      rationale:
-        "Fictional educational scenario. Authored level assignments illustrate the declared X1 rubric and require real-world evidence before operational use.",
-      currentState: `Authored teaching state ${index % 5}`,
-      targetState: "Scoped and evidenced operation with accountable review",
-      evidence:
-        index % 3 === 0
-          ? ""
-          : `Fictional example ${s.id}-${index + 1} · not organisational evidence`,
-      verification:
-        index % 3 === 0 ? ("None" as const) : ("Learner assertion" as const),
-      confidence: "Medium" as const,
-      periodStart: studio.scope.periodStart,
-      periodEnd: studio.scope.periodEnd,
-    }));
-    setStudio((previous) => ({
-      ...previous,
-      framework: s.id,
-      edition: s.edition,
-      scope: {
-        ...previous.scope,
-        services: previous.scope.services || scenario.process,
-        boundary:
-          previous.scope.boundary ||
-          `${scenario.name} selected service, supplier interfaces and recovery dependencies`,
-      },
-      findings: [
-        ...previous.findings,
-        ...findings.filter(
-          (record) =>
-            !previous.findings.some(
-              (existing) =>
-                existing.framework === record.framework &&
-                existing.controlId === record.controlId,
-            ),
-        ),
-      ],
-    }));
-    setView("results");
-    setStatus("All");
-    setMessage(
-      `Fictional demo loaded; existing findings are retained. Scope includes ${findings.length} ${s.id === "nist-csf-2" ? "official CSF outcomes" : "selected educational topics"}.`,
-    );
-  };
+  useEffect(() => {
+    if (editing)
+      document
+        .querySelector(".xa-finding-editor")
+        ?.scrollIntoView({ block: "nearest" });
+  }, [editing?.id]);
   const visible = profile.filter((row) => {
     if (
       !`${row.controlId} ${row.title} ${row.owner}`
@@ -146,6 +158,26 @@ export default function StandardsAcademy() {
         .includes(recordQuery.toLowerCase())
     )
       return false;
+    if (status === "Assessed")
+      return row.applicability === "Applicable" && row.current !== null;
+    if (status === "At target")
+      return (
+        row.applicability === "Applicable" &&
+        row.current !== null &&
+        row.current >= row.target
+      );
+    if (status === "Partial")
+      return (
+        row.applicability === "Applicable" &&
+        row.current !== null &&
+        row.current > 0 &&
+        row.current < row.target
+      );
+    if (status.startsWith("Category "))
+      return (
+        topics.find((item) => item.id === row.controlId)?.category ===
+        status.slice(9)
+      );
     if (status === "Gaps") return gaps.some((gap) => gap.id === row.id);
     if (status.startsWith("Gaps in "))
       return (
@@ -157,31 +189,108 @@ export default function StandardsAcademy() {
     if (status.startsWith("Group ")) return row.group === status.slice(6);
     return true;
   });
+  const metadata = (
+    <details className="xa-panel xe-standard-metadata">
+      <summary>
+        <strong>{s.name}</strong> · {model?.kind ?? "Guidance"} · Source, scope
+        & edition
+      </summary>
+      <p>
+        {s.authority} · {s.edition}
+      </p>
+      <div className="xa-tags">
+        <span>
+          {model?.kind ?? "Guidance"} ·{" "}
+          {model?.family ?? "Security and privacy"}
+        </span>
+        <span>Publication / application · {s.publicationDate}</span>
+      </div>
+      <p>{s.scope}</p>
+      <h2>Applicability and educational boundaries</h2>
+      <p>{s.scoping}</p>
+      <p>
+        <strong>Publisher architecture context</strong> · {s.architecture}
+      </p>
+      <p>{s.reviewStatus}</p>
+      <p>{s.limitations}</p>
+      <Source href={s.url}>Authoritative publisher reference</Source>
+    </details>
+  );
+  const tabs = (
+    <div className="xa-segment xa-assessment-views" aria-label="Standards view">
+      {[
+        ...(assessment
+          ? [
+              ["overview", "Functions & coverage"],
+              ...(s.id === "nist-csf-2" ? [["governance", "Governance"]] : []),
+              ["controls", "Controls"],
+              ["results", "Findings"],
+              ["gaps", "Gaps"],
+              ["evidence", "Evidence"],
+            ]
+          : [
+              ["architecture", "Architecture"],
+              ["controls", "Controls"],
+              ["results", "Assessment dashboard"],
+              ["relationships", "Relationships"],
+            ]),
+      ].map(([id, label]) => (
+        <button
+          key={id}
+          aria-pressed={
+            view === id ||
+            (view === "results" &&
+              ((id === "gaps" && status === "Gaps") ||
+                (id === "evidence" && status === "With evidence")))
+          }
+          onClick={() =>
+            id === "gaps"
+              ? showRecords("Gaps")
+              : id === "evidence"
+                ? showRecords("With evidence")
+                : id === "results"
+                  ? showRecords("All")
+                  : setView(id)
+          }
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
   return (
     <div className="xe-standards-workspace">
-      <Header
-        eyebrow="Explore Standards · architecture, evidence & implementation"
-        title="Explore Standards"
+      {!assessment && (
+        <Header
+          eyebrow="Explore Standards · architecture, evidence & implementation"
+          title="Explore Standards"
+        >
+          <p>
+            Select a standard, understand its purpose and turn scoped assessment
+            findings into an implementation roadmap.
+          </p>
+        </Header>
+      )}
+      <div
+        className={`xe-standard-toolbar ${assessment ? "xa-assessment-toolbar" : ""}`}
       >
-        <p>
-          Select a standard, understand its purpose and turn scoped assessment
-          findings into an implementation roadmap.
-        </p>
-      </Header>
-      <div className="xe-standard-toolbar">
-        <Field label="Search standards">
-          <input
-            value={query}
-            maxLength={240}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Privacy, resilience, NIST, ISO or regulation"
-          />
-        </Field>
+        {!assessment && (
+          <Field label="Search standards">
+            <input
+              value={query}
+              maxLength={240}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Privacy, resilience, NIST, ISO or regulation"
+            />
+          </Field>
+        )}
         <Field label="Standard edition">
           <select
             value={s.id}
             onChange={(event) => {
-              setParams({ framework: event.target.value });
+              setParams({
+                [assessment ? "standard" : "framework"]: event.target.value,
+              });
               setQuery("");
               setRecordQuery("");
               setGroupId("");
@@ -192,9 +301,11 @@ export default function StandardsAcademy() {
             {standards
               .filter(
                 (row) =>
-                  `${row.name} ${row.scope}`
-                    .toLowerCase()
-                    .includes(query.toLowerCase()) || row.id === s.id,
+                  ((!primary || isPriority(row.id)) &&
+                    `${row.name} ${row.scope}`
+                      .toLowerCase()
+                      .includes(query.toLowerCase())) ||
+                  row.id === s.id,
               )
               .map((row) => (
                 <option key={row.id} value={row.id}>
@@ -203,58 +314,128 @@ export default function StandardsAcademy() {
               ))}
           </select>
         </Field>
-        <button
-          className="primary"
-          onClick={completeDemo}
-          disabled={!topics.length}
-        >
-          <Lightbulb size={16} />
-          Try Completed Demo
-        </button>
-      </div>
-      <details className="xa-panel xe-standard-metadata">
-        <summary>
-          <strong>{s.name}</strong> · {model?.kind ?? "Guidance"} · Source,
-          scope & edition
-        </summary>
-        <p>
-          {s.authority} · {s.edition}
-        </p>
-        <div className="xa-tags">
-          <span>
-            {model?.kind ?? "Guidance"} ·{" "}
-            {model?.family ?? "Security and privacy"}
-          </span>
-          <span>Publication / application · {s.publicationDate}</span>
-        </div>
-        <p>{s.scope}</p>
-        <h2>Applicability and educational boundaries</h2>
-        <p>{s.scoping}</p>
-        <p>
-          <strong>Publisher architecture context</strong> · {s.architecture}
-        </p>
-        <p>{s.reviewStatus}</p>
-        <p>{s.limitations}</p>
-        <Source href={s.url}>Authoritative publisher reference</Source>
-      </details>
-      <p className="xe-standard-status" role="status">
-        {message}
-      </p>
-      <div className="xa-segment" aria-label="Standards view">
-        {[
-          ["architecture", "Architecture"],
-          ["results", "Assessment dashboard"],
-          ["relationships", "Relationships"],
-        ].map(([id, label]) => (
-          <button
-            key={id}
-            aria-pressed={view === id}
-            onClick={() => setView(id)}
+        {!assessment && topics.length > 0 && <DemoButton id={s.id} />}
+        {assessment && (
+          <Link
+            className="xa-button secondary"
+            to={`${base}/standards?framework=${s.id}`}
           >
-            {label}
-          </button>
-        ))}
+            Explore structure
+          </Link>
+        )}
+        {!assessment && primary && (
+          <Link to={`${base}/frameworks`}>More framework references</Link>
+        )}
       </div>
+      {!assessment && metadata}
+      {message && (
+        <p className="xe-standard-status" role="status">
+          {message}
+        </p>
+      )}
+      {view !== "overview" && tabs}
+      {view === "overview" && (
+        <AssessmentSummary
+          standard={s}
+          studio={studio}
+          items={topics}
+          findings={profile}
+          onFilter={showRecords}
+          tabs={tabs}
+        />
+      )}
+      {view === "governance" && (
+        <GovernanceDashboard
+          studio={studio}
+          items={topics}
+          onFilter={showRecords}
+        />
+      )}
+      {view === "controls" && (
+        <Panel
+          title={`${s.name} control register`}
+          subtitle={`${filteredTopics.length} matching indexed items`}
+        >
+          <div className="xa-toolbar">
+            <Field label="Search controls">
+              <input
+                type="search"
+                value={controlQuery}
+                onChange={(event) => {
+                  setControlQuery(event.target.value);
+                  setPage(0);
+                }}
+              />
+            </Field>
+            <Field label="Control area">
+              <select
+                value={controlGroup}
+                onChange={(event) => {
+                  setControlGroup(event.target.value);
+                  setPage(0);
+                }}
+              >
+                <option value="">All areas</option>
+                {controlGroups.map((name) => (
+                  <option key={name}>{name}</option>
+                ))}
+              </select>
+            </Field>
+          </div>
+          <div className="xa-table-scroll">
+            <table aria-label="Indexed controls">
+              <thead>
+                <tr>
+                  <th>Control</th>
+                  <th>Scope</th>
+                  <th>Assessment</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredTopics.slice(page * 20, page * 20 + 20).map((item) => {
+                  const finding = profile.find(
+                    (row) => row.controlId === item.id,
+                  );
+                  return (
+                    <tr key={item.id}>
+                      <td>
+                        <button
+                          className="xa-text-button"
+                          onClick={() => editItem(item)}
+                        >
+                          {item.id} · {item.title}
+                        </button>
+                      </td>
+                      <td>{item.group}</td>
+                      <td>
+                        {finding?.applicability === "Excluded"
+                          ? "Excluded"
+                          : finding?.current === null || !finding
+                            ? "Unassessed"
+                            : `${finding.current} / ${finding.target}`}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div className="xa-actions">
+            <button disabled={page === 0} onClick={() => setPage(page - 1)}>
+              Previous page
+            </button>
+            <span>
+              {page + 1} of {Math.max(1, Math.ceil(filteredTopics.length / 20))}
+            </span>
+            <button
+              disabled={(page + 1) * 20 >= filteredTopics.length}
+              onClick={() => setPage(page + 1)}
+            >
+              Next page
+            </button>
+          </div>
+        </Panel>
+      )}
       {view === "architecture" && model && group && (
         <>
           <div className="xe-standards-layout">
@@ -364,7 +545,14 @@ export default function StandardsAcademy() {
               </details>
             )}
             <div className="xa-actions">
-              <Link className="xa-button primary" to={`${base}${s.workspace}`}>
+              <Link
+                className="xa-button primary"
+                to={
+                  primary
+                    ? `${base}/assess?standard=${s.id}`
+                    : `${base}${s.workspace}`
+                }
+              >
                 Open assessment or simulation →
               </Link>
               <Link
@@ -518,6 +706,10 @@ export default function StandardsAcademy() {
                   {[
                     "All",
                     "Gaps",
+                    "Assessed",
+                    "At target",
+                    "Partial",
+                    ...(status.startsWith("Category ") ? [status] : []),
                     "With evidence",
                     "Without evidence",
                     ...studio.rubric.labels.map((_, index) => `Level ${index}`),
@@ -541,6 +733,7 @@ export default function StandardsAcademy() {
                     <th>Current / target</th>
                     <th>Owner</th>
                     <th>Evidence</th>
+                    <th>Remediation</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -584,6 +777,21 @@ export default function StandardsAcademy() {
                         </td>
                         <td>{row.owner || "Unassigned"}</td>
                         <td>{row.evidence || "No reference"}</td>
+                        <td>
+                          {row.taskId ? (
+                            <Link
+                              to={`${base}/implement?standard=${s.id}&task=${row.taskId}`}
+                            >
+                              Open action
+                            </Link>
+                          ) : gaps.some((gap) => gap.id === row.id) ? (
+                            <button onClick={() => addRemediation(row)}>
+                              Create action
+                            </button>
+                          ) : (
+                            "—"
+                          )}
+                        </td>
                       </tr>
                     ))}
                 </tbody>
@@ -602,7 +810,10 @@ export default function StandardsAcademy() {
               >
                 Generate implementation roadmap →
               </Link>
-              <Link className="xa-button" to={`${base}/report`}>
+              <Link
+                className="xa-button"
+                to={`${base}/report?standard=${s.id}`}
+              >
                 Open connected report centre →
               </Link>
               <button
@@ -618,7 +829,9 @@ export default function StandardsAcademy() {
                         organisation: scenario.name,
                         scenarioId: scenario.id,
                         generatedAt: new Date().toISOString(),
-                        provenance: "Learner or authored fictional assessment",
+                        provenance: demoId
+                          ? "Fictional completed demo"
+                          : provenance,
                       })),
                     ),
                     "text/csv;charset=utf-8",
@@ -664,6 +877,9 @@ export default function StandardsAcademy() {
                         scenarioId: scenario.id,
                         scope: studio.scope,
                         method: studio.rubric,
+                        provenance: demoId
+                          ? "Fictional completed demo"
+                          : provenance,
                         findings: profile,
                         generatedAt: new Date().toISOString(),
                         disclaimer:
@@ -682,8 +898,57 @@ export default function StandardsAcademy() {
           </Panel>
         </>
       )}
-      {editing && view === "results" && (
-        <Panel title={`Edit ${editing.controlId}`}>
+      {assessment && <AssessmentScope standard={s} />}
+      {assessment && metadata}
+      {assessment && (
+        <div className="xa-actions xa-assess-actions">
+          {s.id === "nist-csf-2" && (
+            <Link to={`${base}/assess?mode=profile`}>Guided CSF profile</Link>
+          )}
+          <Link to={`${base}/implement?standard=${s.id}`}>
+            Implementation plan
+          </Link>
+          <Link to={`${base}/risk-register`}>Risk register</Link>
+          <Link to={`${base}/report?standard=${s.id}`}>Assessment report</Link>
+        </div>
+      )}
+      {editing && (view === "results" || view === "controls") && (
+        <Panel
+          title={`Edit ${editing.controlId}`}
+          className="xa-finding-editor"
+        >
+          <p>
+            {topics.find((item) => item.id === editing.controlId)
+              ?.explanation || editing.title}
+          </p>
+          <p className="xa-muted">
+            {topics.find((item) => item.id === editing.controlId)?.evidence}
+          </p>
+          {message && <p role="status">{message}</p>}
+          <Field label="Applicability">
+            <select
+              value={editing.applicability}
+              onChange={(event) =>
+                setEditing({
+                  ...editing,
+                  applicability: event.target.value as Finding["applicability"],
+                })
+              }
+            >
+              <option>Applicable</option>
+              <option>Excluded</option>
+            </select>
+          </Field>
+          {editing.applicability === "Excluded" && (
+            <Field label="Exclusion rationale">
+              <textarea
+                value={editing.exclusion}
+                onChange={(event) =>
+                  setEditing({ ...editing, exclusion: event.target.value })
+                }
+              />
+            </Field>
+          )}
           <div className="xa-grid two">
             <Field label="Current educational level">
               <select
@@ -733,6 +998,31 @@ export default function StandardsAcademy() {
                 maxLength={4000}
                 onChange={(event) =>
                   setEditing({ ...editing, evidence: event.target.value })
+                }
+              />
+            </Field>
+          </div>
+          <div className="xa-grid two">
+            <Field label="Evidence verification">
+              <select
+                value={editing.verification}
+                onChange={(event) =>
+                  setEditing({
+                    ...editing,
+                    verification: event.target.value as Finding["verification"],
+                  })
+                }
+              >
+                {evidenceStates.map((state) => (
+                  <option key={state}>{state}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Evidence reviewer">
+              <input
+                value={editing.reviewer}
+                onChange={(event) =>
+                  setEditing({ ...editing, reviewer: event.target.value })
                 }
               />
             </Field>

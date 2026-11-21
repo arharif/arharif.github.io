@@ -1,6 +1,6 @@
 import { AcademicLibraryPage } from "@/pages/AcademicLibraryPage";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useAcademic } from "../app/context";
 import { resources, filterResources } from "../data/resources";
 import type { EducationalResource } from "../data/types";
@@ -23,7 +23,8 @@ const fields: Filter[] = [
   "role",
 ];
 export default function Resources() {
-  const [collection, setCollection] = useState("curated");
+  const [params, setParams] = useSearchParams();
+  const collection = params.get("view") === "library" ? "published" : "curated";
   const [query, setQuery] = useState("");
   const [filters, setFilters] = useState<
     Partial<Pick<EducationalResource, Filter>>
@@ -44,13 +45,13 @@ export default function Resources() {
       <div className="xa-segmented" aria-label="Resource collection">
         <button
           aria-pressed={collection === "curated"}
-          onClick={() => setCollection("curated")}
+          onClick={() => setParams({})}
         >
           Standards & learning sources
         </button>
         <button
           aria-pressed={collection === "published"}
-          onClick={() => setCollection("published")}
+          onClick={() => setParams({ view: "library" })}
         >
           Published Academic Library
         </button>

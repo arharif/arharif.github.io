@@ -2,6 +2,14 @@ import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { readFile } from "node:fs/promises";
 const base = "/x1-academic";
+async function openAcademyPage(page: Page, title: string) {
+  await page.getByLabel("Search academy").fill(title);
+  await page
+    .getByLabel("Academy search results")
+    .getByText(title, { exact: true })
+    .first()
+    .click();
+}
 async function closeGuide(page: Page) {
   const b = page.getByRole("button", {
     name: "Close explanation",
@@ -45,9 +53,9 @@ test("novice CSF profile → gap → risk → task → dependency schedule → i
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto(base);
-  await page
-    .getByRole("link", { name: "Continue your project", exact: false })
-    .click();
+  await page.getByRole("button", { name: /Assess & Simulate/ }).click();
+  await page.getByRole("link", { name: "NIST CSF 2.0", exact: true }).click();
+  await page.getByRole("link", { name: "Guided CSF profile" }).click();
   await page
     .getByRole("button", { name: "Continue to outcome assessment" })
     .click();
@@ -78,7 +86,7 @@ test("novice CSF profile → gap → risk → task → dependency schedule → i
       name: "Resource-levelled working-calendar schedule",
     }),
   ).toContainText("2027-02-08 → 2027-02-09");
-  await page.getByRole("link", { name: "Report", exact: true }).click();
+  await openAcademyPage(page, "Programme Reports");
   await page.getByRole("button", { name: "Generate immutable report" }).click();
   const report = await jsonDownload(page, "Export complete report JSON");
   expect(report.summary.current).toBe(1);
@@ -105,7 +113,13 @@ test("novice CSF profile → gap → risk → task → dependency schedule → i
   const restored = await jsonDownload(page, "Export complete report JSON");
   expect(restored.findings).toEqual(report.findings);
   expect(restored.plan).toEqual(report.plan);
-  await page.getByRole("link", { name: "Assess", exact: true }).click();
+  await page
+    .getByRole("navigation", { name: "Academic navigation" })
+    .getByRole("link", { name: "Assess & Simulate", exact: true })
+    .click();
+  await page
+    .getByRole("link", { name: /Guided CSF & maturity assessment/ })
+    .click();
   await page
     .getByRole("navigation", { name: "Guided workflow steps" })
     .getByRole("button")
@@ -115,7 +129,7 @@ test("novice CSF profile → gap → risk → task → dependency schedule → i
     .getByLabel("Current X1 maturity level", { exact: true })
     .selectOption("2");
   await page.getByRole("button", { name: "Record profile outcome" }).click();
-  await page.getByRole("link", { name: "Report", exact: true }).click();
+  await openAcademyPage(page, "Programme Reports");
   await page.getByRole("button", { name: "Generate immutable report" }).click();
   const edited = await jsonDownload(page, "Export complete report JSON");
   expect(edited.findings[0].id).toBe(report.findings[0].id);
@@ -130,11 +144,8 @@ test("framework reset is scoped; unsaved editors survive navigation; full export
 }) => {
   await page.goto(`${base}/labs/framework-explorer`);
   await page.getByLabel("Action owner").fill("CSF draft owner");
-  await page.getByRole("link", { name: "Find your learning path", exact: true }).click();
-  await page.getByText("All workspaces", { exact: true }).click();
-  await page
-    .getByRole("link", { name: "Control & Framework Explorer", exact: true })
-    .click();
+  await openAcademyPage(page, "Programme Reports");
+  await openAcademyPage(page, "Control & Framework Explorer");
   await expect(page.getByLabel("Action owner")).toHaveValue("CSF draft owner");
   await page
     .getByLabel("Assessment status", { exact: true })
@@ -256,13 +267,16 @@ test("privacy processing inventory → individual harm → edition-safe remediat
   await expect(
     page.getByRole("button", { name: /Edition-specific findings/ }),
   ).toContainText("1");
-  await page.getByRole("link", { name: "Implement", exact: true }).click();
+  await page
+    .getByRole("navigation", { name: "Academic navigation" })
+    .getByRole("link", { name: "Implement & Plan", exact: true })
+    .click();
   await expect(
     page.getByRole("table", {
       name: "Resource-levelled working-calendar schedule",
     }),
   ).toContainText("privacy");
-  await page.getByRole("link", { name: "Report", exact: true }).click();
+  await openAcademyPage(page, "Programme Reports");
   await page.getByRole("button", { name: "Generate immutable report" }).click();
   const executive = await jsonDownload(page, "Export complete report JSON");
   expect(executive.privacy[0].taskId).toBe(executive.plan[0].id);
@@ -369,7 +383,7 @@ test("NIST official source, baseline comparison and explicit reviewed control de
   await page
     .getByRole("button", { name: "Create control implementation task" })
     .click();
-  await page.getByRole("link", { name: "Report", exact: true }).click();
+  await openAcademyPage(page, "Programme Reports");
   await page.getByRole("button", { name: "Generate immutable report" }).click();
   const executive = await jsonDownload(page, "Export complete report JSON");
   expect(executive.sp.decisions["ac-2"].reviewed).toBe(true);
@@ -430,20 +444,24 @@ test("planning dependencies, RACI, baseline and validation are editable without 
   await page.getByRole("button", { name: "Capture plan baseline" }).click();
   await page
     .getByRole("table", { name: "Resource-levelled working-calendar schedule" })
-    .getByRole("button", { name: "FRAME: Scope & mobilise", exact: true })
+    .getByRole("button", {
+      name: before.tasks.find(
+        (task: { stage: string }) => task.stage === "FRAME",
+      ).title,
+      exact: true,
+    })
     .click();
   await closeGuide(page);
   await page.getByText("Finish-to-start dependencies", { exact: true }).click();
-  await page
-    .getByLabel("DIAGNOSE: Understand current state", { exact: true })
-    .check();
+  const diagnose = before.tasks.find(
+    (task: { stage: string }) => task.stage === "DIAGNOSE",
+  ).title;
+  await page.getByLabel(diagnose, { exact: true }).check();
   await page
     .getByRole("button", { name: "Record implementation task" })
     .click();
   await expect(page.getByRole("alert")).toContainText("Circular");
-  await page
-    .getByLabel("DIAGNOSE: Understand current state", { exact: true })
-    .uncheck();
+  await page.getByLabel(diagnose, { exact: true }).uncheck();
   await page
     .getByLabel("Task status", { exact: true })
     .selectOption("Validated");
@@ -476,6 +494,7 @@ test("tutorial keyboard focus, search, consistent explanation mode and legacy la
   page,
 }) => {
   await page.goto(base);
+  await page.locator(".xa-help-menu > summary").click();
   await page.getByRole("button", { name: "Open interactive tutorial" }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
   await page.keyboard.press("Escape");
@@ -497,20 +516,16 @@ test("tutorial keyboard focus, search, consistent explanation mode and legacy la
   await page.getByLabel("Academy explanation mode").selectOption("Executive");
   await page.getByLabel("Search academy").fill("privacy");
   await page.locator(".xs-search-results").getByRole("link").first().click();
+  await page.locator(".xa-help-menu > summary").click();
   await expect(page.getByLabel("Academy explanation mode")).toHaveValue(
     "Executive",
   );
-  await page.getByText("All workspaces", { exact: true }).click();
-  await page
-    .getByRole("link", { name: "Cyber Incident Lab", exact: true })
-    .click();
+  await openAcademyPage(page, "Cyber Incident Lab");
   await page
     .getByLabel("Investigation notes, competing explanation and uncertainty")
     .fill("Unrecorded incident hypothesis retained between routes.");
-  await page.getByRole("link", { name: "Find your learning path", exact: true }).click();
-  await page
-    .getByRole("link", { name: "Cyber Incident Lab", exact: true })
-    .click();
+  await openAcademyPage(page, "Programme Reports");
+  await openAcademyPage(page, "Cyber Incident Lab");
   await expect(
     page.getByLabel(
       "Investigation notes, competing explanation and uncertainty",

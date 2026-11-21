@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { base, Header, download, Field } from "../components/shared";
 import { useAcademic } from "../app/context";
 import { useWorkspace } from "../workspace/state";
@@ -11,8 +11,13 @@ import { Kpi, Bars, Donut, RiskMatrix, palette } from "../workspace/charts";
 import { Panel, Radar, Empty, Method } from "./visuals";
 import { metricInsight, useInsight } from "../workspace/insights";
 import { csv } from "../utils/engines";
+import { priorityStandards } from "./priorities";
 import ControlAssurance, { ControlDecisionTable } from "./ControlAssurance";
 export default function ReportCenter() {
+  const [params] = useSearchParams();
+  const standard = priorityStandards.find(
+    (item) => item.id === params.get("standard"),
+  );
   const w = useWorkspace(),
     { progress } = useAcademic(),
     { explain } = useInsight(),
@@ -23,6 +28,7 @@ export default function ReportCenter() {
     [message, setMessage] = useState("");
   const fingerprint = () =>
     JSON.stringify({
+      selectedStandard: standard?.id,
       studio: { ...w.studio, history: [] },
       rows: w.rows,
       analysed: w.analysed,
@@ -54,7 +60,7 @@ export default function ReportCenter() {
     );
   }
   function generate() {
-    setReport(buildReport(w));
+    setReport(buildReport(w, new Date(), standard, w.demoId));
     setStamp(fingerprint());
     setFilter("All");
     setMessage(
