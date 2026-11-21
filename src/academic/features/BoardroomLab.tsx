@@ -1,6 +1,3 @@
-import { Metric, Panel, Bars, Donut } from "../components/Analytics";
-import { metricExplanation, useExplanation } from "../components/Explanation";
-import { useState } from "react";
 import { useAcademic, useScenario } from "../app/context";
 import {
   ExportPanel,
@@ -9,6 +6,10 @@ import {
   LabIntro,
   Reset,
 } from "../components/shared";
+import { Kpi, Panel, Bars, ProgressBar } from "../workspace/charts";
+import { useWorkspace, useLabState } from "../workspace/state";
+import { analyseRisks, scenarioRisks, riskMethod } from "../workspace/risk";
+import { metricInsight, useInsight } from "../workspace/insights";
 import { budgetResult, challengeResponse, initiatives } from "../utils/engines";
 const situations = [
   {
@@ -62,17 +63,45 @@ const situations = [
 ];
 export default function BoardroomLab() {
   const scenario = useScenario();
-  const { explain } = useExplanation();
+  const { explain } = useInsight();
+  const { analysed, provenance, asOf, analysedAsOf, assessments } =
+    useWorkspace();
+  const reportDate = analysed ? analysedAsOf : asOf;
+  const riskStats = analyseRisks(
+    analysed ?? scenarioRisks(scenario.id),
+    reportDate,
+  );
+  const [budget, setBudget] = useLabState(
+    "boardroom",
+    "budget",
+    scenario.budget,
+  );
   const { imported } = useAcademic();
-  const [situation, setSituation] = useState(0),
-    [selected, setSelected] = useState<string[]>([]);
-  const [owner, setOwner] = useState(""),
-    [strategy, setStrategy] = useState("Stage delivery with explicit gates");
-  const [assurance, setAssurance] = useState("Independent risk-based sampling"),
-    [decision, setDecision] = useState("Escalate material residual exposure");
-  const [brief, setBrief] = useState(""),
-    [evaluated, setEvaluated] = useState(false);
-  const result = budgetResult(selected, scenario.budget),
+  const [situation, setSituation] = useLabState("boardroom", "situation", 0),
+    [selected, setSelected] = useLabState<string[]>(
+      "boardroom",
+      "selected",
+      [],
+    );
+  const [owner, setOwner] = useLabState("boardroom", "owner", ""),
+    [strategy, setStrategy] = useLabState(
+      "boardroom",
+      "strategy",
+      "Stage delivery with explicit gates",
+    );
+  const [assurance, setAssurance] = useLabState(
+      "boardroom",
+      "assurance",
+      "Independent risk-based sampling",
+    ),
+    [decision, setDecision] = useLabState(
+      "boardroom",
+      "decision",
+      "Escalate material residual exposure",
+    );
+  const [brief, setBrief] = useLabState("boardroom", "brief", ""),
+    [evaluated, setEvaluated] = useLabState("boardroom", "evaluated", false);
+  const result = budgetResult(selected, budget),
     context = situations[situation];
   const ready =
     selected.length > 0 &&
@@ -98,69 +127,6 @@ export default function BoardroomLab() {
           clear executive request.
         </p>
       </Header>
-      <div className="xa-metric-grid">
-        <Metric
-          label="Allocated budget"
-          value={`${result.cost}/${scenario.budget}`}
-          detail="Fictional planning units"
-          onClick={() =>
-            explain(
-              metricExplanation(
-                "Allocated budget",
-                `${result.cost} units`,
-                `Sum of selected initiative costs against a ${scenario.budget}-unit capacity assumption. No currency conversion.`,
-                "executive",
-              ),
-            )
-          }
-        />
-        <Metric
-          label="Delivery horizon"
-          value={`${result.weeks}w`}
-          detail={`Scenario deadline ${context.weeks} weeks`}
-          tone="amber"
-          onClick={() =>
-            explain(
-              metricExplanation(
-                "Delivery horizon",
-                `${result.weeks} weeks`,
-                "Maximum selected initiative duration, assuming parallel staffing. Dependencies and resource constraints require review.",
-                "executive",
-              ),
-            )
-          }
-        />
-        <Metric
-          label="Exposure index"
-          value={result.exposurePoints}
-          detail="Authored improvement points"
-          onClick={() =>
-            explain(
-              metricExplanation(
-                "Exposure improvement index",
-                String(result.exposurePoints),
-                "Additive teaching points attached to selected initiatives. No calibrated risk-reduction percentage is claimed.",
-                "executive",
-              ),
-            )
-          }
-        />
-        <Metric
-          label="Evidence readiness"
-          value={result.evidencePoints}
-          detail="Authored assurance points"
-          onClick={() =>
-            explain(
-              metricExplanation(
-                "Evidence readiness index",
-                String(result.evidencePoints),
-                "Additive authored assurance points. Independent evidence sampling does not itself implement controls.",
-                "assurance",
-              ),
-            )
-          }
-        />
-      </div>
       <LabIntro
         objectives={[
           "Prioritise under budget and deadline constraints",
@@ -169,6 +135,189 @@ export default function BoardroomLab() {
         ]}
         reference="risk-assessment"
       />
+      <div className="xa-data-banner">
+        <span className="xa-live-dot" />
+        <strong>{analysed ? provenance : "Fictional scenario baseline"}</strong>
+        <span>
+          Risk snapshot as of {reportDate}. Portfolio assumptions are
+          independent of register ratings.
+        </span>
+      </div>
+      <div className="xa-kpi-grid">
+        <Kpi
+          label="Residual exposure"
+          value={riskStats.residual}
+          detail={`${riskStats.total} active risk records`}
+          onClick={() =>
+            explain(
+              metricInsight(
+                "Board risk exposure",
+                "Sum of active risk residual indices in the current analysed snapshot or fictional baseline.",
+                riskMethod,
+                "This is an ordinal prioritisation index. Budget selections do not silently change entered risk ratings.",
+              ),
+            )
+          }
+        />
+        <Kpi
+          label="Budget allocated"
+          value={`${result.cost}/${budget}`}
+          detail="Fictional planning units"
+          tone="blue"
+          onClick={() =>
+            explain(
+              metricInsight(
+                "Budget allocation",
+                "Capacity committed to the selected initiatives.",
+                "Sum of selected initiative costs; remaining = capacity − cost. No currency conversion.",
+                "An affordable portfolio still requires staff, dependencies and implementation approval.",
+              ),
+            )
+          }
+        />
+        <Kpi
+          label="Review actions overdue"
+          value={riskStats.overdue.length}
+          detail={`Before ${reportDate}`}
+          tone="amber"
+          onClick={() =>
+            explain(
+              metricInsight(
+                "Overdue management reviews",
+                "Active risk records requiring review before the selected analysis date.",
+                "Review date < analysis date; closed risks are excluded.",
+                "Ask each risk owner to reassess exposure and acceptance expiry.",
+              ),
+            )
+          }
+        />
+        <Kpi
+          label="Evidence references"
+          value={`${riskStats.withEvidence}/${riskStats.total}`}
+          detail="Register references · unverified"
+          onClick={() =>
+            explain(
+              metricInsight(
+                "Assurance context",
+                "Reference presence in the risk register.",
+                "Count nonempty evidence references on active records. This is not independently tested control assurance.",
+                "Scope independent sampling before reporting an effective control.",
+              ),
+            )
+          }
+        />
+      </div>
+      <div className="xa-grid two">
+        <Panel
+          title="Portfolio decision model"
+          subtitle="Authored teaching indices · no business forecast"
+        >
+          <Bars
+            items={[
+              { label: "Exposure points", value: result.exposurePoints },
+              { label: "Evidence points", value: result.evidencePoints },
+              {
+                label: "Remaining capacity",
+                value: Math.max(0, result.remaining),
+              },
+            ]}
+            onSelect={(label) =>
+              explain(
+                metricInsight(
+                  label,
+                  "A view of the selected fictional initiative portfolio.",
+                  "Exposure and evidence points are fixed authored teaching assumptions summed across selected initiatives. They are independent of entered risk indices.",
+                  "Compare trade-offs; these points do not predict real loss reduction or compliance.",
+                ),
+              )
+            }
+          />
+          <p className="xa-muted">
+            Select initiatives below to model the trade-off. No historical
+            observations were supplied; trend lines would be unsupported.
+          </p>
+        </Panel>
+        <Panel
+          title="Delivery & funding gates"
+          subtitle="Parallel staffing assumption"
+        >
+          <ProgressBar
+            value={budget ? (result.cost / budget) * 100 : 0}
+            label="Budget utilisation"
+          />
+          <p>
+            {result.cost} of {budget} units allocated · {result.weeks} week(s)
+            longest selected delivery
+          </p>
+          <Bars
+            items={initiatives
+              .filter((i) => selected.includes(i.id))
+              .map((i) => ({ label: i.title, value: i.weeks }))}
+            suffix="w"
+            onSelect={(title) => {
+              const i = initiatives.find((i) => i.title === title)!;
+              explain({
+                ...metricInsight(
+                  i.title,
+                  i.dependency,
+                  `Authored cost ${i.cost} units, duration ${i.weeks} weeks. Portfolio duration is max selected duration under parallel delivery.`,
+                  `Validate dependency: ${i.dependency}. Real staffing contention may extend delivery.`,
+                ),
+                actions: [
+                  "Confirm capacity and dependency.",
+                  "Set an accountable owner and milestone.",
+                  "Escalate any deadline shortfall.",
+                ],
+              });
+            }}
+          />
+        </Panel>
+      </div>
+      <Field label={`Available planning capacity · ${budget} units`}>
+        <input
+          aria-label="Available planning capacity"
+          type="range"
+          min="25"
+          max="150"
+          step="5"
+          value={budget}
+          onChange={(e) => setBudget(+e.target.value)}
+        />
+      </Field>
+      <Panel
+        title="Control assurance position"
+        subtitle="Saved learner assessments across selected teaching scopes · no independent assurance claim"
+      >
+        <Bars
+          items={[
+            "Implemented and evidenced",
+            "Partially implemented",
+            "Not implemented",
+            "Not assessed",
+            "Not applicable",
+          ].map((label) => ({
+            label,
+            value: Object.values(assessments).filter((a) => a.status === label)
+              .length,
+          }))}
+          onSelect={(label) =>
+            explain(
+              metricInsight(
+                label,
+                `${Object.values(assessments).filter((a) => a.status === label).length} saved assessment records in this status.`,
+                "Counts use saved learner assessments across the four supported assessment scopes. Unrecorded catalogue items are outside this count.",
+                "An evidence reference is a learner assertion. An independent review of design and operation is needed before assurance conclusions.",
+                "control",
+              ),
+            )
+          }
+        />
+        <p className="xa-muted">
+          {Object.keys(assessments).length
+            ? `${Object.keys(assessments).length} assessment record(s) saved in this tab.`
+            : "No learner control assessments have been saved. Open Framework Explorer to establish an assessment scope."}
+        </p>
+      </Panel>
       <Field label="Executive scenario">
         <select
           value={situation}
@@ -189,9 +338,9 @@ export default function BoardroomLab() {
         <p>{context.need}</p>
         <p>{scenario.constraint}</p>
         <p>
-          Deadline · {context.weeks} weeks. Budget · {scenario.budget} fictional
-          planning units. A unit represents a relative capacity assumption, with
-          no currency conversion.
+          Deadline · {context.weeks} weeks. Budget · {budget} fictional planning
+          units. A unit represents a relative capacity assumption, with no
+          currency conversion.
         </p>
         {imported && (
           <p>
@@ -235,7 +384,7 @@ export default function BoardroomLab() {
           <div className="xa-statline" aria-live="polite">
             <div className="xa-stat">
               <strong>
-                {result.cost}/{scenario.budget}
+                {result.cost}/{budget}
               </strong>
               <span>Allocated units</span>
             </div>
@@ -349,63 +498,6 @@ export default function BoardroomLab() {
           )}
         </div>
       </section>
-      <div className="xa-dashboard-grid">
-        <Panel
-          title="Investment allocation"
-          subtitle="Select an initiative to inspect its assumptions"
-        >
-          <Bars
-            label="Initiative costs"
-            entries={selected.map((id) => {
-              const item = initiatives.find((row) => row.id === id)!;
-              return { label: item.title, value: item.cost };
-            })}
-            onSelect={(label) => {
-              const item = initiatives.find((row) => row.title === label)!;
-              explain({
-                ...metricExplanation(
-                  item.title,
-                  `${item.cost} planning units`,
-                  `${item.weeks} weeks; dependency: ${item.dependency}. Authored exposure contribution ${item.exposure}, evidence contribution ${item.evidence}.`,
-                  "executive",
-                ),
-                actions: [
-                  `Validate ${item.dependency.toLowerCase()}.`,
-                  "Confirm an owner, approval gate and residual exposure.",
-                ],
-              });
-            }}
-          />
-        </Panel>
-        <Panel
-          title="Capacity position"
-          subtitle="Budget totals use selected decisions"
-        >
-          <Donut
-            label="units"
-            entries={[
-              { label: "Allocated", value: result.cost, colour: "#82b9c8" },
-              {
-                label: "Remaining",
-                value: Math.max(0, result.remaining),
-                colour: "#729d8a",
-              },
-            ]}
-            onSelect={(label) =>
-              explain(
-                metricExplanation(
-                  label,
-                  label === "Allocated"
-                    ? String(result.cost)
-                    : String(result.remaining),
-                  `Budget ${scenario.budget}; allocated ${result.cost}. Over-allocation is explicitly flagged and exports remain disabled.`,
-                  "executive",
-                ),
-              )
-            }
-          />
-        </Panel>
-      </div>
       <section className="xa-panel">
         <h2>Prioritised roadmap</h2>
         {!selected.length ? (
@@ -437,6 +529,15 @@ export default function BoardroomLab() {
         ready={ready}
         results={{
           executiveScenario: context.title,
+          learnerControlAssessments: assessments,
+          riskSnapshot: {
+            provenance: analysed ? provenance : "Fictional baseline",
+            asOf: reportDate,
+            activeRisks: riskStats.total,
+            residualIndexSum: riskStats.residual,
+            overdue: riskStats.overdue.length,
+          },
+          planningCapacity: budget,
           executiveBriefing: brief,
           businessService: scenario.process,
           budgetAssumptions: result,
@@ -473,6 +574,7 @@ export default function BoardroomLab() {
       <Reset
         onClick={() => {
           setSituation(0);
+          setBudget(scenario.budget);
           setSelected([]);
           setOwner("");
           setStrategy("Stage delivery with explicit gates");

@@ -3,7 +3,7 @@ import { promisify } from "node:util";
 import { mkdtemp, readFile, writeFile, mkdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { standards } from "../src/academic/data/standards.ts";
+import { standards } from "../src/academic/studio/standards.ts";
 const run = promisify(execFile),
   directory = await mkdtemp(join(tmpdir(), "x1-publisher-review-"));
 try {
@@ -23,7 +23,7 @@ try {
         path,
         "--write-out",
         "%{http_code} %{url_effective}",
-        standard.source,
+        standard.url,
       ]);
       const [status, finalUrl] = stdout.trim().split(" "),
         html = await readFile(path, "utf8");
@@ -35,7 +35,7 @@ try {
           .slice(0, 350) ?? "";
       results.push({
         id: standard.id,
-        source: standard.source,
+        source: standard.url,
         checkedAt: new Date().toISOString(),
         status: Number(status),
         finalUrl,
@@ -50,7 +50,7 @@ try {
     } catch (error) {
       results.push({
         id: standard.id,
-        source: standard.source,
+        source: standard.url,
         checkedAt: new Date().toISOString(),
         outcome: "Unverified",
         error: String(error.message).slice(0, 600),
@@ -64,6 +64,17 @@ try {
     JSON.stringify(results, null, 2) + "\n",
   );
   console.log(JSON.stringify(results, null, 2));
+  const summary = JSON.stringify(
+    results.map(({ id, outcome, publisherTitle }) => ({
+      id,
+      outcome,
+      publisherTitle,
+    })),
+  )
+    .replace(/%/g, "%25")
+    .replace(/\r/g, "%0D")
+    .replace(/\n/g, "%0A");
+  console.log(`::notice title=Publisher source review::${summary}`);
   if (results.some((row) => row.outcome !== "Publisher reference reachable"))
     process.exitCode = 1;
 } finally {

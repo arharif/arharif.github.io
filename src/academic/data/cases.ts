@@ -76,8 +76,8 @@ export const labLinks = [
   },
   {
     id: "risk-decision",
-    title: "Risk Decision Simulator",
-    detail: "Analyse exposure and defend a treatment recommendation.",
+    title: "Risk Register & Simulator",
+    detail: "Import a register, analyse exposure and defend treatment decisions.",
     label: "Make a risk decision",
     discipline: "grc",
   },

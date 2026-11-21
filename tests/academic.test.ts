@@ -172,9 +172,10 @@ test("published content, frameworks and case identifiers are coherent", () => {
   assert.equal(tracks.length, 3);
   assert.equal(
     tracks.reduce((sum, row) => sum + row.modules.length, 0),
-    36,
+    37,
   );
-  assert.equal(modules.length, 3);
+  assert.equal(modules.length, 7);
+  assert.equal(new Set(modules.map(m=>m.id)).size,7);
   assert.equal(scenarios.length, 3);
   assert.equal(new Set(controls.map((row) => row.id)).size, controls.length);
   modules.forEach((row) => {
@@ -188,10 +189,16 @@ test("published content, frameworks and case identifiers are coherent", () => {
   );
 });
 test("resource filtering composes domain, role and keywords", () => {
-  assert.equal(
-    filterResources("model evaluation", { domain: "artificial-intelligence" })
-      .length,
-    1,
+  const results = filterResources("model evaluation", {
+    domain: "artificial-intelligence",
+  });
+  assert.ok(results.length >= 3);
+  assert.ok(
+    results.every(
+      (row) =>
+        row.domain === "artificial-intelligence" &&
+        row.topic === "Model evaluation",
+    ),
   );
   assert.equal(filterResources("impossibleword", {}).length, 0);
   assert.ok(filterResources("", { role: "SOC Analyst" }).length > 0);

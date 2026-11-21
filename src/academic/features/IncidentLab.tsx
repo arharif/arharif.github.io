@@ -1,6 +1,4 @@
-import { Metric, Panel, Bars } from "../components/Analytics";
-import { metricExplanation, useExplanation } from "../components/Explanation";
-import { useState } from "react";
+import { useLabState } from "../workspace/state";
 import { useScenario } from "../app/context";
 import {
   ExportPanel,
@@ -9,10 +7,12 @@ import {
   LabIntro,
   Reset,
 } from "../components/shared";
+import { Kpi, Panel, Bars } from "../workspace/charts";
+import { metricInsight, useInsight } from "../workspace/insights";
 import { incidentActions, incidentFeedback } from "../utils/engines";
 export default function IncidentLab() {
   const scenario = useScenario();
-  const { explain } = useExplanation();
+  const { explain } = useInsight();
   const events = [
     {
       id: "E01",
@@ -57,18 +57,24 @@ export default function IncidentLab() {
       relevant: true,
     },
   ];
-  const [filter, setFilter] = useState(""),
-    [marked, setMarked] = useState<string[]>([]);
-  const [hypothesis, setHypothesis] = useState("Undetermined"),
-    [classification, setClassification] = useState(
+  const [filter, setFilter] = useLabState("incident", "filter", ""),
+    [marked, setMarked] = useLabState<string[]>("incident", "marked", []);
+  const [hypothesis, setHypothesis] = useLabState(
+      "incident",
+      "hypothesis",
+      "Undetermined",
+    ),
+    [classification, setClassification] = useLabState(
+      "incident",
+      "classification",
       "Suspected account compromise",
     );
-  const [severity, setSeverity] = useState("High"),
-    [notes, setNotes] = useState("");
-  const [actions, setActions] = useState<ReturnType<typeof incidentFeedback>[]>(
-    [],
-  );
-  const [reviewed, setReviewed] = useState(false);
+  const [severity, setSeverity] = useLabState("incident", "severity", "High"),
+    [notes, setNotes] = useLabState("incident", "notes", "");
+  const [actions, setActions] = useLabState<
+    ReturnType<typeof incidentFeedback>[]
+  >("incident", "actions", []);
+  const [reviewed, setReviewed] = useLabState("incident", "reviewed", false);
   const count = marked.filter(
     (id) => events.find((event) => event.id === id)?.relevant,
   ).length;
@@ -104,72 +110,128 @@ export default function IncidentLab() {
           exercise before reading the explanation.
         </p>
       </LabIntro>
-      <div className="xa-metric-grid">
-        <Metric
-          label="Synthetic incident"
-          value={
-            <span className="xa-date-value">
-              INC-{scenario.id.toUpperCase()}
-            </span>
-          }
-          detail={scenario.process}
+      <div className="xa-kpi-grid">
+        <Kpi
+          label="Training incident"
+          value="01"
+          detail={`INC-${scenario.id.toUpperCase()}`}
           onClick={() =>
             explain(
-              metricExplanation(
-                "Incident service context",
-                scenario.asset,
-                scenario.consequence,
-                "incident",
+              metricInsight(
+                "Training incident",
+                `Synthetic alert affecting ${scenario.asset}.`,
+                "One authored incident with six timestamped observations. No live telemetry is queried.",
+                "Separate observations, hypotheses and confirmed facts before escalating.",
               ),
             )
           }
         />
-        <Metric
+        <Kpi
           label="Evidence marked"
-          value={marked.length}
-          detail="Selected synthetic events"
+          value={`${marked.length}/${events.length}`}
+          detail="Selected event references"
+          tone="blue"
           onClick={() =>
             explain(
-              metricExplanation(
-                "Marked evidence",
-                `${marked.length} of ${events.length} events`,
-                "Count of marked observations. Relevance is authored scenario ground truth and is reviewed separately.",
-                "incident",
+              metricInsight(
+                "Evidence selection",
+                "Events you have marked for the investigation.",
+                "Count of selected unique event IDs. Relevance is checked against the authored scenario only.",
+                "More selected events do not necessarily strengthen a hypothesis. Explain how their timestamps and sources connect.",
               ),
             )
           }
         />
-        <Metric
-          label="Response decisions"
-          value={actions.length}
-          detail="Includes premature choices"
+        <Kpi
+          label="Assigned severity"
+          value={severity}
+          detail="Learner judgement"
+          tone="rose"
           onClick={() =>
             explain(
-              metricExplanation(
-                "Response decisions",
-                String(actions.length),
-                "Count of distinct selected response actions, including premature choices. Review their evidence requirements.",
-                "incident",
-              ),
-            )
-          }
-        />
-        <Metric
-          label="Learner severity"
-          value={<span className="xa-date-value">{severity}</span>}
-          tone="amber"
-          detail="Requires business-impact rationale"
-          onClick={() =>
-            explain(
-              metricExplanation(
+              metricInsight(
                 "Incident severity",
-                severity,
-                "Severity is a learner judgement about potential harm, distinct from investigative confidence.",
-                "incident",
+                `Current learner severity: ${severity}.`,
+                "Severity is selected by the learner. It is not inferred from an event count.",
+                "Consider service criticality, known scope, confidence and operational consequences.",
               ),
             )
           }
         />
+        <Kpi
+          label="Decisions recorded"
+          value={actions.length}
+          detail="Requests and proposals · no live actions"
+          tone="amber"
+          onClick={() =>
+            explain(
+              metricInsight(
+                "Response decision log",
+                "Unique response proposals recorded in this session.",
+                "Count unique selected action IDs. Evidence thresholds are authored teaching rules.",
+                "Check the evidence available at decision time and coordinate disruptive proposals with service owners.",
+              ),
+            )
+          }
+        />
+      </div>
+      <div className="xa-grid two">
+        <Panel
+          title="Investigation timeline"
+          subtitle="Synthetic UTC sequence · one fictional day"
+        >
+          <div className="xa-timeline">
+            {events.map((event) => (
+              <button
+                key={event.id}
+                onClick={() =>
+                  explain({
+                    ...metricInsight(
+                      `${event.time} · ${event.source}`,
+                      event.text,
+                      "Authored synthetic observation, not verified real-world telemetry. Correlate identity, session and service records before inferring causation.",
+                      "A timestamped observation alone does not establish compromise or attribution.",
+                    ),
+                    technical: `Event ${event.id}: ${event.text}`,
+                    business: scenario.consequence,
+                    path: "/learning/incident-triage",
+                  })
+                }
+              >
+                <span>{event.time}</span>
+                <i />
+                <strong>{event.source}</strong>
+              </button>
+            ))}
+          </div>
+        </Panel>
+        <Panel
+          title="Affected service & response readiness"
+          subtitle={scenario.name}
+        >
+          <h3>{scenario.asset}</h3>
+          <p>{scenario.architecture}</p>
+          <Bars
+            items={[
+              { label: "Events reviewed", value: marked.length },
+              { label: "Response proposals", value: actions.length },
+              {
+                label: "Premature proposals",
+                value: actions.filter((a) => a.premature).length,
+              },
+            ]}
+            onSelect={(label) =>
+              explain(
+                metricInsight(
+                  label,
+                  "Investigation progress and evidence at the time each proposal was made.",
+                  "Counts from event selections and recorded response proposals; repeat selection updates the same action.",
+                  "A proposal is a learning decision, not an executed containment action.",
+                ),
+              )
+            }
+          />
+        </Panel>
       </div>
       <section className="xa-panel">
         <h2>Alert queue & event timeline</h2>
@@ -215,17 +277,18 @@ export default function IncidentLab() {
                                 ? [...marked, event.id]
                                 : marked.filter((id) => id !== event.id),
                             );
-                            setReviewed(false);
                             explain({
-                              ...metricExplanation(
-                                event.id,
-                                event.source,
+                              ...metricInsight(
+                                `${event.id} · ${event.source}`,
                                 event.text,
-                                "incident",
+                                "Synthetic evidence reference. Correlation must preserve source, time and collection context.",
+                                "Explain how this observation supports or challenges your hypothesis.",
                               ),
-                              meaning: event.text,
-                              technical: `Synthetic timestamp ${event.time} UTC. Correlate identity, service and owner observations before reaching a conclusion.`,
+                              technical: event.text,
+                              business: scenario.consequence,
+                              path: "/learning/incident-triage",
                             });
+                            setReviewed(false);
                           }}
                         />
                         {event.id}
@@ -328,6 +391,16 @@ export default function IncidentLab() {
                 key={action.id}
                 onClick={() => {
                   const outcome = incidentFeedback(action.id, count);
+                  explain({
+                    ...metricInsight(
+                      action.label,
+                      outcome.feedback,
+                      `Authored minimum relevant-event count: ${action.required}. At decision time: ${count}.`,
+                      outcome.message,
+                    ),
+                    business: scenario.constraint,
+                    path: "/learning/incident-triage",
+                  });
                   setActions([
                     ...actions.filter((item) => item.id !== action.id),
                     outcome,

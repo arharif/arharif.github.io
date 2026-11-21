@@ -56,6 +56,11 @@ const pages = [
   })),
   ...[
     "learning",
+    "standards/800-53",
+    "simulate",
+    "simulate/privacy",
+    "assess",
+    "report",
     "labs",
     "frameworks",
     "resources",
@@ -83,6 +88,11 @@ const template = await readFile("dist/index.html", "utf8");
 for (const page of pages) {
   const url = `https://arharif.github.io${base}${page.path}`;
   let html = template
+    .replace(
+      "</head>",
+      "<meta name=\"x1-academic-policy\" content=\"v2\"><meta name=\"referrer\" content=\"no-referrer\"><meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'\">" +
+        "</head>",
+    )
     .replace(
       /<title>.*?<\/title>/,
       `<title>${escape(page.title)} · X1 Academic</title>`,

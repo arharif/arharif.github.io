@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useState, cloneElement, isValidElement, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Download, RotateCcw, ArrowUpRight } from "lucide-react";
 import { useAcademic, useScenario } from "../app/context";
@@ -47,7 +47,10 @@ export function Field({
   return (
     <label className="xa-field">
       <span>{label}</span>
-      {children}
+      {isValidElement<{ "aria-label"?: string }>(children) &&
+      !children.props["aria-label"]
+        ? cloneElement(children, { "aria-label": label })
+        : children}
     </label>
   );
 }
@@ -81,34 +84,36 @@ export function CaseSelect() {
             ))}
           </select>
         </Field>
-        <Field label="Import case-state JSON">
-          <input
-            type="file"
-            accept=".json,application/json"
-            onChange={async (e) => {
-              const file = e.target.files?.[0];
-              if (!file) return;
-              try {
-                if (file.size > 100000)
-                  throw new Error("Import must be smaller than 100 KB.");
-                const artifact = parseCaseArtifact(await file.text());
-                setCaseId(artifact.caseId);
-                setImported(artifact);
-                setError("");
-              } catch (reason) {
-                setError(
-                  reason instanceof Error ? reason.message : "Import failed.",
-                );
-              }
-              e.target.value = "";
-            }}
-          />
-        </Field>
+        <details className="xa-case-import">
+          <summary>Import lab context (JSON)</summary>
+          <Field label="Import case-state JSON">
+            <input
+              type="file"
+              accept=".json,application/json"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                try {
+                  if (file.size > 100000)
+                    throw new Error("Import must be smaller than 100 KB.");
+                  const artifact = parseCaseArtifact(await file.text());
+                  setCaseId(artifact.caseId);
+                  setImported(artifact);
+                  setError("");
+                } catch (reason) {
+                  setError(
+                    reason instanceof Error ? reason.message : "Import failed.",
+                  );
+                }
+                e.target.value = "";
+              }}
+            />
+          </Field>
+        </details>
       </div>
       {error && <p role="alert">{error}</p>}
       <p className="xa-disclaimer">
-        {disclaimer} Changing organisation starts a fresh lab workspace. Export
-        your work before switching.
+        {disclaimer} Switching organisation preserves its open project in this tab. Save or export before refreshing.
       </p>
       <details>
         <summary>{scenario.process} · Business context</summary>
@@ -181,7 +186,7 @@ export function ExportPanel({
     disclaimer,
   };
   const table = (
-    rows?.length
+    rows !== undefined
       ? rows
       : Object.entries(results).map(([item, result]) => ({ item, result }))
   ).map((row) => ({

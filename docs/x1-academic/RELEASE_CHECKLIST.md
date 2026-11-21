@@ -1,5 +1,7 @@
 # Release review
 
+> Historical release record. The current connected-studio implementation, methods, sources, security findings and executed checks are documented in [v2/IMPLEMENTATION_REPORT.md](v2/IMPLEMENTATION_REPORT.md) and its linked reports. The older scope/retention statements below describe their original revision.
+
 The academy has been published through the established GitHub Pages workflow. The complete transformation remains in progress. Production verification checks the deployed revision, ten public pages and compiled entry assets.
 
 - [x] Baseline recorded and existing routes retained

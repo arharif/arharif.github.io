@@ -8,13 +8,15 @@ import {
   ChevronDown,
   ArrowUpRight,
 } from "lucide-react";
-import { standards } from "../data/standards";
+import { standards } from "../studio/standards";
 import { labLinks } from "../data/cases";
 import { modules } from "../data/curriculum";
 import { academicSearch } from "../data/search";
 import { base, Field } from "../components/shared";
 import { useAcademic } from "../app/context";
-import { useExplanation, metricExplanation } from "../components/Explanation";
+import { useInsight, metricInsight } from "../workspace/insights";
+import { useWorkspace } from "../workspace/state";
+import { useScenario } from "../app/context";
 const workspaces = [
   {
     id: "standards",
@@ -23,7 +25,7 @@ const workspaces = [
     Icon: ShieldCheck,
     links: [
       ["Standards explorer", "/standards"],
-      ["Try a completed assessment", "/standards?demo=1"],
+      ["Assessment workspace", "/assess"],
       ["Connected knowledge graph", "/knowledge-graph"],
       ["Framework comparison", "/standards?view=relationships"],
     ],
@@ -34,10 +36,12 @@ const workspaces = [
     description: "Turn real inputs into explainable decisions.",
     Icon: FlaskConical,
     links: [
-      ["Risk register & analytics", "/risk-register"],
-      ["Control assessment", "/standards?view=assess"],
+      ["Risk register & analytics", "/labs/risk-decision"],
+      ["Control assessment", "/assess"],
       ...labLinks
-        .filter((row) => row.id !== "framework-explorer")
+        .filter(
+          (row) => !["framework-explorer", "risk-decision"].includes(row.id),
+        )
         .map((row) => [row.title, `/labs/${row.id}`]),
     ],
   },
@@ -48,7 +52,7 @@ const workspaces = [
     Icon: Workflow,
     links: [
       ["Implementation Gantt", "/implement"],
-      ["Plan from assessment gaps", "/standards?view=results"],
+      ["Plan from assessment gaps", "/assess"],
       ["Implementation resources", "/resources"],
     ],
   },
@@ -66,10 +70,12 @@ const workspaces = [
   },
 ];
 export default function Home() {
+  const { studio } = useWorkspace();
+  const scenario = useScenario();
   const [open, setOpen] = useState<string | null>("standards"),
     [query, setQuery] = useState("");
   const { progress } = useAcademic(),
-    { explain } = useExplanation();
+    { explain } = useInsight();
   return (
     <>
       <header className="xa-overview-header">
@@ -94,16 +100,17 @@ export default function Home() {
               onClick={() => {
                 setOpen(open === id ? null : id);
                 explain(
-                  metricExplanation(
+                  metricInsight(
                     title,
                     description,
                     id === "standards"
                       ? "Select a standard, inspect its architecture, assess scoped teaching items and generate a roadmap."
                       : id === "implement"
-                        ? "Roadmaps use explicit calendar-day durations and finish-to-start dependencies."
+                        ? "Roadmaps use working calendars, resource estimates and finish-to-start dependencies."
                         : id === "assess"
                           ? "Analytics are derived from fictional examples or learner-submitted records."
                           : "Existing role, organisational and certification data are preserved in the integrated map.",
+                    "Review the selected scope and source before making an implementation decision.",
                   ),
                 );
               }}
@@ -158,6 +165,26 @@ export default function Home() {
           </div>
         )}
       </div>
+      <section className="xs-next-step">
+        <div>
+          <p className="xa-eyebrow">Your connected project</p>
+          <h2>{scenario.name}</h2>
+          <p>
+            {studio.scope.services ||
+              "Define the service and assessment scope before interpreting results."}
+          </p>
+          <span>
+            {studio.findings.length} findings · {studio.tasks.length} actions ·{" "}
+            {studio.privacyRisks.length} privacy records
+          </span>
+        </div>
+        <Link
+          className="xa-button"
+          to={`${base}${studio.tasks.length ? "/implement" : studio.findings.length ? "/report" : "/assess"}`}
+        >
+          Continue your project →
+        </Link>
+      </section>
       <section className="xa-overview-strip">
         <div>
           <strong>{standards.length}</strong>

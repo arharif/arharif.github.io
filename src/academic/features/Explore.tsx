@@ -285,9 +285,9 @@ function RoleLearningMap() {
       <section>
         <ConceptExplorer />
         <p>
-          <Link to="/security-mindmap">
+          <a href="/security-mindmap">
             Open the original interactive role and organisation map →
-          </Link>
+          </a>
         </p>
       </section>
     </>

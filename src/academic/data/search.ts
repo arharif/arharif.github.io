@@ -1,34 +1,50 @@
+import { standards as sourceStandards } from "../studio/standards";
 import { modules, tracks } from "./curriculum";
 import { labLinks } from "./cases";
 import { resources } from "./resources";
-import { standards } from "./standards";
+import { frameworkSources } from "./controls";
 export const searchIndex = [
+  ...sourceStandards.map(standard=>({title:standard.name,description:standard.scope,path:`/standards?framework=${standard.id}`,type:"Standard or regulatory reference"})),
   {
-    title: "Explore Standards",
-    description:
-      "Interactive standards, privacy, resilience and regulatory architecture",
+    title: "Guided CSF Current / Target Profile and X1 Maturity",
+    description: "Scope, evidence, gaps, Tier exercise and improvement roadmap",
+    path: "/assess",
+    type: "Assessment",
+  },
+  {
+    title: "Standards Academy",
+    description: "NIST, ISO, PCI, privacy and implementation sources",
     path: "/standards",
-    type: "Workspace",
+    type: "Standards",
   },
   {
-    title: "Implementation roadmap and Gantt",
-    description: "Editable tasks, dependencies and calendar-day scheduling",
-    path: "/implement",
-    type: "Workspace",
+    title: "NIST System Implementation",
+    description: "800-53, 800-53A objectives and 800-53B baselines",
+    path: "/standards/800-53",
+    type: "Simulation",
   },
   {
-    title: "Professional risk register",
-    description: "Excel and CSV import, risk analytics and treatment decisions",
-    path: "/risk-register",
-    type: "Workspace",
-  },
-  {
-    title: "Interactive knowledge graph",
+    title: "Privacy Risk & Governance",
     description:
-      "Business processes, controls, evidence and AI governance relationships",
-    path: "/knowledge-graph",
-    type: "Workspace",
+      "Processing, individual harms, DPIA-style assessment and minimisation",
+    path: "/simulate/privacy",
+    type: "Simulation",
   },
+  {
+    title: "Implementation Studio",
+    description:
+      "Seven stages, RACI, Gantt, resources, dependencies and validation",
+    path: "/implement",
+    type: "Project",
+  },
+  {
+    title: "Programme Reports",
+    description:
+      "Immutable practitioner and executive snapshots with source records",
+    path: "/report",
+    type: "Reporting",
+  },
+
   ...modules.map((row) => ({
     title: row.title,
     description: row.objectives.join(" · "),
@@ -53,10 +69,10 @@ export const searchIndex = [
     path: "/resources",
     type: "Resource",
   })),
-  ...standards.map((row) => ({
-    title: row.title,
-    description: row.purpose,
-    path: `/standards?framework=${row.id}`,
+  ...frameworkSources.map((row) => ({
+    title: row.name,
+    description: row.scope,
+    path: `/frameworks/${row.id}`,
     type: "Framework",
   })),
   {

@@ -1,5 +1,7 @@
 # Security and privacy review
 
+> Historical release record. The current connected-studio implementation, methods, sources, security findings and executed checks are documented in [v2/IMPLEMENTATION_REPORT.md](v2/IMPLEMENTATION_REPORT.md) and its linked reports. The older scope/retention statements below describe their original revision.
+
 Review performed across the implemented source and exercised browser workflows on 2026-11-20.
 
 | Finding | Severity | Action and result |
@@ -19,3 +21,11 @@ Progress is anonymous local browser storage. It contains learning IDs, counts, b
 Legacy administration, authentication and Supabase integration retain their original boundaries. Source inspection and existing tests do not prove deployed RLS, storage policy or rate-limiting correctness. An authenticated policy test with an authorised test project remains a separate verification dependency. Browser-only throttling must never become an authorisation boundary.
 
 A future tutor must run behind a server-side API with schema validation, bounded request sizes, quotas, rate limits, authorised retrieval, provenance, output escaping, prompt-injection-resistant treatment of retrieved material and safe logging. GitHub Pages alone cannot host that service. No hosted endpoint is represented as working in this increment.
+
+## Interactive workspace update
+
+Excel/CSV registers are processed locally through a lazy ExcelJS adapter; the browser workflow test monitors outgoing POST/PUT requests and asserts none occur during import/analysis/export. Required fields, rating/date/status bounds, case-insensitive duplicate IDs, row limits and append limits are checked before atomic application. Files are capped at 3 MB / 80 columns / 2000 records. Formula-bearing XLSX cells are rejected; workbook exports write literal strings and CSV prefixes remain neutralised. A compressed malicious workbook may still consume browser resources while parsing; archive preflight/worker isolation remains a hardening opportunity.
+
+Risk data, dated observations and assessments stay in React tab memory across internal navigation. No new persistence or backend is introduced for these inputs. Refresh clears them. Changing organisation clears shared workspace data. Authoritative links remain checked-in URLs rather than links executed from uploads. Imported evidence text remains an unverified learner reference.
+
+The ExcelJS UUID transitive dependency is overridden to 11.1.1. Workbook import/export regression tests exercise it. Production audit has no high/critical findings; the inherited React Router 6 advisories remain moderate and require a separately assessed major-version migration. No dependency downgrade is used to silence the audit.

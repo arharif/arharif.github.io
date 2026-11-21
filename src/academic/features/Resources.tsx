@@ -6,7 +6,13 @@ import { resources, filterResources } from "../data/resources";
 import type { EducationalResource } from "../data/types";
 import { base, Field, Header, Source } from "../components/shared";
 type Filter =
-  "domain" | "type" | "difficulty" | "access" | "topic" | "framework" | "role";
+  | "domain"
+  | "type"
+  | "difficulty"
+  | "access"
+  | "topic"
+  | "framework"
+  | "role";
 const fields: Filter[] = [
   "domain",
   "type",
