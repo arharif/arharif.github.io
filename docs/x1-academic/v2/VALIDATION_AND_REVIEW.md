@@ -2,6 +2,8 @@
 
 Baseline: `4259b8cb55b9364ee5dc9c1c216ec7085c52f6d5`. Branch: `feat/x1-academic-2-connected-studio`. Local checks were executed against production builds, not Vite-only mock pages. Final revision and remote results are recorded in the PR/Actions history.
 
+Local source validation was completed before publication of commit `eb215a1c3cd07d0f9cc295b5b014fc8eb5b7ee18`: 37 unit/contract tests and all 41 Chromium workflows passed. This source has no merge conflict with production baseline `4259b8c`. Remote cross-browser and deployment results are separate release gates; they are not inferred from the local result.
+
 ## Executed evidence
 
 | Check | Observed local result |
