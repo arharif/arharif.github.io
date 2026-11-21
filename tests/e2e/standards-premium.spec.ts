@@ -144,7 +144,17 @@ test("framework-specific roadmap includes themed implementation and validation t
   await expect(
     page.locator(".xe-phase-group").filter({ hasText: "IMPLEMENT ·" }),
   ).toHaveAttribute("aria-expanded", "false");
-  await page.getByRole("button", { name: "Expand all phases" }).click();
+  const expand = page.getByRole("button", { name: "Expand all phases" });
+  const overlapsTimeline = await expand.evaluate((button) => {
+    const timeline = document.querySelector(".xa-pmo-gantt");
+    return (
+      !!timeline &&
+      button.getBoundingClientRect().bottom >
+        timeline.getBoundingClientRect().top
+    );
+  });
+  expect(overlapsTimeline).toBe(false);
+  await expand.click();
   await expect(
     page.locator(".xe-phase-group").filter({ hasText: "IMPLEMENT ·" }),
   ).toHaveAttribute("aria-expanded", "true");
@@ -173,6 +183,9 @@ for (const theme of ["dark", "light"])
     page,
   }) => {
     await page.goto(`${base}/standards`);
+    await expect(
+      page.getByRole("heading", { name: "Explore Standards", exact: true }),
+    ).toBeVisible();
     if (theme === "light")
       await page.getByRole("button", { name: "Switch to light theme" }).click();
     const result = await new AxeBuilder({ page })
