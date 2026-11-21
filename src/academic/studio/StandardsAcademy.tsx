@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Lightbulb, GitBranch, ArrowRight } from "lucide-react";
 import { base, Header, Field, Source, download } from "../components/shared";
@@ -17,11 +17,12 @@ export default function StandardsAcademy() {
   const [params, setParams] = useSearchParams(),
     { studio, setStudio } = useWorkspace(),
     scenario = useScenario(),
-    { explain } = useInsight();
+    { explain, open, setOpen } = useInsight();
   const selected = params.get("framework") ?? "nist-csf-2",
     s = standards.find((row) => row.id === selected) ?? standards[0],
     model = architectureFor(s.id);
   const [query, setQuery] = useState(""),
+    [recordQuery, setRecordQuery] = useState(""),
     [groupId, setGroupId] = useState(""),
     [category, setCategory] = useState(""),
     [view, setView] = useState(params.get("view") ?? "architecture"),
@@ -79,6 +80,16 @@ export default function StandardsAcademy() {
           : "/learning/risk-assessment",
     });
   };
+  useEffect(() => {
+    // Search links can change the framework without remounting this route.
+    setEditing(null);
+    setRecordQuery("");
+    setView(params.get("view") ?? "architecture");
+    if (model?.nodes[0]) {
+      choose(model.nodes[0]);
+      setOpen(open); // Refresh context without opening an unsolicited drawer.
+    }
+  }, [s.id, scenario.id]);
   const completeDemo = () => {
     const findings = topics.map((topic, index) => ({
       ...newFinding(topic.id, topic.title, topic.group, s.id, s.edition),
@@ -132,11 +143,14 @@ export default function StandardsAcademy() {
     if (
       !`${row.controlId} ${row.title} ${row.owner}`
         .toLowerCase()
-        .includes(query.toLowerCase())
+        .includes(recordQuery.toLowerCase())
     )
       return false;
-    if (status === "Gaps")
-      return row.current === null || row.current < row.target;
+    if (status === "Gaps") return gaps.some((gap) => gap.id === row.id);
+    if (status.startsWith("Gaps in "))
+      return (
+        row.group === status.slice(8) && gaps.some((gap) => gap.id === row.id)
+      );
     if (status === "With evidence") return !!row.evidence;
     if (status === "Without evidence") return !row.evidence;
     if (status.startsWith("Level ")) return row.current === +status.slice(6);
@@ -169,14 +183,10 @@ export default function StandardsAcademy() {
             onChange={(event) => {
               setParams({ framework: event.target.value });
               setQuery("");
+              setRecordQuery("");
               setGroupId("");
               setEditing(null);
               setMessage("");
-              const next = standards.find(
-                (row) => row.id === event.target.value,
-              )!;
-              const nextModel = architectureFor(next.id);
-              if (nextModel?.nodes[0]) choose(nextModel.nodes[0], next);
             }}
           >
             {standards
@@ -454,7 +464,7 @@ export default function StandardsAcademy() {
                       "control",
                     ),
                   );
-                  setQuery("");
+                  setRecordQuery("");
                   setStatus(`Level ${level}`);
                 }}
               />
@@ -471,7 +481,8 @@ export default function StandardsAcademy() {
                   }),
                 )}
                 onSelect={(label) => {
-                  setStatus(`Group ${label}`);
+                  setRecordQuery("");
+                  setStatus(`Gaps in ${label}`);
                   explain(
                     metricInsight(
                       label,
@@ -490,6 +501,15 @@ export default function StandardsAcademy() {
             subtitle="Every aggregate links back to these source records"
           >
             <div className="xa-toolbar">
+              <Field label="Search profile records">
+                <input
+                  type="search"
+                  maxLength={240}
+                  value={recordQuery}
+                  onChange={(event) => setRecordQuery(event.target.value)}
+                  placeholder="Outcome, topic or owner"
+                />
+              </Field>
               <Field label="Filter profile records">
                 <select
                   value={status}
@@ -503,6 +523,9 @@ export default function StandardsAcademy() {
                     ...studio.rubric.labels.map((_, index) => `Level ${index}`),
                     ...[...new Set(profile.map((row) => row.group))].map(
                       (group) => `Group ${group}`,
+                    ),
+                    ...[...new Set(profile.map((row) => row.group))].map(
+                      (group) => `Gaps in ${group}`,
                     ),
                   ].map((value) => (
                     <option key={value}>{value}</option>

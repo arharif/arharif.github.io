@@ -38,7 +38,7 @@ Demo levels are authored examples on **X1-EMM-1**, not NIST-prescribed maturity 
 
 Run `npm run check:standard-sources`. It records checked time, reachability, final URL and publisher title in `test-results/standards-source-review.json`. A title/reachable page is not automatic edition verification. The diagnostic CI job retains the evidence for manual editorial review.
 
-The local attempt reached an environment proxy denial for all 26 publisher references. Existing official NIST snapshots and hashes are preserved; new source records explicitly retain pending edition/amendment/legal-status review where authoritative access was unavailable. No later edition is inferred from the current date. Publisher search URLs are discovery references, not asserted verified standard records. National NIS2 transposition and phased EU AI Act obligations require current jurisdictional review.
+The local attempt reached an environment proxy denial for all 26 publisher references. The [branch publisher job](https://github.com/arharif/arharif.github.io/actions/runs/44913613465/job/136874412443) subsequently reached 16 references and encountered access challenges on 10 ISO pages. It retained a review artifact and a public summary. The ISACA landing-page title now mentions COBIT 7; this requested COBIT 2019 learning track remains edition-specific, with current publisher review pending. A title alone is not edition validation. Existing official NIST snapshots and hashes are preserved; new source records explicitly retain pending edition/amendment/legal-status review where authoritative access was unavailable. No later edition is inferred from the current date. Publisher search URLs are discovery references, not asserted verified standard records. National NIS2 transposition and phased EU AI Act obligations require current jurisdictional review.
 
 See [the retained source register](v2/FRAMEWORK_SOURCE_REGISTER.md) for NIST provenance and [the security review](v2/SECURITY_REVIEW.md) for the connected platform's boundaries.
 
@@ -46,7 +46,7 @@ See [the retained source register](v2/FRAMEWORK_SOURCE_REGISTER.md) for NIST pro
 
 Required local checks: `npm run lint`, `npm test`, `npm run build`, `npm run test:e2e`, `npm audit --omit=dev --audit-level=high`. The unit suite contains 43 tests, including all-catalogue roadmap scheduling/serialization, 106-gap fan-in and safe size-limit rejection. Browser coverage contains 48 tests per configured browser, including CSV/XLSX workflows, five laboratories, project recovery, chart filtering, source/version boundaries, legacy routes, Pages-style refresh, accessibility and responsive layout. Final execution/publication status is recorded below after completion.
 
-Initial integrated browser failures identified obsolete navigation/plan-size expectations and two ambiguous new test selectors. These were corrected against the actual UI, without dropping functional assertions. Visual review identified a stale explanation after framework switching, overly distant diagrams and a mobile X1 label hidden by inherited CSS; each was corrected. Full-profile scheduling review identified dependency fan-in beyond the saved-project contract; a regression test now covers it.
+Initial integrated browser failures identified obsolete navigation/plan-size expectations and two ambiguous new test selectors. These were corrected against the actual UI, without dropping functional assertions. Visual review identified a stale explanation after framework switching, overly distant diagrams and a mobile X1 label hidden by inherited CSS; each was corrected. Full-profile scheduling review identified dependency fan-in beyond the saved-project contract; a regression test now covers it. The final walkthrough separated standards and finding searches, preserved contextual explanations during query-driven framework navigation and made gap-bar selections filter the matching gaps.
 
 | Review perspective | Finding and action | Remaining limitation |
 | --- | --- | --- |
@@ -67,6 +67,12 @@ The existing Pages workflow builds and deploys main, records its exact commit in
 
 Smallest remaining product backlog: complete authoritative review of pending source editions and applicability; expand priority non-NIST requirements only with suitable source rights; author the remaining substantive modules; consider a separately secured hosted tutor; perform manual assistive-technology testing and the router major-version migration.
 
-### Final execution status
+### Execution evidence
 
-Pending final browser/CI and publication verification.
+Local execution: type checking passed; 43 unit tests passed; the complete 48-test Chromium suite passed. Subsequent changes were checked by rebuilding and rerunning the seven affected explorer tests, including a complete 106-outcome project export/import round trip. The production audit reported two inherited moderate router findings, with no high/critical findings. The build produced 56 academic route documents; the sitemap has 63 unique entries.
+
+Current release evidence is the [dedicated branch and its checks](https://github.com/arharif/arharif.github.io/tree/codex/academic-premium-workspace), the [GitHub Actions execution records](https://github.com/arharif/arharif.github.io/actions) and, after a successful Pages run, the public `/deployment.json` revision. The latest in-chat implementation report identifies the actual publication outcome. PR creation was attempted and rejected by the environment's network policy at `api.github.com/graphql`; the branch and [baseline comparison](https://github.com/arharif/arharif.github.io/compare/440f8b4...codex/academic-premium-workspace) remain reviewable without claiming an actual PR exists.
+
+[Actual premium workspace captures](premium-screenshots/) show the desktop overview, standards architecture, fictional demo dashboard, ISMS lifecycle and mobile overview. They contain synthetic data only.
+
+The requested cloud onboarding setup/startup instructions and additive network requirements were saved in the environment configuration draft. This is separate from the website release. Activating that draft requires review/save and publication through the environment settings; it has not changed current runtime access or published a new environment snapshot.

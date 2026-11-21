@@ -78,10 +78,16 @@ test("completed CSF demo contains 106 real outcomes and preserves learner edits 
   page,
 }) => {
   await page.goto(`${base}/standards`);
+  await page.getByLabel("Search standards", { exact: true }).fill("NIST");
   await page.getByRole("button", { name: "Try Completed Demo" }).click();
   await expect(
     page.getByRole("button", { name: /Profile records.*106/ }),
   ).toBeVisible();
+  await page
+    .getByLabel("Search profile records", { exact: true })
+    .fill("GV.OC-01");
+  await expect(page.locator(".xa-table-scroll tbody tr")).toHaveCount(1);
+  await page.getByLabel("Search profile records", { exact: true }).clear();
   await page.getByRole("button", { name: /^GV.OC-01 ·/ }).click();
   await page
     .getByLabel("Finding owner", { exact: true })
@@ -104,13 +110,11 @@ test("completed CSF demo contains 106 real outcomes and preserves learner edits 
     .click();
   const raw = await readFile((await (await pending).path())!, "utf8");
   expect(JSON.parse(raw).data.studio.findings).toHaveLength(106);
-  await page
-    .getByLabel("Import project JSON", { exact: true })
-    .setInputFiles({
-      name: "fictional-assessment.json",
-      mimeType: "application/json",
-      buffer: Buffer.from(raw),
-    });
+  await page.getByLabel("Import project JSON", { exact: true }).setInputFiles({
+    name: "fictional-assessment.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(raw),
+  });
   await expect(
     page.locator(".xa-project-controls [role=status]"),
   ).toContainText("Project imported and validated");
