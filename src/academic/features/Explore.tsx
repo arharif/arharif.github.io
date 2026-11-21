@@ -1,3 +1,4 @@
+import { SecurityMindmapExperience } from "@/components/security-map/SecurityMindmapExperience";
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { complianceFrameworks } from "@/data/complianceFrameworks";
@@ -202,7 +203,7 @@ export function Cases() {
     </>
   );
 }
-export function SecurityMap() {
+function RoleLearningMap() {
   const [selected, setSelected] = useState(securityRoles[0].id),
     [query, setQuery] = useState("");
   const role = securityRoles.find((row) => row.id === selected)!;
@@ -379,6 +380,29 @@ export function Certifications() {
             </article>
           ))}
       </div>
+    </>
+  );
+}
+
+export function SecurityMap() {
+  const [view, setView] = useState("visual");
+  return (
+    <>
+      <div className="xa-segmented" aria-label="Security mindmap view">
+        <button
+          aria-pressed={view === "visual"}
+          onClick={() => setView("visual")}
+        >
+          Original interactive map
+        </button>
+        <button
+          aria-pressed={view === "learning"}
+          onClick={() => setView("learning")}
+        >
+          Role learning pathways
+        </button>
+      </div>
+      {view === "visual" ? <SecurityMindmapExperience /> : <RoleLearningMap />}
     </>
   );
 }

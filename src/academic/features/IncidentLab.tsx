@@ -1,3 +1,5 @@
+import { Metric, Panel, Bars } from "../components/Analytics";
+import { metricExplanation, useExplanation } from "../components/Explanation";
 import { useState } from "react";
 import { useScenario } from "../app/context";
 import {
@@ -10,6 +12,7 @@ import {
 import { incidentActions, incidentFeedback } from "../utils/engines";
 export default function IncidentLab() {
   const scenario = useScenario();
+  const { explain } = useExplanation();
   const events = [
     {
       id: "E01",
@@ -101,19 +104,72 @@ export default function IncidentLab() {
           exercise before reading the explanation.
         </p>
       </LabIntro>
-      <div className="xa-statline">
-        <div className="xa-stat">
-          <strong>INC-{scenario.id.toUpperCase()}</strong>
-          <span>Active training alert</span>
-        </div>
-        <div className="xa-stat">
-          <strong>{marked.length}</strong>
-          <span>Events marked</span>
-        </div>
-        <div className="xa-stat">
-          <strong>{severity}</strong>
-          <span>Learner-assigned severity</span>
-        </div>
+      <div className="xa-metric-grid">
+        <Metric
+          label="Synthetic incident"
+          value={
+            <span className="xa-date-value">
+              INC-{scenario.id.toUpperCase()}
+            </span>
+          }
+          detail={scenario.process}
+          onClick={() =>
+            explain(
+              metricExplanation(
+                "Incident service context",
+                scenario.asset,
+                scenario.consequence,
+                "incident",
+              ),
+            )
+          }
+        />
+        <Metric
+          label="Evidence marked"
+          value={marked.length}
+          detail="Selected synthetic events"
+          onClick={() =>
+            explain(
+              metricExplanation(
+                "Marked evidence",
+                `${marked.length} of ${events.length} events`,
+                "Count of marked observations. Relevance is authored scenario ground truth and is reviewed separately.",
+                "incident",
+              ),
+            )
+          }
+        />
+        <Metric
+          label="Response decisions"
+          value={actions.length}
+          detail="Includes premature choices"
+          onClick={() =>
+            explain(
+              metricExplanation(
+                "Response decisions",
+                String(actions.length),
+                "Count of distinct selected response actions, including premature choices. Review their evidence requirements.",
+                "incident",
+              ),
+            )
+          }
+        />
+        <Metric
+          label="Learner severity"
+          value={<span className="xa-date-value">{severity}</span>}
+          tone="amber"
+          detail="Requires business-impact rationale"
+          onClick={() =>
+            explain(
+              metricExplanation(
+                "Incident severity",
+                severity,
+                "Severity is a learner judgement about potential harm, distinct from investigative confidence.",
+                "incident",
+              ),
+            )
+          }
+        />
       </div>
       <section className="xa-panel">
         <h2>Alert queue & event timeline</h2>
@@ -160,6 +216,16 @@ export default function IncidentLab() {
                                 : marked.filter((id) => id !== event.id),
                             );
                             setReviewed(false);
+                            explain({
+                              ...metricExplanation(
+                                event.id,
+                                event.source,
+                                event.text,
+                                "incident",
+                              ),
+                              meaning: event.text,
+                              technical: `Synthetic timestamp ${event.time} UTC. Correlate identity, service and owner observations before reaching a conclusion.`,
+                            });
                           }}
                         />
                         {event.id}

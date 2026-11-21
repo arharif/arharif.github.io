@@ -1,4 +1,4 @@
-import type { FrameworkControl } from "./types";
+import type { FrameworkControl } from "./types.ts";
 export const frameworkSources = [
   {
     id: "nist-csf-2",

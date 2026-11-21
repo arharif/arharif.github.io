@@ -148,7 +148,7 @@ export function CaseSelect() {
     </section>
   );
 }
-export function download(name: string, contents: string, mime: string) {
+export function download(name: string, contents: string | Blob, mime: string) {
   const url = URL.createObjectURL(new Blob([contents], { type: mime }));
   const anchor = document.createElement("a");
   anchor.href = url;

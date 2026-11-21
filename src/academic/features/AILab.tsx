@@ -1,3 +1,5 @@
+import { Curve, Metric, Panel } from "../components/Analytics";
+import { metricExplanation, useExplanation } from "../components/Explanation";
 import { useMemo, useState } from "react";
 import { useAcademic } from "../app/context";
 import type { AIConfiguration } from "../data/types";
@@ -66,6 +68,7 @@ const experiments = [
 ] as const;
 const percent = (value: number) => `${(value * 100).toFixed(1)}%`;
 export default function AILab() {
+  const { explain } = useExplanation();
   const { progress, setProgress } = useAcademic();
   const [config, setConfig] = useState<AIConfiguration>(
     progress.savedExperiment ?? baseline,
@@ -81,8 +84,19 @@ export default function AILab() {
     threshold: i / 10,
     ...metrics(data, i / 10),
   }));
-  const update = (key: keyof AIConfiguration, value: number | string) =>
-    setConfig({ ...config, [key]: value });
+  const update = (key: keyof AIConfiguration, value: number | string) => {
+    const next = { ...config, [key]: value };
+    setConfig(next);
+    const computed = metrics(predictions(next), next.threshold);
+    explain(
+      metricExplanation(
+        `${key} configuration change`,
+        `precision ${percent(computed.precision)}, recall ${percent(computed.recall)}`,
+        `400 fixed-seed synthetic records. Threshold ${next.threshold}, prevalence ${next.prevalence}%, shift ${next.shift}, ${next.features} features and ${next.split} assumptions. Metrics are calculated from the resulting confusion counts.`,
+        "ai",
+      ),
+    );
+  };
   return (
     <>
       <Header eyebrow="Laboratory · 04" title="AI Experiment Studio">
@@ -211,15 +225,42 @@ export default function AILab() {
         </div>
         <div className="xa-panel">
           <h2>Detection results</h2>
-          <div className="xa-statline" aria-live="polite">
+          <div className="xa-ai-metrics" aria-live="polite">
             {(["precision", "recall", "f1"] as const).map((key) => (
-              <div className="xa-stat" key={key}>
-                <strong data-testid={key}>{percent(result[key])}</strong>
-                <span>{key}</span>
-              </div>
+              <Metric
+                key={key}
+                label={key}
+                value={<span data-testid={key}>{percent(result[key])}</span>}
+                detail={
+                  key === "precision"
+                    ? `${result.tp} true / ${result.tp + result.fp} positive predictions`
+                    : key === "recall"
+                      ? `${result.tp} found / ${result.tp + result.fn} actual positives`
+                      : "Harmonic mean of precision and recall"
+                }
+                onClick={() =>
+                  explain(
+                    metricExplanation(
+                      key,
+                      percent(result[key]),
+                      key === "precision"
+                        ? "TP / (TP + FP); zero convention when denominator is zero."
+                        : key === "recall"
+                          ? "TP / (TP + FN); zero convention when denominator is zero."
+                          : "2 × precision × recall / (precision + recall), with zero convention.",
+                      "ai",
+                    ),
+                  )
+                }
+              />
             ))}
           </div>
-          <div className="xa-table-scroll" role="region" aria-label="Confusion matrix results" tabIndex={0}>
+          <div
+            className="xa-table-scroll"
+            role="region"
+            aria-label="Confusion matrix results"
+            tabIndex={0}
+          >
             <table>
               <caption>
                 Confusion matrix · threshold {config.threshold.toFixed(2)}
@@ -234,13 +275,77 @@ export default function AILab() {
               <tbody>
                 <tr>
                   <th>Suspicious</th>
-                  <td>TP {result.tp}</td>
-                  <td>FN {result.fn}</td>
+                  <td>
+                    <button
+                      className="xa-confusion-cell"
+                      onClick={() =>
+                        explain(
+                          metricExplanation(
+                            "True positives",
+                            String(result.tp),
+                            "Count of defined synthetic labels and thresholded predictions in the true positives cell.",
+                            "ai",
+                          ),
+                        )
+                      }
+                    >
+                      TP {result.tp}
+                    </button>
+                  </td>
+                  <td>
+                    <button
+                      className="xa-confusion-cell"
+                      onClick={() =>
+                        explain(
+                          metricExplanation(
+                            "False negatives",
+                            String(result.fn),
+                            "Count of defined synthetic labels and thresholded predictions in the false negatives cell.",
+                            "ai",
+                          ),
+                        )
+                      }
+                    >
+                      FN {result.fn}
+                    </button>
+                  </td>
                 </tr>
                 <tr>
                   <th>Normal</th>
-                  <td>FP {result.fp}</td>
-                  <td>TN {result.tn}</td>
+                  <td>
+                    <button
+                      className="xa-confusion-cell"
+                      onClick={() =>
+                        explain(
+                          metricExplanation(
+                            "False positives",
+                            String(result.fp),
+                            "Count of defined synthetic labels and thresholded predictions in the false positives cell.",
+                            "ai",
+                          ),
+                        )
+                      }
+                    >
+                      FP {result.fp}
+                    </button>
+                  </td>
+                  <td>
+                    <button
+                      className="xa-confusion-cell"
+                      onClick={() =>
+                        explain(
+                          metricExplanation(
+                            "True negatives",
+                            String(result.tn),
+                            "Count of defined synthetic labels and thresholded predictions in the true negatives cell.",
+                            "ai",
+                          ),
+                        )
+                      }
+                    >
+                      TN {result.tn}
+                    </button>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -264,20 +369,41 @@ export default function AILab() {
       </section>
       <section className="xa-panel">
         <h2>Precision–recall operating points</h2>
-        <div className="xa-plot" aria-hidden="true">
-          {curve.map((row) => (
-            <div
-              key={row.threshold}
-              style={{
-                height: `${row.recall * 100}%`,
-                opacity: 0.3 + row.precision * 0.7,
-              }}
+        <div className="xa-dashboard-grid">
+          <Panel
+            title="ROC operating points"
+            subtitle="False-positive rate against true-positive rate"
+          >
+            <Curve
+              label="ROC curve from synthetic predictions"
+              points={curve.map((row) => ({
+                x: row.fpr,
+                y: row.recall,
+                label: `ROC threshold ${row.threshold.toFixed(1)}`,
+              }))}
+              onSelect={(index) => update("threshold", curve[index].threshold)}
             />
-          ))}
+          </Panel>
+          <Panel
+            title="Precision–recall curve"
+            subtitle="Precision against recall"
+          >
+            <Curve
+              label="Precision recall curve from synthetic predictions"
+              xLabel="Recall"
+              yLabel="Precision"
+              points={curve.map((row) => ({
+                x: row.recall,
+                y: row.precision,
+                label: `PR threshold ${row.threshold.toFixed(1)}`,
+              }))}
+              onSelect={(index) => update("threshold", curve[index].threshold)}
+            />
+          </Panel>
         </div>
         <p>
-          Bar height shows recall as threshold rises from 0 to 1. The table
-          provides the full accessible values.
+          Select an operating point to apply its threshold. Counts and metrics
+          recalculate from the same defined predictions.
         </p>
         <details>
           <summary>Threshold results table</summary>

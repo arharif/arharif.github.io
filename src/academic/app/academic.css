@@ -685,5 +685,7 @@
   }
 }
 @media (max-width: 1000px) {
-  .xa .xa-grid.two { grid-template-columns: minmax(0, 1fr); }
+  .xa .xa-grid.two {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

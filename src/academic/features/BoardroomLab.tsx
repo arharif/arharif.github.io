@@ -1,3 +1,5 @@
+import { Metric, Panel, Bars, Donut } from "../components/Analytics";
+import { metricExplanation, useExplanation } from "../components/Explanation";
 import { useState } from "react";
 import { useAcademic, useScenario } from "../app/context";
 import {
@@ -60,6 +62,7 @@ const situations = [
 ];
 export default function BoardroomLab() {
   const scenario = useScenario();
+  const { explain } = useExplanation();
   const { imported } = useAcademic();
   const [situation, setSituation] = useState(0),
     [selected, setSelected] = useState<string[]>([]);
@@ -95,6 +98,69 @@ export default function BoardroomLab() {
           clear executive request.
         </p>
       </Header>
+      <div className="xa-metric-grid">
+        <Metric
+          label="Allocated budget"
+          value={`${result.cost}/${scenario.budget}`}
+          detail="Fictional planning units"
+          onClick={() =>
+            explain(
+              metricExplanation(
+                "Allocated budget",
+                `${result.cost} units`,
+                `Sum of selected initiative costs against a ${scenario.budget}-unit capacity assumption. No currency conversion.`,
+                "executive",
+              ),
+            )
+          }
+        />
+        <Metric
+          label="Delivery horizon"
+          value={`${result.weeks}w`}
+          detail={`Scenario deadline ${context.weeks} weeks`}
+          tone="amber"
+          onClick={() =>
+            explain(
+              metricExplanation(
+                "Delivery horizon",
+                `${result.weeks} weeks`,
+                "Maximum selected initiative duration, assuming parallel staffing. Dependencies and resource constraints require review.",
+                "executive",
+              ),
+            )
+          }
+        />
+        <Metric
+          label="Exposure index"
+          value={result.exposurePoints}
+          detail="Authored improvement points"
+          onClick={() =>
+            explain(
+              metricExplanation(
+                "Exposure improvement index",
+                String(result.exposurePoints),
+                "Additive teaching points attached to selected initiatives. No calibrated risk-reduction percentage is claimed.",
+                "executive",
+              ),
+            )
+          }
+        />
+        <Metric
+          label="Evidence readiness"
+          value={result.evidencePoints}
+          detail="Authored assurance points"
+          onClick={() =>
+            explain(
+              metricExplanation(
+                "Evidence readiness index",
+                String(result.evidencePoints),
+                "Additive authored assurance points. Independent evidence sampling does not itself implement controls.",
+                "assurance",
+              ),
+            )
+          }
+        />
+      </div>
       <LabIntro
         objectives={[
           "Prioritise under budget and deadline constraints",
@@ -283,6 +349,63 @@ export default function BoardroomLab() {
           )}
         </div>
       </section>
+      <div className="xa-dashboard-grid">
+        <Panel
+          title="Investment allocation"
+          subtitle="Select an initiative to inspect its assumptions"
+        >
+          <Bars
+            label="Initiative costs"
+            entries={selected.map((id) => {
+              const item = initiatives.find((row) => row.id === id)!;
+              return { label: item.title, value: item.cost };
+            })}
+            onSelect={(label) => {
+              const item = initiatives.find((row) => row.title === label)!;
+              explain({
+                ...metricExplanation(
+                  item.title,
+                  `${item.cost} planning units`,
+                  `${item.weeks} weeks; dependency: ${item.dependency}. Authored exposure contribution ${item.exposure}, evidence contribution ${item.evidence}.`,
+                  "executive",
+                ),
+                actions: [
+                  `Validate ${item.dependency.toLowerCase()}.`,
+                  "Confirm an owner, approval gate and residual exposure.",
+                ],
+              });
+            }}
+          />
+        </Panel>
+        <Panel
+          title="Capacity position"
+          subtitle="Budget totals use selected decisions"
+        >
+          <Donut
+            label="units"
+            entries={[
+              { label: "Allocated", value: result.cost, colour: "#82b9c8" },
+              {
+                label: "Remaining",
+                value: Math.max(0, result.remaining),
+                colour: "#729d8a",
+              },
+            ]}
+            onSelect={(label) =>
+              explain(
+                metricExplanation(
+                  label,
+                  label === "Allocated"
+                    ? String(result.cost)
+                    : String(result.remaining),
+                  `Budget ${scenario.budget}; allocated ${result.cost}. Over-allocation is explicitly flagged and exports remain disabled.`,
+                  "executive",
+                ),
+              )
+            }
+          />
+        </Panel>
+      </div>
       <section className="xa-panel">
         <h2>Prioritised roadmap</h2>
         {!selected.length ? (

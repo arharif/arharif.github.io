@@ -1,8 +1,34 @@
 import { modules, tracks } from "./curriculum";
 import { labLinks } from "./cases";
 import { resources } from "./resources";
-import { frameworkSources } from "./controls";
+import { standards } from "./standards";
 export const searchIndex = [
+  {
+    title: "Explore Standards",
+    description:
+      "Interactive standards, privacy, resilience and regulatory architecture",
+    path: "/standards",
+    type: "Workspace",
+  },
+  {
+    title: "Implementation roadmap and Gantt",
+    description: "Editable tasks, dependencies and calendar-day scheduling",
+    path: "/implement",
+    type: "Workspace",
+  },
+  {
+    title: "Professional risk register",
+    description: "Excel and CSV import, risk analytics and treatment decisions",
+    path: "/risk-register",
+    type: "Workspace",
+  },
+  {
+    title: "Interactive knowledge graph",
+    description:
+      "Business processes, controls, evidence and AI governance relationships",
+    path: "/knowledge-graph",
+    type: "Workspace",
+  },
   ...modules.map((row) => ({
     title: row.title,
     description: row.objectives.join(" · "),
@@ -27,10 +53,10 @@ export const searchIndex = [
     path: "/resources",
     type: "Resource",
   })),
-  ...frameworkSources.map((row) => ({
-    title: row.name,
-    description: row.scope,
-    path: `/frameworks/${row.id}`,
+  ...standards.map((row) => ({
+    title: row.title,
+    description: row.purpose,
+    path: `/standards?framework=${row.id}`,
     type: "Framework",
   })),
   {

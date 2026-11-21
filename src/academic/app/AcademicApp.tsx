@@ -13,11 +13,32 @@ import {
   ArrowUpRight,
   Sun,
   Moon,
+  Menu,
 } from "lucide-react";
 import { AcademicProvider, useAcademic } from "./context";
 import { base, CaseSelect } from "../components/shared";
 import { searchIndex } from "../data/search";
 import "./academic.css";
+import "./workspace.css";
+import { X1Mark } from "@/components/branding/X1Mark";
+import { ThemeSwitcher } from "@/components/ThemeSwitcher";
+import { initTheme, themeMap, type ThemeMode } from "@/lib/theme";
+import { AuthProvider } from "@/hooks/useAuth";
+import { AssessmentProvider } from "../features/standards/state";
+import {
+  ExplanationProvider,
+  ExplanationPanel,
+} from "../components/Explanation";
+const RiskRegister = lazy(
+  () => import("../features/risk-register/RiskRegister"),
+);
+const KnowledgeGraph = lazy(() => import("../features/KnowledgeGraph"));
+const StandardsWorkspace = lazy(
+  () => import("../features/standards/StandardsWorkspace"),
+);
+const ImplementationPlanner = lazy(
+  () => import("../features/implement/ImplementationPlanner"),
+);
 const Home = lazy(() => import("../features/Home"));
 const Lesson = lazy(() => import("../features/Learning"));
 const Catalogue = lazy(() =>
@@ -43,36 +64,62 @@ const Cases = lazy(() =>
 const Resources = lazy(() => import("../features/Resources"));
 const Navigator = lazy(() => import("../features/Navigator"));
 const Progress = lazy(() => import("../features/Progress"));
-const FrameworkLab = lazy(() => import("../features/FrameworkLab"));
+
 const RiskLab = lazy(() => import("../features/RiskLab"));
 const IncidentLab = lazy(() => import("../features/IncidentLab"));
 const AILab = lazy(() => import("../features/AILab"));
 const BoardroomLab = lazy(() => import("../features/BoardroomLab"));
 const navigation = [
-  { path: "", label: "Academy home", Icon: GraduationCap },
-  { path: "/learning", label: "Learning paths", Icon: BookOpen },
-  { path: "/labs", label: "Laboratories", Icon: FlaskConical },
-  { path: "/frameworks", label: "Frameworks", Icon: Shield },
+  { path: "", label: "Academic Overview", Icon: GraduationCap },
+  { path: "/cybersecurity", label: "Cybersecurity Academy", Icon: Shield },
+  { path: "/grc", label: "GRC & Risk Academy", Icon: CheckCircle },
+  {
+    path: "/artificial-intelligence",
+    label: "AI & Machine Learning",
+    Icon: FlaskConical,
+  },
+  { path: "/standards", label: "Explore Standards", Icon: Library },
+  {
+    path: "/implement",
+    label: "Implement · Roadmap & Gantt",
+    Icon: CheckCircle,
+  },
+  { path: "/knowledge-graph", label: "Knowledge Graph", Icon: Network },
+  { path: "/risk-register", label: "Risk Register & Simulator", Icon: Shield },
+  { path: "/labs/cyber-incident", label: "Cyber Incident Lab", Icon: Shield },
+  {
+    path: "/labs/ai-experiment",
+    label: "AI Experiment Studio",
+    Icon: FlaskConical,
+  },
+  { path: "/labs/ciso-boardroom", label: "CISO Boardroom", Icon: CheckCircle },
+  { path: "/resources", label: "Learning resources", Icon: Compass },
+  {
+    path: "/certifications",
+    label: "Certifications & careers",
+    Icon: GraduationCap,
+  },
+  { path: "/security-map", label: "Security roles", Icon: Network },
   { path: "/case-studies", label: "Case studies", Icon: Library },
-  { path: "/security-map", label: "Roles & skills", Icon: Network },
-  { path: "/certifications", label: "Certifications", Icon: CheckCircle },
-  { path: "/resources", label: "Resources", Icon: Compass },
-  { path: "/assistant", label: "Navigator", Icon: MessageSquare },
+  { path: "/assistant", label: "Knowledge navigator", Icon: MessageSquare },
   { path: "/progress", label: "Your progress", Icon: BookOpen },
 ];
 function Layout() {
   const location = useLocation();
   const { caseId, storageError } = useAcademic();
+  const [navOpen, setNavOpen] = useState(false);
+  useEffect(() => setNavOpen(false), [location.pathname]);
   const mainRef = useRef<HTMLElement>(null);
-  const [theme, setTheme] = useState(() => {
+  const [theme, setTheme] = useState<ThemeMode>(() => initTheme());
+  useEffect(() => {
+    document.documentElement.classList.remove(...Object.values(themeMap));
+    document.documentElement.classList.add(themeMap[theme]);
     try {
-      return localStorage.getItem("x1-academic-theme") === "light"
-        ? "light"
-        : "dark";
+      localStorage.setItem("theme", theme);
     } catch {
-      return "dark";
+      /* Session theme remains available. */
     }
-  });
+  }, [theme]);
   const relative = location.pathname.slice(base.length).replace(/\/$/, "");
   const isLab = relative.startsWith("/labs/");
   const title = relative
@@ -117,20 +164,35 @@ function Layout() {
       </a>
       <header className="xa-top">
         <div className="xa-top-inner">
-          <Link className="xa-brand" to={base}>
-            X1 <span>ACADEMIC</span>
+          <Link
+            className="xa-brand"
+            to={base}
+            aria-label="X1 Academic overview"
+          >
+            <X1Mark size="sm" mode={theme} />
+            <span>ACADEMIC</span>
           </Link>
           <div className="xa-actions" style={{ margin: 0 }}>
+            <button
+              className="xa-academy-menu"
+              aria-expanded={navOpen}
+              aria-controls="academic-sidebar"
+              onClick={() => setNavOpen(!navOpen)}
+            >
+              <Menu size={16} />
+              Academy menu
+            </button>
             <Link className="xa-button secondary" to="/">
               Professional gateway <ArrowUpRight size={14} aria-hidden="true" />
             </Link>
+            <ThemeSwitcher mode={theme} onChange={setTheme} />
             <button
               aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
               onClick={() => {
                 const next = theme === "dark" ? "light" : "dark";
                 setTheme(next);
                 try {
-                  localStorage.setItem("x1-academic-theme", next);
+                  localStorage.setItem("theme", next);
                 } catch {
                   /* Theme remains usable for the session. */
                 }
@@ -146,7 +208,10 @@ function Layout() {
         </div>
       </header>
       <div className="xa-shell">
-        <aside className="xa-sidebar">
+        <aside
+          id="academic-sidebar"
+          className={`xa-sidebar ${navOpen ? "is-open" : ""}`}
+        >
           <nav aria-label="Academic navigation">
             {navigation.map(({ path, label, Icon }) => (
               <NavLink key={path} to={`${base}${path}`} end={!path}>
@@ -154,6 +219,20 @@ function Layout() {
                 {label}
               </NavLink>
             ))}
+            <details className="xa-nav-group">
+              <summary>Framework shortcuts</summary>
+              {[
+                ["nist-csf-2", "NIST CSF 2.0"],
+                ["nist-800-53", "NIST SP 800-53"],
+                ["iso-27001", "ISO/IEC 27001"],
+                ["pci-dss", "PCI DSS"],
+              ].map(([id, label]) => (
+                <Link key={id} to={`${base}/standards?framework=${id}`}>
+                  {label}
+                </Link>
+              ))}
+              <Link to={`${base}/frameworks`}>All existing frameworks</Link>
+            </details>
           </nav>
         </aside>
         <main id="academic-main" tabIndex={-1} ref={mainRef}>
@@ -188,6 +267,8 @@ function Layout() {
           >
             <Routes>
               <Route index element={<Home />} />
+              <Route path="risk-register" element={<RiskRegister />} />
+              <Route path="knowledge-graph" element={<KnowledgeGraph />} />
               <Route path="learning" element={<Catalogue />} />
               <Route
                 path="learning/:id"
@@ -207,7 +288,7 @@ function Layout() {
               <Route path="labs" element={<Labs />} />
               <Route
                 path="labs/framework-explorer"
-                element={<FrameworkLab key={caseId} />}
+                element={<StandardsWorkspace key={caseId} />}
               />
               <Route
                 path="labs/risk-decision"
@@ -225,8 +306,19 @@ function Layout() {
                 path="labs/ciso-boardroom"
                 element={<BoardroomLab key={caseId} />}
               />
-              <Route path="frameworks" element={<Frameworks />} />
-              <Route path="frameworks/:id" element={<Frameworks />} />
+              <Route
+                path="standards"
+                element={<StandardsWorkspace key={caseId} />}
+              />
+              <Route path="implement" element={<ImplementationPlanner />} />
+              <Route
+                path="frameworks"
+                element={<StandardsWorkspace key={caseId} />}
+              />
+              <Route
+                path="frameworks/:id"
+                element={<StandardsWorkspace key={caseId} />}
+              />
               <Route path="security-map" element={<SecurityMap />} />
               <Route path="certifications" element={<Certifications />} />
               <Route path="resources" element={<Resources />} />
@@ -248,6 +340,7 @@ function Layout() {
             </Routes>
           </Suspense>
         </main>
+        <ExplanationPanel />
       </div>
       <footer className="xa-footer">
         <span>X1 Academic · Evidence, practice & judgement</span>
@@ -261,7 +354,13 @@ function Layout() {
 export default function AcademicApp() {
   return (
     <AcademicProvider>
-      <Layout />
+      <AuthProvider>
+        <AssessmentProvider>
+          <ExplanationProvider>
+            <Layout />
+          </ExplanationProvider>
+        </AssessmentProvider>
+      </AuthProvider>
     </AcademicProvider>
   );
 }

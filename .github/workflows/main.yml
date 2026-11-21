@@ -32,3 +32,21 @@ jobs:
           path: test-results/
           retention-days: 7
       - run: npm audit --omit=dev --audit-level=high
+
+  publisher-sources:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Inspect public publisher references
+        continue-on-error: true
+        run: npm run check:standard-sources
+      - name: Retain publisher review evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: standards-publisher-review
+          path: test-results/standards-source-review.json
+          retention-days: 14

@@ -8,8 +8,23 @@ const pages = [
     path: "",
     title: "X1 Academic",
     description:
-      "Understand cybersecurity. Master risk. Govern AI. Learn through interactive frameworks, realistic business scenarios and reproducible experiments.",
+      "Explore standards, assess and simulate risk, build implementation roadmaps and connect cybersecurity, privacy, resilience and AI through professional practice.",
   },
+  ...["standards", "implement", "risk-register", "knowledge-graph"].map(
+    (path) => ({
+      path: `/${path}`,
+      title:
+        path === "standards"
+          ? "Explore Standards"
+          : path === "implement"
+            ? "Implementation Roadmap Studio"
+            : path === "risk-register"
+              ? "Risk Intelligence Workspace"
+              : "Interactive Knowledge Graph",
+      description:
+        "Connected educational workspaces for cybersecurity, governance, privacy, resilience and AI. Explore sources, assess evidence, practise decisions and implement a scoped roadmap.",
+    }),
+  ),
   ...tracks.map((row) => ({
     path: `/${row.id}`,
     title: row.title,

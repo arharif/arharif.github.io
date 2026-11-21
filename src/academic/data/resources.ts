@@ -1,3 +1,4 @@
+import { standards } from "./standards.ts";
 import type { EducationalResource } from "./types";
 const entries = [
   [
@@ -113,7 +114,7 @@ const entries = [
     "incident-triage",
   ],
 ] as const;
-export const resources: EducationalResource[] = entries.map((row) => ({
+const curatedResources: EducationalResource[] = entries.map((row) => ({
   id: row[0],
   title: row[1],
   description: row[2],
@@ -133,6 +134,47 @@ export const resources: EducationalResource[] = entries.map((row) => ({
     "Link verification recorded separately in docs/x1-academic/LINK_REPORT.json",
   skills: [row[4], "Evidence interpretation"],
 }));
+const standardsResources: EducationalResource[] = standards.map((row) => ({
+  id: `source-${row.id}`,
+  title: `${row.title} · publisher reference`,
+  description: row.purpose,
+  domain: row.family === "AI governance" ? "artificial-intelligence" : "grc",
+  topic: row.family,
+  type: row.kind,
+  difficulty: "Intermediate",
+  access: row.id.startsWith("iso")
+    ? "Publisher / licensed text"
+    : "Free publisher reference",
+  publisher: row.id.startsWith("nist")
+    ? "NIST"
+    : row.id.startsWith("iso")
+      ? "ISO / IEC"
+      : ["gdpr", "nis2", "dora", "eu-ai-act"].includes(row.id)
+        ? "European Union / EUR-Lex"
+        : row.id === "pci-dss"
+          ? "PCI SSC"
+          : row.id === "cobit-2019"
+            ? "ISACA"
+            : row.id === "soc-2"
+              ? "AICPA"
+              : "CIS",
+  url: row.source,
+  duration: "Reference material · duration varies",
+  reviewed: row.reviewed,
+  verification: row.verification,
+  framework: row.title,
+  role:
+    row.family === "AI governance" ? "AI Governance Officer" : "GRC Analyst",
+  skills: [row.family, "Source interpretation", "Implementation planning"],
+  lesson:
+    row.family === "AI governance" ? "detection-evaluation" : "risk-assessment",
+}));
+export const resources: EducationalResource[] = [
+  ...curatedResources,
+  ...standardsResources.filter(
+    (row) => !curatedResources.some((existing) => existing.url === row.url),
+  ),
+];
 export function filterResources(
   query: string,
   filters: Partial<

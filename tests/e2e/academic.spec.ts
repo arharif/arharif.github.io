@@ -19,7 +19,7 @@ test("academy sections, route refresh, metadata and static teaching content", as
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto(base);
   await expect(page.getByRole("heading", { level: 1 })).toContainText(
-    "Understand cybersecurity",
+    "Explore. Assess. Implement.",
   );
   for (const route of [
     "learning",
@@ -54,9 +54,13 @@ test("framework hierarchy, evidence validation, assessment and gap export", asyn
   page,
 }) => {
   await page.goto(`${base}/labs/framework-explorer`);
+  await page
+    .getByRole("button", { name: "Assess controls", exact: true })
+    .click();
+  await page.getByRole("button", { name: /PROTECT/ }).click();
   await page.getByRole("button", { name: /PR.AA-05/ }).click();
   await expect(
-    page.getByRole("heading", { name: "Review access permissions" }),
+    page.getByRole("heading", { name: /Review access permissions/ }),
   ).toBeVisible();
   await page
     .getByLabel("Assessment status")
@@ -74,7 +78,10 @@ test("framework hierarchy, evidence validation, assessment and gap export", asyn
   const file = await download;
   const data = JSON.parse(await readFile((await file.path())!, "utf8"));
   expect(data.results.summary.evidenced).toBe(1);
-  await page.getByRole("button", { name: "Reset scenario" }).click();
+  await page
+    .getByRole("button", { name: "Assessment dashboard", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Reset assessment" }).click();
   await expect(
     page.getByRole("button", { name: "Export JSON" }),
   ).toBeDisabled();
@@ -336,9 +343,15 @@ for (const route of [
         () => document.documentElement.scrollWidth <= window.innerWidth,
       ),
     ).toBe(true);
-    const first = await page.locator(".xa-sidebar a").nth(0).boundingBox();
-    const second = await page.locator(".xa-sidebar a").nth(1).boundingBox();
-    expect(second!.x).toBeGreaterThanOrEqual(first!.x + first!.width);
+    await page
+      .getByRole("button", { name: "Academy menu", exact: true })
+      .click();
+    await expect(
+      page.getByRole("navigation", { name: "Academic navigation" }),
+    ).toBeVisible();
+    await page
+      .getByRole("button", { name: "Academy menu", exact: true })
+      .click();
     await page.setViewportSize({ width: 768, height: 1024 });
     expect(
       await page.evaluate(
