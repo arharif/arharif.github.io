@@ -31,9 +31,12 @@ export function Stepper({
 export function Radar({
   items,
   onSelect,
+  compact = false,
 }: {
+  compact?: boolean;
   items: {
     label: string;
+    name?: string;
     current: number | null;
     target: number | null;
     count: number;
@@ -123,36 +126,42 @@ export function Radar({
         <span>● Current</span>
         <span>◌ Target · X1 0–4 scale</span>
       </div>
-      <table>
-        <caption>Current/target values and eligible record counts</caption>
-        <thead>
-          <tr>
-            <th>Group</th>
-            <th>Current</th>
-            <th>Target</th>
-            <th>Assessed</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((p) => (
-            <tr key={p.label}>
-              <td>
-                <button
-                  className="xa-text-button"
-                  onClick={() => onSelect(p.label)}
-                >
-                  {p.label}
-                </button>
-              </td>
-              <td>
-                {p.current === null ? "Unassessed" : p.current.toFixed(2)}
-              </td>
-              <td>{p.target === null ? "—" : p.target.toFixed(2)}</td>
-              <td>{p.count}</td>
+      <details
+        className={compact ? "xa-radar-details" : undefined}
+        open={!compact}
+      >
+        <summary>Current / target values</summary>
+        <table>
+          <caption>Current/target values and eligible record counts</caption>
+          <thead>
+            <tr>
+              <th>Group</th>
+              <th>Current</th>
+              <th>Target</th>
+              <th>Assessed</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {items.map((p) => (
+              <tr key={p.label}>
+                <td>
+                  <button
+                    className="xa-text-button"
+                    onClick={() => onSelect(p.label)}
+                  >
+                    {p.label}
+                  </button>
+                </td>
+                <td>
+                  {p.current === null ? "Unassessed" : p.current.toFixed(2)}
+                </td>
+                <td>{p.target === null ? "—" : p.target.toFixed(2)}</td>
+                <td>{p.count}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </details>
     </div>
   );
 }

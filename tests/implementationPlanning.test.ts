@@ -57,7 +57,7 @@ test("a complete 106-gap profile retains assessment claims and bounded dependenc
     result.calendar,
   );
   const assurance = plan.rows.find(
-    (row) => row.task.title === "ASSURE: Test & validate",
+    (row) => row.task.stage === "ASSURE" && row.task.subphase === "Lifecycle",
   )!;
   assert.ok(
     plan.rows

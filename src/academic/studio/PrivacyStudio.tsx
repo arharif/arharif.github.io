@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import PrivacyMap from "./PrivacyMap";
 import { Link, useSearchParams } from "react-router-dom";
 import { base, Header, Field, Source, download } from "../components/shared";
 import { useScenario } from "../app/context";
@@ -12,7 +13,7 @@ import {
   type PrivacyRisk,
 } from "./model";
 import { privacyScores, privacyMethod } from "./engines";
-import { Panel, Flow, Method, Empty } from "./visuals";
+import { Panel, Method, Empty } from "./visuals";
 import { RiskMatrix, Bars, Kpi } from "../workspace/charts";
 import { metricInsight, useInsight } from "../workspace/insights";
 function blankActivity(): ProcessingActivity {
@@ -175,10 +176,10 @@ export default function PrivacyStudio() {
     );
   }
   return (
-    <>
+    <div className="xa-privacy-workspace">
       <Header
         eyebrow="SIMULATE / PRIVACY RISK & GOVERNANCE"
-        title="Follow the data. Understand the human impact."
+        title="Privacy Risk & Governance"
       >
         <p>
           Security risk concerns objectives and assets; privacy risk concerns
@@ -186,6 +187,18 @@ export default function PrivacyStudio() {
           without a breach.
         </p>
       </Header>
+      <PrivacyMap
+        activities={s.activities}
+        risks={risks}
+        onEdit={(row) => {
+          setSelectedActivity(row.id);
+          setActivity(row);
+          setRisk(blankPrivacy(s.privacyEdition, row.id));
+          document
+            .getElementById("xa-privacy-editor")
+            ?.scrollIntoView({ block: "start" });
+        }}
+      />
       <div className="xa-toolbar">
         <Field label="Privacy Framework track">
           <select
@@ -231,137 +244,148 @@ export default function PrivacyStudio() {
           finalisation; no draft record is silently relabelled final.
         </p>
       )}
-      <Panel
-        title="1. Define a processing activity"
-        subtitle="Processing inventory and educational DPIA-style context"
-      >
-        <button onClick={loadCase}>Load fictional processing scenario</button>
-        <div className="xa-grid two">
-          {(
-            [
-              "name",
-              "purpose",
-              "dataSubjects",
-              "categories",
-              "collection",
-              "use",
-              "sharing",
-              "deletion",
-              "controller",
-              "processor",
-              "jurisdiction",
-              "obligations",
-              "necessity",
-              "proportionality",
-              "rights",
-              "minimisation",
-            ] as const
-          ).map((k) => (
-            <Field
-              key={k}
-              label={
-                {
-                  name: "Processing activity name",
-                  purpose: "Processing purpose",
-                  dataSubjects: "Data subjects",
-                  categories: "Personal-data categories",
-                  collection: "Collection sources and systems",
-                  use: "Processing use and systems",
-                  sharing: "Recipients and third-party sharing",
-                  deletion: "Deletion mechanism and verification",
-                  controller: "Controller role",
-                  processor: "Processor role",
-                  jurisdiction: "Jurisdiction and legal-scope assumptions",
-                  obligations: "Relevant obligations and review",
-                  necessity: "Necessity assessment",
-                  proportionality:
-                    "Proportionality and less intrusive alternatives",
-                  rights: "Rights, challenge and human review",
-                  minimisation: "Data minimisation strategy",
-                }[k]
-              }
-            >
-              <textarea
-                value={activity[k]}
-                maxLength={4000}
+      <div id="xa-privacy-editor">
+        <Panel
+          title="1. Define a processing activity"
+          subtitle="Processing inventory and educational DPIA-style context"
+        >
+          <button onClick={loadCase}>Load fictional processing scenario</button>
+          <div className="xa-grid two">
+            {(
+              [
+                "name",
+                "purpose",
+                "dataSubjects",
+                "categories",
+                "collection",
+                "use",
+                "sharing",
+                "deletion",
+                "controller",
+                "processor",
+                "jurisdiction",
+                "obligations",
+                "necessity",
+                "proportionality",
+                "rights",
+                "minimisation",
+              ] as const
+            ).map((k) => (
+              <Field
+                key={k}
+                label={
+                  {
+                    name: "Processing activity name",
+                    purpose: "Processing purpose",
+                    dataSubjects: "Data subjects",
+                    categories: "Personal-data categories",
+                    collection: "Collection sources and systems",
+                    use: "Processing use and systems",
+                    sharing: "Recipients and third-party sharing",
+                    deletion: "Deletion mechanism and verification",
+                    controller: "Controller role",
+                    processor: "Processor role",
+                    jurisdiction: "Jurisdiction and legal-scope assumptions",
+                    obligations: "Relevant obligations and review",
+                    necessity: "Necessity assessment",
+                    proportionality:
+                      "Proportionality and less intrusive alternatives",
+                    rights: "Rights, challenge and human review",
+                    minimisation: "Data minimisation strategy",
+                  }[k]
+                }
+              >
+                <textarea
+                  value={activity[k]}
+                  maxLength={4000}
+                  onChange={(e) =>
+                    setActivity({ ...activity, [k]: e.target.value })
+                  }
+                />
+              </Field>
+            ))}
+            <Field label="Retention period (days)">
+              <input
+                type="number"
+                min="0"
+                max="36500"
+                value={activity.retentionDays}
                 onChange={(e) =>
-                  setActivity({ ...activity, [k]: e.target.value })
+                  setActivity({ ...activity, retentionDays: +e.target.value })
                 }
               />
             </Field>
-          ))}
-          <Field label="Retention period (days)">
-            <input
-              type="number"
-              min="0"
-              max="36500"
-              value={activity.retentionDays}
-              onChange={(e) =>
-                setActivity({ ...activity, retentionDays: +e.target.value })
-              }
-            />
-          </Field>
-          <Field label="Legal applicability review">
-            <select
-              value={activity.legalReview}
-              onChange={(e) =>
-                setActivity({
-                  ...activity,
-                  legalReview: e.target
-                    .value as ProcessingActivity["legalReview"],
-                })
-              }
-            >
-              {["Not reviewed", "Review required", "Reviewed by learner"].map(
-                (v) => (
-                  <option key={v}>{v}</option>
-                ),
-              )}
-            </select>
-          </Field>
-        </div>
-        <div className="xa-actions">
-          <button
-            className="primary"
-            onClick={() => {
-              const v = activitySchema.safeParse(activity);
-              if (
-                !v.success ||
-                ![
-                  activity.name,
-                  activity.purpose,
-                  activity.dataSubjects,
-                  activity.categories,
-                  activity.controller,
-                ].every((x) => x.trim())
-              ) {
-                setError(
-                  "Record a valid name, purpose, subjects, data categories and controller; retention must be a whole nonnegative number.",
+            <Field label="Activity recorded on">
+              <input
+                type="date"
+                value={activity.recordedOn ?? ""}
+                onChange={(e) =>
+                  setActivity({ ...activity, recordedOn: e.target.value })
+                }
+              />
+            </Field>
+            <Field label="Legal applicability review">
+              <select
+                value={activity.legalReview}
+                onChange={(e) =>
+                  setActivity({
+                    ...activity,
+                    legalReview: e.target
+                      .value as ProcessingActivity["legalReview"],
+                  })
+                }
+              >
+                {["Not reviewed", "Review required", "Reviewed by learner"].map(
+                  (v) => (
+                    <option key={v}>{v}</option>
+                  ),
+                )}
+              </select>
+            </Field>
+          </div>
+          <div className="xa-actions">
+            <button
+              className="primary"
+              onClick={() => {
+                const v = activitySchema.safeParse(activity);
+                if (
+                  !v.success ||
+                  ![
+                    activity.name,
+                    activity.purpose,
+                    activity.dataSubjects,
+                    activity.categories,
+                    activity.controller,
+                  ].every((x) => x.trim())
+                ) {
+                  setError(
+                    "Record a valid name, purpose, subjects, data categories and controller; retention must be a whole nonnegative number.",
+                  );
+                  return;
+                }
+                setStudio((p) => ({
+                  ...p,
+                  activities: [
+                    ...p.activities.filter((a) => a.id !== activity.id),
+                    activity,
+                  ],
+                }));
+                setSelectedActivity(activity.id);
+                setRisk(blankPrivacy(s.privacyEdition, activity.id));
+                setError("");
+                setMessage(
+                  "Processing inventory recorded. Legal review status remains a learner input, not conformity.",
                 );
-                return;
-              }
-              setStudio((p) => ({
-                ...p,
-                activities: [
-                  ...p.activities.filter((a) => a.id !== activity.id),
-                  activity,
-                ],
-              }));
-              setSelectedActivity(activity.id);
-              setRisk(blankPrivacy(s.privacyEdition, activity.id));
-              setError("");
-              setMessage(
-                "Processing inventory recorded. Legal review status remains a learner input, not conformity.",
-              );
-            }}
-          >
-            Record processing activity
-          </button>
-          <button onClick={() => setActivity(blankActivity())}>
-            New processing activity
-          </button>
-        </div>
-      </Panel>
+              }}
+            >
+              Record processing activity
+            </button>
+            <button onClick={() => setActivity(blankActivity())}>
+              New processing activity
+            </button>
+          </div>
+        </Panel>
+      </div>
       {selected ? (
         <>
           <Panel
@@ -386,31 +410,6 @@ export default function PrivacyStudio() {
                 ))}
               </select>
             </Field>
-            <Flow
-              nodes={[
-                {
-                  id: "collection",
-                  label: "Collection",
-                  text: selected.collection,
-                },
-                { id: "use", label: "Use", text: selected.use },
-                { id: "sharing", label: "Sharing", text: selected.sharing },
-                {
-                  id: "retention",
-                  label: "Retention",
-                  text: `${selected.retentionDays} days`,
-                },
-                { id: "deletion", label: "Deletion", text: selected.deletion },
-              ]}
-              onSelect={(id) =>
-                explainPrivacy(
-                  `Processing stage: ${id}`,
-                  id === "retention"
-                    ? `The recorded retention window is ${selected.retentionDays} days. Confirm necessity, trigger and deletion evidence.`
-                    : `Inspect ${id} for unexpected purposes, excessive data or loss of individual control.`,
-                )
-              }
-            />
             <p>
               <strong>Data subjects:</strong> {selected.dataSubjects}.{" "}
               <strong>Categories:</strong> {selected.categories}
@@ -850,6 +849,6 @@ export default function PrivacyStudio() {
       >
         Official source for the selected Privacy Framework track
       </Source>
-    </>
+    </div>
   );
 }

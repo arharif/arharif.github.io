@@ -6,11 +6,24 @@ import {
   privacyScores,
   privacyMethod,
 } from "./engines.ts";
+import { tasksForStandard } from "./planning.ts";
 import { analyseRisks, riskMethod } from "../workspace/risk.ts";
-export function buildReport(data: WorkspaceData, now = new Date()) {
+export function buildReport(
+  data: WorkspaceData,
+  now = new Date(),
+  selection?: { id: string; edition: string },
+  demoId?: string | null,
+) {
   const snapshot = JSON.parse(JSON.stringify(data)) as WorkspaceData;
   const studio = snapshot.studio;
-  const maturity = aggregate(studio.findings, studio.rubric.weighting);
+  const findings = selection
+    ? studio.findings.filter((finding) => finding.framework === selection.id)
+    : studio.findings;
+  const tasks = selection
+    ? tasksForStandard(studio, selection.id)
+    : studio.tasks;
+  const taskIds = new Set(tasks.map((task) => task.id));
+  const maturity = aggregate(findings, studio.rubric.weighting);
   let plan;
   let scheduleError = "";
   try {
@@ -20,6 +33,19 @@ export function buildReport(data: WorkspaceData, now = new Date()) {
       studio.scope.start,
       studio.calendar,
     );
+    if (selection) {
+      const rows = plan.rows.filter((row) => taskIds.has(row.task.id));
+      plan = {
+        ...plan,
+        rows,
+        cost: rows.reduce((cost, row) => cost + row.cost, 0),
+        finish:
+          rows
+            .map((row) => row.end)
+            .sort()
+            .pop() ?? studio.scope.start,
+      };
+    }
   } catch (e) {
     scheduleError = e instanceof Error ? e.message : "Schedule invalid.";
   }
@@ -33,16 +59,17 @@ export function buildReport(data: WorkspaceData, now = new Date()) {
     generatedAt: now.toISOString(),
     caseId: studio.caseId,
     projectId: studio.id,
-    framework: studio.framework,
-    edition: studio.edition,
+    framework: selection?.id ?? studio.framework,
+    edition: selection?.edition ?? studio.edition,
     scope: studio.scope,
     resources: studio.resources,
     calendar: studio.calendar,
-    taskInputs: studio.tasks,
+    taskInputs: tasks,
     rubric: studio.rubric,
     currency: studio.currency,
     riskAnalysisDate: snapshot.analysed ? snapshot.analysedAsOf : snapshot.asOf,
-    provenance: snapshot.provenance,
+    provenance: demoId ? "Fictional completed demo" : snapshot.provenance,
+    ...(demoId ? { demoId } : {}),
     methodology: {
       maturity: maturityMethod,
       risk: riskMethod,
@@ -59,10 +86,9 @@ export function buildReport(data: WorkspaceData, now = new Date()) {
       activeRisks: risks.total,
       residualIndexSum: risks.residual,
       overdueReviews: risks.overdue.length,
-      taskCount: studio.tasks.length,
-      implementationComplete: studio.tasks.filter((t) => t.progress === 100)
-        .length,
-      validated: studio.tasks.filter(
+      taskCount: tasks.length,
+      implementationComplete: tasks.filter((t) => t.progress === 100).length,
+      validated: tasks.filter(
         (t) => t.status === "Validated" && t.validation === "Passed",
       ).length,
       cost: plan?.cost ?? null,
@@ -70,7 +96,7 @@ export function buildReport(data: WorkspaceData, now = new Date()) {
       finish: plan?.finish ?? null,
       privacyRisks: studio.privacyRisks.length,
     },
-    findings: studio.findings,
+    findings,
     assessments: snapshot.assessments,
     risks: snapshot.analysed ?? snapshot.rows,
     privacy: studio.privacyRisks.map((r) => ({ ...r, ...privacyScores(r) })),
@@ -104,7 +130,7 @@ export function buildReport(data: WorkspaceData, now = new Date()) {
     tiers: studio.tiers,
     sp: studio.sp,
     raid: studio.raid,
-    baseline: studio.baseline,
+    baseline: studio.baseline.filter((row) => taskIds.has(row.id)),
     history: studio.history,
     limitations:
       "Educational, learner-supplied assertions. No certification, independent assurance, legal conformity or measured business-cost claim. Proposed actions never change assessed risk/maturity automatically.",

@@ -3,6 +3,7 @@ import {
   useContext,
   useState,
   useEffect,
+  useRef,
   type ReactNode,
   type Dispatch,
   type SetStateAction,
@@ -33,11 +34,15 @@ type API = WorkspaceData &
     projectMessage: string;
     hasSaved: boolean;
     dirty: boolean;
+    demoId: string | null;
+    demoLoading: boolean;
+    openDemo: (id: string) => Promise<void>;
+    closeDemo: () => void;
   };
 const Context = createContext<API | null>(null);
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const { caseId, setCaseId } = useAcademic();
-  const [projects, setProjects] = useState<Record<CaseId, WorkspaceData>>(
+  const [projects, setProjects] = useState<Record<string, WorkspaceData>>(
     () => ({
       paysecure: createWorkspace("paysecure"),
       petroshield: createWorkspace("petroshield"),
@@ -72,20 +77,59 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         "Expired local projects were deleted on this visit. The 30-day expiry is checked when you return or restore.",
       );
   }, []);
-  const data = projects[caseId];
+  const [demoId, setDemoId] = useState<string | null>(null);
+  const [demoLoading, setDemoLoading] = useState(false);
+  const demoRequest = useRef(0);
+  const projectId =
+    demoId && projects[`${caseId}:${demoId}`] ? `${caseId}:${demoId}` : caseId;
+  const activeDemo = projectId === caseId ? null : demoId;
+  const data = projects[projectId];
+  async function openDemo(id: string) {
+    const request = ++demoRequest.current;
+    const demoKey = `${caseId}:${id}`;
+    setDemoLoading(true);
+    try {
+      if (!projects[demoKey]) {
+        const { createDemo } = await import("../studio/demos");
+        const demo = createDemo(caseId, id);
+        if (request !== demoRequest.current) return;
+        setProjects((previous) => ({
+          ...previous,
+          [demoKey]: previous[demoKey] ?? demo,
+        }));
+      }
+      setDemoId(id);
+      setMessage("Fictional demo ready. Edits stay in this separate project.");
+    } catch (error) {
+      if (request === demoRequest.current)
+        setMessage(
+          error instanceof Error
+            ? error.message
+            : "The demo could not be loaded.",
+        );
+    } finally {
+      if (request === demoRequest.current) setDemoLoading(false);
+    }
+  }
+  function closeDemo() {
+    demoRequest.current += 1;
+    setDemoLoading(false);
+    setDemoId(null);
+    setMessage("Learner project restored.");
+  }
   const setters = Object.fromEntries(
     (Object.keys(data) as (keyof WorkspaceData)[]).map((key) => [
       `set${key[0].toUpperCase()}${key.slice(1)}`,
       (value: unknown) =>
         setProjects((previous) => {
-          const p = previous[caseId];
+          const p = previous[projectId];
           const next =
             typeof value === "function"
               ? (value as (v: unknown) => unknown)(p[key])
               : value;
           return {
             ...previous,
-            [caseId]: {
+            [projectId]: {
               ...p,
               [key]: next,
               ...(key === "analysed" && next ? { analysedAsOf: p.asOf } : {}),
@@ -95,6 +139,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     ]),
   ) as Setters;
   function saveProject() {
+    if (activeDemo) return;
     try {
       const raw = encodeProject(data, caseId);
       if (raw.length > 3_000_000)
@@ -123,10 +168,15 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem(projectKey(caseId));
         throw new Error("Saved project expired after 30 days and was deleted.");
       }
-      setProjects((p) => ({ ...p, [e.caseId]: e.data }));
+      closeDemo();
+      const importedKey = e.demoId ? `${e.caseId}:${e.demoId}` : e.caseId;
+      setProjects((p) => ({ ...p, [importedKey]: e.data }));
+      setDemoId(e.demoId ?? null);
       setCaseId(e.caseId);
-      setSavedAt((p) => ({ ...p, [e.caseId]: e.savedAt }));
-      setSavedDigest((p) => ({ ...p, [e.caseId]: JSON.stringify(e.data) }));
+      if (!e.demoId) {
+        setSavedAt((p) => ({ ...p, [e.caseId]: e.savedAt }));
+        setSavedDigest((p) => ({ ...p, [e.caseId]: JSON.stringify(e.data) }));
+      }
       setMessage(
         raw
           ? "Project imported and validated. Local saving remains an explicit action."
@@ -137,6 +187,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     }
   }
   function deleteSavedProject() {
+    if (activeDemo) return;
     try {
       localStorage.removeItem(projectKey(caseId));
       setSavedAt((p) => ({ ...p, [caseId]: "" }));
@@ -160,16 +211,22 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         saveProject,
         restoreProject,
         deleteSavedProject,
+        demoId: activeDemo,
+        demoLoading,
+        openDemo,
+        closeDemo,
         resetProject: () => {
+          if (activeDemo) return;
           setProjects((p) => ({ ...p, [caseId]: createWorkspace(caseId) }));
           setMessage(
             "Open project reset for this organisation only. Any saved copy remains until deleted.",
           );
         },
-        exportProject: () => encodeProject(data, caseId),
-        savedAt: savedAt[caseId] || "",
+        exportProject: () =>
+          encodeProject(data, caseId, new Date(), activeDemo ?? undefined),
+        savedAt: activeDemo ? "" : savedAt[caseId] || "",
         projectMessage,
-        hasSaved,
+        hasSaved: !activeDemo && hasSaved,
         dirty:
           JSON.stringify(data) !==
           (savedDigest[caseId] ?? initialDigest[caseId]),

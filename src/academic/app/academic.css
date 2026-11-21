@@ -2263,7 +2263,8 @@
   display: none;
 }
 @media print {
-  .xa main:has(.xa-risk-print) > :not(.xa-risk-print) {
+  .xa main:has(.xa-risk-print) > :not(.xa-risk-print, .xa-risk-workspace),
+  .xa .xa-risk-workspace:has(.xa-risk-print) > :not(.xa-risk-print) {
     display: none !important;
   }
   .xa .xa-risk-print {

@@ -33,17 +33,11 @@ import {
 } from "../workspace/risk";
 import { readSpreadsheet, exportWorkbook } from "../workspace/spreadsheets";
 import { useWorkspace } from "../workspace/state";
-import {
-  Bars,
-  Donut,
-  Kpi,
-  palette,
-  Panel,
-  RiskMatrix,
-} from "../workspace/charts";
+import { Bars, Panel } from "../workspace/charts";
 import { metricInsight, useInsight } from "../workspace/insights";
 import RiskDecision from "./RiskDecision";
 import RiskHistory from "../workspace/RiskHistory";
+import RiskDashboard from "./RiskDashboard";
 export default function RiskLab() {
   const scenario = useScenario();
   const workspace = useWorkspace();
@@ -172,7 +166,7 @@ export default function RiskLab() {
     asOf: reportDate,
   }));
   return (
-    <>
+    <div className="xa-risk-workspace">
       <Header
         eyebrow="GRC WORKSPACE / RISK INTELLIGENCE"
         title="Risk Register & Simulator"
@@ -194,6 +188,21 @@ export default function RiskLab() {
         <RiskDecision />
       ) : (
         <>
+          {analysed && (
+            <>
+              <RiskDashboard
+                stats={stats}
+                observations={observations}
+                asOf={reportDate}
+                onSelect={select}
+              />
+              <div className="xa-actions">
+                <Link to={`${base}/labs/ciso-boardroom`}>
+                  Bring this snapshot to the boardroom →
+                </Link>
+              </div>
+            </>
+          )}
           <div className="xa-data-banner">
             <span className="xa-live-dot" />
             <strong>{provenance}</strong>
@@ -438,152 +447,9 @@ export default function RiskLab() {
             </p>
           )}
           {analysed ? (
-            <>
-              <div className="xa-kpi-grid" id="xa-risk-dashboard">
-                <Kpi
-                  label="Active risk exposure"
-                  value={stats.residual}
-                  detail={`${stats.total} active risks · ordinal index sum`}
-                  onClick={() =>
-                    select("Active exposure", stats.active, riskMethod)
-                  }
-                />
-                <Kpi
-                  label="Critical / high"
-                  value={
-                    (stats.distribution.Critical || 0) +
-                    (stats.distribution.High || 0)
-                  }
-                  detail="Residual indices ≥ 10"
-                  tone="rose"
-                  onClick={() =>
-                    select(
-                      "Critical / high",
-                      stats.active.filter((r) => residualScore(r) >= 10),
-                      riskMethod,
-                    )
-                  }
-                />
-                <Kpi
-                  label="Overdue reviews"
-                  value={stats.overdue.length}
-                  detail={`Review date before ${reportDate}`}
-                  tone="amber"
-                  onClick={() =>
-                    select(
-                      "Overdue reviews",
-                      stats.overdue,
-                      "Active risk reviewDate < analysis date. Missing dates are not treated as overdue.",
-                    )
-                  }
-                />
-                <Kpi
-                  label="Evidence references"
-                  value={`${stats.withEvidence}/${stats.total}`}
-                  detail="Presence only · effectiveness unverified"
-                  tone="blue"
-                  onClick={() =>
-                    select(
-                      "Evidence references",
-                      stats.active.filter((r) => !!r.evidence),
-                      "Count active records with nonempty evidence references. No verification is implied.",
-                    )
-                  }
-                />
-              </div>
-              <div className="xa-dashboard-grid">
-                <Panel
-                  title="Risk landscape"
-                  subtitle="Residual likelihood × impact · click a cell to filter"
-                >
-                  <RiskMatrix
-                    counts={(l, i) =>
-                      stats.active.filter(
-                        (r) =>
-                          r.residualLikelihood === l && r.residualImpact === i,
-                      ).length
-                    }
-                    onSelect={(l, i) =>
-                      select(
-                        `Residual ${l} × ${i}`,
-                        stats.active.filter(
-                          (r) =>
-                            r.residualLikelihood === l &&
-                            r.residualImpact === i,
-                        ),
-                        `Cell score = ${l} × ${i} = ${l * i}. ${riskMethod}`,
-                      )
-                    }
-                  />
-                </Panel>
-                <Panel
-                  title="Risk distribution"
-                  subtitle="Active residual ratings"
-                >
-                  <Donut
-                    label="active risks"
-                    segments={(
-                      ["Critical", "High", "Medium", "Low"] as const
-                    ).map((b) => ({
-                      label: b,
-                      value: stats.distribution[b] || 0,
-                      color: palette[b],
-                    }))}
-                    onSelect={(b) =>
-                      select(
-                        `${b} risks`,
-                        stats.active.filter(
-                          (r) => band(residualScore(r)) === b,
-                        ),
-                        riskMethod,
-                      )
-                    }
-                  />
-                </Panel>
-              </div>
+            <details className="xa-guide">
+              <summary>Ownership, controls and treatment</summary>
               <div className="xa-grid two">
-                <Panel
-                  title="Inherent → residual"
-                  subtitle="Comparable ordinal indices · no monetary interpretation"
-                >
-                  <Bars
-                    items={[
-                      {
-                        label: "Inherent",
-                        value: stats.inherent,
-                        color: palette.High,
-                      },
-                      { label: "Residual", value: stats.residual },
-                    ]}
-                    onSelect={(s) =>
-                      select(`${s} ratings`, stats.active, riskMethod)
-                    }
-                  />
-                  <p className="xa-muted">
-                    Change reflects entered judgements; it does not measure
-                    actual loss reduction.
-                  </p>
-                </Panel>
-                <Panel
-                  title="Risk ageing"
-                  subtitle={`Opening dates to ${reportDate}`}
-                >
-                  <Bars
-                    items={stats.ageing.map((a) => ({
-                      label: a.label,
-                      value: a.ids.length,
-                      color: palette.Neutral,
-                    }))}
-                    onSelect={(label) => {
-                      const a = stats.ageing.find((a) => a.label === label)!;
-                      select(
-                        label,
-                        stats.active.filter((r) => a.ids.includes(r.id)),
-                        "Age = max(0, analysis date − opening date), in UTC calendar days. Missing dates are separate.",
-                      );
-                    }}
-                  />
-                </Panel>
                 <Panel
                   title="Accountable owners"
                   subtitle="Active risk count per owner"
@@ -672,12 +538,9 @@ export default function RiskLab() {
                       ? `${observations.length} learner-entered historical observations are available below; these do not overwrite the current register.`
                       : "No dated score observations were submitted. Historical risk trends cannot be calculated from this snapshot."}
                   </p>
-                  <Link to={`${base}/labs/ciso-boardroom`}>
-                    Bring this snapshot to the boardroom →
-                  </Link>
                 </Panel>
               </div>
-            </>
+            </details>
           ) : (
             <div className="xa-empty">
               <Play size={25} />
@@ -689,6 +552,7 @@ export default function RiskLab() {
             </div>
           )}
           <Panel
+            className="xa-risk-records"
             title={
               filter ? `Underlying records · ${filter.label}` : "Risk register"
             }
@@ -993,6 +857,6 @@ export default function RiskLab() {
           </section>
         </>
       )}
-    </>
+    </div>
   );
 }

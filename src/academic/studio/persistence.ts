@@ -97,6 +97,12 @@ const envelopeSchema = z
     kind: z.literal("x1-fictional-project"),
     savedAt: z.string().datetime(),
     caseId: z.enum(["paysecure", "petroshield", "smartfactory"]),
+    demoId: z
+      .string()
+      .min(1)
+      .max(120)
+      .regex(/^[a-z0-9:-]+$/)
+      .optional(),
     data: workspaceSchema,
   })
   .strict();
@@ -144,6 +150,7 @@ export function encodeProject(
   data: WorkspaceData,
   caseId: CaseId,
   now = new Date(),
+  demoId?: string,
 ): string {
   const parsed = workspaceSchema.parse(data);
   const envelope = {
@@ -151,6 +158,7 @@ export function encodeProject(
     kind: "x1-fictional-project" as const,
     savedAt: now.toISOString(),
     caseId,
+    demoId,
     data: parsed,
   };
   const raw = JSON.stringify(envelope, null, 2);

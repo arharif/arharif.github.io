@@ -2,6 +2,54 @@ import type { Scenario } from "../data/types.ts";
 import { stages, newTask, newId, type Task, type Studio } from "./model.ts";
 import { architectureFor, stageGuidance } from "./standards.ts";
 
+const priorityPhases: Record<string, string[]> = {
+  "nist-csf-2": [
+    "Agree profile boundaries",
+    "Record current outcomes",
+    "Set a target profile",
+    "Prioritise profile gaps",
+    "Deliver CSF improvements",
+    "Test selected outcomes",
+    "Review and refresh the profile",
+  ],
+  "iso-27001": [
+    "Approve the ISMS scope",
+    "Assess information risks",
+    "Approve the treatment approach",
+    "Prepare the Statement of Applicability",
+    "Implement and operate the ISMS",
+    "Complete internal audit",
+    "Hold management review",
+  ],
+  "pci-dss": [
+    "Confirm the payment data environment",
+    "Trace systems and payment flows",
+    "Agree control ownership",
+    "Prioritise PCI remediation",
+    "Implement payment safeguards",
+    "Validate payment controls",
+    "Record recurring reviews",
+  ],
+};
+
+export function tasksForStandard(studio: Studio, standard: string) {
+  const findings = new Set(
+    studio.findings
+      .filter((finding) => finding.framework === standard)
+      .map((finding) => `finding:${finding.id}`),
+  );
+  return studio.tasks.filter(
+    (task) =>
+      task.standard === standard ||
+      task.sourceIds.some(
+        (source) =>
+          source.startsWith(`objective:${standard}:`) ||
+          source.startsWith(`control:${standard}:`) ||
+          findings.has(source),
+      ),
+  );
+}
+
 /** Adds a traceable educational project without changing assessment ratings or evidence. */
 export function generateImplementation(s: Studio, scenario: Scenario): Studio {
   const source = `objective:${s.framework}:implementation-lifecycle`;
@@ -11,7 +59,12 @@ export function generateImplementation(s: Studio, scenario: Scenario): Studio {
   for (const [i, stage] of stages.entries()) {
     const guide = stageGuidance[i];
     const task = {
-      ...newTask(source, `${stage}: ${guide.title}`, stage),
+      ...newTask(
+        source,
+        `${stage}: ${priorityPhases[s.framework]?.[i] ?? guide.title}`,
+        stage,
+      ),
+      subphase: "Lifecycle",
       owner: stage === "ASSURE" ? "Independent assessor" : scenario.owner,
       accountable: scenario.owner,
       consulted: "Security, privacy and operations leads as applicable",
@@ -32,6 +85,7 @@ export function generateImplementation(s: Studio, scenario: Scenario): Studio {
             : "Management acceptance / monitoring gate",
           stage,
         ),
+        subphase: "Lifecycle",
         owner: scenario.owner,
         accountable: scenario.owner,
         effort: 0,
@@ -56,6 +110,7 @@ export function generateImplementation(s: Studio, scenario: Scenario): Studio {
         `Implement: ${node.title}`,
         "IMPLEMENT",
       ),
+      subphase: "Control delivery",
       owner: node.owner,
       accountable: scenario.owner,
       resourceId: "control-owner",
@@ -69,6 +124,7 @@ export function generateImplementation(s: Studio, scenario: Scenario): Studio {
         `Validate: ${node.title}`,
         "ASSURE",
       ),
+      subphase: "Control testing",
       owner: "Independent assessor",
       accountable: scenario.owner,
       resourceId: "assessor",
@@ -93,6 +149,7 @@ export function generateImplementation(s: Studio, scenario: Scenario): Studio {
         `Remediate ${finding.controlId}: ${finding.title}`.slice(0, 240),
         "IMPLEMENT",
       ),
+      subphase: "Assessment remediation",
       owner: finding.owner || scenario.owner,
       accountable: scenario.owner,
       effort: 8,

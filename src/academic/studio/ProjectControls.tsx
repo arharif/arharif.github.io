@@ -27,21 +27,28 @@ export default function ProjectControls() {
         application. Browser storage is accessible to scripts on this origin; it
         is not authentication or a trusted evidence repository.
       </p>
-      <label className="xa-check">
-        <input
-          type="checkbox"
-          checked={consent}
-          onChange={(e) => setConsent(e.target.checked)}
-        />
-        I understand this project is fictional and consent to storing a local
-        copy that expires after 30 days and is deleted on my next academy visit.
-      </label>
+      {!w.demoId && (
+        <label className="xa-check">
+          <input
+            type="checkbox"
+            checked={consent}
+            onChange={(e) => setConsent(e.target.checked)}
+          />
+          I understand this project is fictional and consent to storing a local
+          copy that expires after 30 days and is deleted on my next academy
+          visit.
+        </label>
+      )}
       <div className="xa-actions">
-        <button disabled={!consent} onClick={w.saveProject}>
+        <button hidden={!!w.demoId} disabled={!consent} onClick={w.saveProject}>
           <Save size={15} />
           Save fictional project
         </button>
-        <button disabled={!w.hasSaved} onClick={() => w.restoreProject()}>
+        <button
+          hidden={!!w.demoId}
+          disabled={!w.hasSaved}
+          onClick={() => w.restoreProject()}
+        >
           <FolderOpen size={15} />
           Restore saved project
         </button>
@@ -49,7 +56,7 @@ export default function ProjectControls() {
           onClick={() => {
             try {
               download(
-                "x1-project-v2.json",
+                w.demoId ? "x1-fictional-demo-v2.json" : "x1-project-v2.json",
                 w.exportProject(),
                 "application/json",
               );
@@ -80,11 +87,13 @@ export default function ProjectControls() {
             }}
           />
         </label>
-        <button onClick={w.deleteSavedProject}>
+        <button hidden={!!w.demoId} onClick={w.deleteSavedProject}>
           <Trash2 size={15} />
           Delete saved copy
         </button>
-        <button onClick={w.resetProject}>Reset open project</button>
+        <button hidden={!!w.demoId} onClick={w.resetProject}>
+          Reset open project
+        </button>
       </div>
       <p role="status">{w.projectMessage}</p>
       {error && <p role="alert">{error}</p>}

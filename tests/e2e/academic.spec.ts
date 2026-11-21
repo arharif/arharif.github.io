@@ -52,7 +52,7 @@ test("academy sections, route refresh, metadata and static teaching content", as
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto(base);
   await expect(page.getByRole("heading", { level: 1 })).toContainText(
-    "Explore. Assess. Implement.",
+    "X1 Academic",
   );
   cspViolations.push(
     ...(await page.evaluate(() => (window as any).__x1CspViolations)),
@@ -171,6 +171,7 @@ test("risk workflow exports actual decisions and imports context in boardroom", 
     page.getByRole("button", { name: "Export JSON" }),
   ).toBeDisabled();
   await page.goto(`${base}/labs/ciso-boardroom`);
+  await page.locator(".xa-case-menu > summary").click();
   await page.getByText("Import lab context (JSON)", { exact: true }).click();
   await page.getByLabel("Import case-state JSON").setInputFiles({
     name: "case.json",
@@ -273,6 +274,7 @@ test("boardroom constrains budgets and evaluates recorded decisions", async ({
   await expect(
     page.getByRole("button", { name: "Export JSON" }),
   ).toBeDisabled();
+  await page.locator(".xa-case-menu > summary").click();
   await page.getByLabel("Fictional organisation").selectOption("petroshield");
   await expect(page.getByLabel("Accountable programme owner")).toHaveValue("");
   await expect(
@@ -403,8 +405,14 @@ for (const route of [
     await expect(
       page.getByRole("navigation", { name: "Academic navigation" }),
     ).toBeVisible();
-    const first = await page.locator(".xa-sidebar a").nth(0).boundingBox();
-    const second = await page.locator(".xa-sidebar a").nth(1).boundingBox();
+    const first = await page
+      .locator(".xa-workspace-nav a")
+      .nth(0)
+      .boundingBox();
+    const second = await page
+      .locator(".xa-workspace-nav a")
+      .nth(1)
+      .boundingBox();
     expect(second!.y).toBeGreaterThanOrEqual(first!.y + first!.height);
     await page.setViewportSize({ width: 768, height: 1024 });
     expect(
