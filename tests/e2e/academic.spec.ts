@@ -9,6 +9,8 @@ test("academy sections, route refresh, metadata and static teaching content", as
   request,
 }) => {
   const errors: string[] = [];
+  const consoleDetails: unknown[] = [];
+  const detailTasks: Promise<void>[] = [];
   const cspViolations: string[] = [];
   await page.addInitScript(() => {
     (window as any).__x1CspViolations = [];
@@ -19,7 +21,31 @@ test("academy sections, route refresh, metadata and static teaching content", as
     });
   });
   page.on("console", (message) => {
-    if (message.type() === "error") errors.push(message.text());
+    if (message.type() === "error") {
+      errors.push(message.text());
+      detailTasks.push(
+        Promise.all(
+          message
+            .args()
+            .map((arg) =>
+              arg.evaluate((value) => ({
+                name: value?.name,
+                message: value?.message,
+                stack: value?.stack,
+              })),
+            ),
+        )
+          .then((args) => {
+            consoleDetails.push({ location: message.location(), args });
+          })
+          .catch((error) => {
+            consoleDetails.push({
+              location: message.location(),
+              unavailable: String(error),
+            });
+          }),
+      );
+    }
   });
   page.on("response", (response) => {
     if (response.url().includes("/assets/") && response.status() >= 400)
@@ -54,6 +80,12 @@ test("academy sections, route refresh, metadata and static teaching content", as
     );
   }
   await page.goto(`${base}/learning/risk-assessment`);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+    "Enterprise Risk and Cyber Risk Assessment",
+  );
+  cspViolations.push(
+    ...(await page.evaluate(() => (window as any).__x1CspViolations)),
+  );
   await page.reload();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
     "Enterprise Risk and Cyber Risk Assessment",
@@ -63,6 +95,17 @@ test("academy sections, route refresh, metadata and static teaching content", as
   ).text();
   expect(html).toContain("Write a cause");
   expect(html).toContain("application/ld+json");
+  cspViolations.push(
+    ...(await page.evaluate(() => (window as any).__x1CspViolations)),
+  );
+  await Promise.all(detailTasks);
+  if (errors.length)
+    await test
+      .info()
+      .attach("console-error-details", {
+        body: JSON.stringify(consoleDetails, null, 2),
+        contentType: "application/json",
+      });
   expect(errors).toEqual([]);
   expect(cspViolations).toEqual([]);
 });

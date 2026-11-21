@@ -533,6 +533,7 @@ for (const route of [
     const errors: string[] = [];
     page.on("pageerror", (e) => errors.push(e.message));
     await page.goto(`${base}${route}`);
+    await expect(page.locator(".xa main h1")).toBeVisible();
     await page.reload();
     await expect(page.locator(".xa main h1")).toBeVisible();
     if (route === "/standards/800-53")
