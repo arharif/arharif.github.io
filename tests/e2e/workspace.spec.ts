@@ -320,6 +320,7 @@ test("mobile menu, risk analysis and explanation drawer remain operable", async 
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(base);
+  await page.getByRole("link", { name: "Previous Academy projects" }).click();
   await page.getByRole("button", { name: "Menu", exact: true }).click();
   if (!((await page.locator(".xs-tools-nav").getAttribute("open")) !== null))
     await page.getByText("All workspaces", { exact: true }).click();

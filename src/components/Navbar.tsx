@@ -6,12 +6,6 @@ import { ThemeSwitcher } from './ThemeSwitcher';
 import { X1Mark } from './branding/X1Mark';
 
 type NavItem = { to: string; label: string; active: (path: string) => boolean };
-const academic: NavItem[] = [
-  { to: '/x1-academic', label: 'Academic Home', active: (p) => p.startsWith('/x1-academic') },
-  { to: '/security-mindmap', label: 'Security Map', active: (p) => p === '/security-mindmap' || p === '/Security_Mindmap' },
-  { to: '/compliance-frameworks', label: 'Compliance Frameworks', active: (p) => p === '/compliance-frameworks' },
-  { to: '/academic-library', label: 'Course & PDF Library', active: (p) => p === '/academic-library' },
-];
 const insights: NavItem[] = [
   { to: '/professional', label: 'Technology & Innovation', active: (p) => p.startsWith('/professional') },
   { to: '/personal', label: 'Curiosities & Philosophy', active: (p) => p.startsWith('/personal') },
@@ -31,7 +25,7 @@ function Dropdown({ label, items, open, setOpen, mobile = false }: { label: stri
 
 export function Navbar({ mode, onTheme }: { mode: ThemeMode; onTheme: (m: ThemeMode) => void }) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [menu, setMenu] = useState<'academic' | 'insights' | null>(null);
+  const [menu, setMenu] = useState<'insights' | null>(null);
   const location = useLocation();
   const headerRef = useRef<HTMLElement>(null);
   useEffect(() => { setMobileOpen(false); setMenu(null); }, [location.pathname]);
@@ -49,7 +43,7 @@ export function Navbar({ mode, onTheme }: { mode: ThemeMode; onTheme: (m: ThemeM
       <Link to="/" className="flex items-center rounded-lg" aria-label="X1 home" title="Home"><X1Mark size="sm" mode={mode} /></Link>
       <nav className="hidden items-center gap-1.5 lg:flex" aria-label="Primary navigation">
         <NavLink to="/about-x1" className={`nav-link ${aboutActive ? 'is-active' : ''}`}>About Me</NavLink>
-        <Dropdown label="X1 Academic" items={academic} open={menu === 'academic'} setOpen={(v) => setMenu(v ? 'academic' : null)} />
+        <NavLink to="/x1-academic" className="nav-link">X1 Academic</NavLink>
         <Dropdown label="Insights & Innovation" items={insights} open={menu === 'insights'} setOpen={(v) => setMenu(v ? 'insights' : null)} />
         <NavLink to="/submitting" className={`nav-link ${contributeActive ? 'is-active' : ''}`}>Connect / Contribute</NavLink>
       </nav>
@@ -58,7 +52,7 @@ export function Navbar({ mode, onTheme }: { mode: ThemeMode; onTheme: (m: ThemeM
     </div>
     {mobileOpen && <nav id="mobile-navigation" className="mobile-nav glass is-open mx-4 rounded-2xl p-4 lg:hidden" aria-label="Mobile navigation">
       <NavLink tabIndex={mobileOpen ? 0 : -1} to="/about-x1" className={`nav-link ${aboutActive ? 'is-active' : ''}`}>About Me</NavLink>
-      <Dropdown mobile label="X1 Academic" items={academic} open={menu === 'academic'} setOpen={(v) => setMenu(v ? 'academic' : null)} />
+      <NavLink to="/x1-academic" className="nav-link">X1 Academic</NavLink>
       <Dropdown mobile label="Insights & Innovation" items={insights} open={menu === 'insights'} setOpen={(v) => setMenu(v ? 'insights' : null)} />
       <NavLink tabIndex={mobileOpen ? 0 : -1} to="/submitting" className={`nav-link ${contributeActive ? 'is-active' : ''}`}>Connect / Contribute</NavLink>
       <div className="mt-2 flex items-center gap-2">{utility}</div>

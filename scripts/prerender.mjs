@@ -11,6 +11,16 @@ const pages = [
     description:
       "Explore standards, assess and simulate risk, build implementation roadmaps and connect cybersecurity, privacy, resilience and AI through professional practice.",
   },
+  ...[
+    ["explore", "Explore Standards"],
+    ["assess-simulate", "Assess & Simulate"],
+    ["implement-plan", "Implement & Plan"],
+  ].map(([path, title]) => ({
+    path: "/" + path,
+    title,
+    description:
+      "Interactive NIST CSF 2.0, ISO/IEC 27001 and PCI DSS workspaces with editable assessments and fictional demonstration projects.",
+  })),
   ...["standards", "implement", "risk-register", "knowledge-graph"].map(
     (path) => ({
       path: `/${path}`,

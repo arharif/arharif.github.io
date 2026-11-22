@@ -2,45 +2,43 @@ import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { readFile } from "node:fs/promises";
 const base = "/x1-academic";
-test("four overview workspaces expand, preserve contextual lessons and use the official logo", async ({
+test("three workspace choices expand by standard and retain the official themes", async ({
   page,
 }) => {
   await page.goto(base);
-  await expect(
-    page.getByRole("heading", { name: "Explore. Assess. Implement." }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+    "X1 Academic.",
+  );
+  await expect(page.locator(".xc-homecards > section")).toHaveCount(3);
   for (const title of [
     "Explore Standards",
     "Assess & Simulate",
-    "Implement",
-    "Security Mindmap",
-  ])
+    "Implement & Plan",
+  ]) {
+    await page.getByRole("button", { name: new RegExp(title) }).click();
     await expect(
-      page.locator(".xa-workspace-bubble>button").filter({ hasText: title }),
-    ).toBeVisible();
-  await page
-    .locator(".xa-workspace-bubble>button")
-    .filter({ hasText: "Implement" })
-    .click();
-  await page
-    .getByRole("link", { name: "Implementation Gantt", exact: true })
-    .click();
-  await expect(page).toHaveURL(/\/implement$/);
-  await page
-    .getByRole("link", { name: "X1 Academic overview", exact: true })
-    .click();
-  await expect(page).toHaveURL(new RegExp(`${base}$`));
+      page
+        .getByRole("navigation", { name: title + " standards" })
+        .getByRole("link"),
+    ).toHaveCount(3);
+  }
+  await page.getByRole("link", { name: "PCI DSS", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Implement & Plan", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByLabel("Standard edition")).toHaveValue("pci-dss");
+  await page.getByRole("link", { name: "X1 Academic overview" }).click();
   await expect(page.locator(".x1-mark")).toBeVisible();
   await page.getByRole("button", { name: "Open theme selector" }).click();
   await page
     .getByRole("menuitemradio", { name: "Activate Purple theme" })
     .click();
-  await expect(page.locator(".xa")).toHaveAttribute("data-theme", "purple");
+  await expect(page.locator(".xc")).toHaveAttribute("data-theme", "purple");
 });
 test("standards architecture differs by source and CSF category drill-down reaches official outcomes", async ({
   page,
 }) => {
-  await page.goto(`${base}/standards`);
+  await page.goto(`${base}/standards?previous=1`);
   await page
     .locator(".xe-standard-tree summary")
     .filter({ hasText: "GOVERN" })
@@ -77,7 +75,7 @@ test("standards architecture differs by source and CSF category drill-down reach
 test("completed CSF demo contains 106 real outcomes and preserves learner edits on repeat", async ({
   page,
 }) => {
-  await page.goto(`${base}/standards`);
+  await page.goto(`${base}/standards?previous=1`);
   await page.getByLabel("Search standards", { exact: true }).fill("NIST");
   await page.getByRole("button", { name: "Try Completed Demo" }).click();
   await expect(
@@ -170,7 +168,8 @@ for (const theme of ["dark", "light"])
   test(`standards architecture and assessment accessibility ${theme}`, async ({
     page,
   }) => {
-    await page.goto(`${base}/standards`);
+    await page.goto(`${base}/standards?previous=1`);
+    await expect(page.locator(".xe-standard-tree").first()).toBeVisible();
     if (theme === "light")
       await page.getByRole("button", { name: "Switch to light theme" }).click();
     const result = await new AxeBuilder({ page })

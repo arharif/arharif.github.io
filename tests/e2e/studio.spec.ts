@@ -46,7 +46,7 @@ test("novice CSF profile → gap → risk → task → dependency schedule → i
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto(base);
   await page
-    .getByRole("link", { name: "Continue your project", exact: false })
+    .getByRole("link", { name: "Previous Academy projects", exact: true })
     .click();
   await page
     .getByRole("button", { name: "Continue to outcome assessment" })
@@ -202,7 +202,7 @@ test("risk analysis uses current UTC date; pending date changes do not relabel t
 test("privacy processing inventory → individual harm → edition-safe remediation and Gantt", async ({
   page,
 }) => {
-  await page.goto(`${base}/simulate/privacy`);
+  await page.goto(`${base}/simulate/privacy?previous=1`);
   await page
     .getByRole("button", { name: "Load fictional processing scenario" })
     .click();
@@ -389,7 +389,7 @@ test("NIST official source, baseline comparison and explicit reviewed control de
 test("saved project rejects malformed lab data and bad versions without losing open state", async ({
   page,
 }) => {
-  await page.goto(`${base}/assess`);
+  await page.goto(`${base}/assess?previous=1`);
   await scope(page);
   await assess(page);
   await page.locator(".xa-project-controls summary").click();
@@ -412,7 +412,7 @@ test("saved project rejects malformed lab data and bad versions without losing o
 test("planning dependencies, RACI, baseline and validation are editable without inventing assurance", async ({
   page,
 }) => {
-  await page.goto(`${base}/implement`);
+  await page.goto(`${base}/implement?previous=1`);
   await page.getByLabel("Project start date").fill("2027-02-08");
   await page
     .getByRole("button", { name: "Generate seven-stage project" })
@@ -475,7 +475,7 @@ test("planning dependencies, RACI, baseline and validation are editable without 
 test("tutorial keyboard focus, search, consistent explanation mode and legacy lab draft recovery", async ({
   page,
 }) => {
-  await page.goto(base);
+  await page.goto(base + "/learning");
   await page.getByRole("button", { name: "Open interactive tutorial" }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
   await page.keyboard.press("Escape");
@@ -532,7 +532,7 @@ for (const route of [
     test.setTimeout(60000);
     const errors: string[] = [];
     page.on("pageerror", (e) => errors.push(e.message));
-    await page.goto(`${base}${route}`);
+    await page.goto(`${base}${route}?previous=1`);
     await expect(page.locator(".xa main h1")).toBeVisible();
     await page.reload();
     await expect(page.locator(".xa main h1")).toBeVisible();
