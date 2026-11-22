@@ -387,7 +387,8 @@ for (const route of [
         nodes: item.nodes.map((node) => node.target),
       })),
     ).toEqual([]);
-    await page.getByRole("button", { name: "Switch to light theme" }).click();
+    await page.getByRole("button", { name: "Open theme selector" }).click();
+    await page.getByRole("menuitemradio", { name: "Activate Midnight Slate" }).click();
     const lightResults = await new AxeBuilder({ page })
       .include(".xa")
       .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])

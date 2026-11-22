@@ -279,11 +279,11 @@ test("main-site navigation, resource links, themes, keyboard and responsive layo
     page
       .getByRole("navigation", { name: "Academic resources" })
       .getByRole("link"),
-  ).toHaveCount(3);
-  for (const theme of ["Light", "Dark"]) {
+  ).toHaveCount(5);
+  for (const theme of ["Editorial Ivory", "Midnight Slate"]) {
     await page.getByRole("button", { name: "Open theme selector" }).click();
     await page
-      .getByRole("menuitemradio", { name: "Activate " + theme + " theme" })
+      .getByRole("menuitemradio", { name: "Activate " + theme })
       .click();
     const audit = await new AxeBuilder({ page })
       .include(".xc")
@@ -356,10 +356,10 @@ test("dashboard accessibility in dark and light themes", async ({ page }) => {
     for (const view of views) {
       await page.goto(base + "/" + space + "?view=" + view);
       await demo(page);
-      for (const theme of ["Dark", "Light"]) {
+      for (const theme of ["Midnight Slate", "Editorial Ivory"]) {
         await page.getByLabel("Open theme selector").click();
         await page
-          .getByRole("menuitemradio", { name: "Activate " + theme + " theme" })
+          .getByRole("menuitemradio", { name: "Activate " + theme })
           .click();
         const result = await new AxeBuilder({ page })
           .include(".xc")
