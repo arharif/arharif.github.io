@@ -1,0 +1,101 @@
+[
+  {
+    "file": "01-cyber-risk.png",
+    "workspace": "assess-simulate",
+    "view": "risk",
+    "width": 709,
+    "height": 480,
+    "theme": "dark",
+    "focus": true,
+    "panels": 6,
+    "scrollWidth": 709
+  },
+  {
+    "file": "02-knowledge-graph.png",
+    "workspace": "explore",
+    "view": "graph",
+    "width": 709,
+    "height": 464,
+    "theme": "dark",
+    "focus": true,
+    "panels": 1,
+    "scrollWidth": 709
+  },
+  {
+    "file": "03-framework-profile.png",
+    "workspace": "explore",
+    "view": "profile",
+    "width": 709,
+    "height": 451,
+    "theme": "light",
+    "focus": true,
+    "panels": 3,
+    "scrollWidth": 709
+  },
+  {
+    "file": "04-risk-matrix.png",
+    "workspace": "assess-simulate",
+    "view": "matrix",
+    "width": 709,
+    "height": 412,
+    "theme": "dark",
+    "focus": true,
+    "panels": 5,
+    "scrollWidth": 709
+  },
+  {
+    "file": "05-ai-experiment.png",
+    "workspace": "assess-simulate",
+    "view": "experiment",
+    "width": 709,
+    "height": 361,
+    "theme": "dark",
+    "focus": true,
+    "panels": 3,
+    "scrollWidth": 709
+  },
+  {
+    "file": "06-executive.png",
+    "workspace": "assess-simulate",
+    "view": "executive",
+    "width": 709,
+    "height": 440,
+    "theme": "dark",
+    "focus": true,
+    "panels": 6,
+    "scrollWidth": 709
+  },
+  {
+    "file": "07-project-dashboard.png",
+    "workspace": "implement-plan",
+    "view": "planner",
+    "width": 709,
+    "height": 720,
+    "theme": "light",
+    "focus": true,
+    "panels": 9,
+    "scrollWidth": 709
+  },
+  {
+    "file": "08-data-flow.png",
+    "workspace": "assess-simulate",
+    "view": "flow",
+    "width": 709,
+    "height": 456,
+    "theme": "light",
+    "focus": true,
+    "panels": 1,
+    "scrollWidth": 709
+  },
+  {
+    "file": "09-governance.png",
+    "workspace": "explore",
+    "view": "governance",
+    "width": 709,
+    "height": 418,
+    "theme": "light",
+    "focus": true,
+    "panels": 3,
+    "scrollWidth": 709
+  }
+]

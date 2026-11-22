@@ -52,7 +52,7 @@ test("academy sections, route refresh, metadata and static teaching content", as
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto(base);
   await expect(page.getByRole("heading", { level: 1 })).toContainText(
-    "Explore. Assess. Implement.",
+    "X1 Academic",
   );
   cspViolations.push(
     ...(await page.evaluate(() => (window as any).__x1CspViolations)),
@@ -362,7 +362,7 @@ test("legacy routes still render and Pages fallback preserves query and fragment
   ).toBeVisible();
 });
 for (const route of [
-  "",
+  "/learning",
   "/labs/framework-explorer",
   "/labs/risk-decision",
   "/labs/cyber-incident",
@@ -375,7 +375,7 @@ for (const route of [
   test(`accessibility and 320px layout ${route || "home"}`, async ({
     page,
   }) => {
-    await page.goto(`${base}${route}`);
+    await page.goto(`${base}${route}?previous=1`);
     await expect(page.locator(".xa main h1")).toBeVisible();
     const results = await new AxeBuilder({ page })
       .include(".xa")
