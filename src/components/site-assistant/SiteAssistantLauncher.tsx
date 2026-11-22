@@ -87,11 +87,8 @@ export function SiteAssistantLauncher() {
         ref={trigger}
         className="assistant-launcher"
         onClick={() => {
-          setOpen((v) => {
-            const next = !v;
-            if (next) { setHasOpened(true); markSeen(routeKey); setNavIndicator(false); }
-            return next;
-          });
+          if (!open) { setHasOpened(true); setNavIndicator(false); }
+          setOpen(!open);
         }}
         aria-label={open ? 'Close X1 assistant' : 'Open X1 assistant'}
         aria-expanded={open}

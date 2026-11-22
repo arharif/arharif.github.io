@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
-import { querySiteAssistant } from '@/lib/siteAssistant';
 import { getAssistantWelcome } from './assistantContext';
 
 interface QuickAction { label: string; route?: string; prompt?: string }
@@ -72,6 +71,7 @@ export function SiteAssistantPanel({ open, onClose }: { open: boolean; onClose: 
     setInput('');
     setLoading(true);
     try {
+      const { querySiteAssistant } = await import('@/lib/siteAssistant');
       const reply = await querySiteAssistant(q, location.pathname);
       const replyMessage: Message = {
         id: mkId(),
