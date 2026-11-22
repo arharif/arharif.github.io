@@ -59,6 +59,7 @@ try {
   for (const [file, width, height, path] of [
     ["home", 1440, 900, ""],
     ["mobile", 390, 844, "/assess-simulate"],
+    ["planner-mobile", 320, 780, "/implement-plan"],
   ]) {
     const page = await browser.newPage({
       viewport: { width, height },
