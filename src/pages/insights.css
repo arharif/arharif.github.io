@@ -1,0 +1,184 @@
+.insights-hero {
+  padding: 25px clamp(14px, 3vw, 52px) 22px;
+  text-align: center;
+  color: white;
+  background:
+    linear-gradient(90deg, #110e2a26, #110b3585 34%, #110b3585 68%, #110e2a26),
+    url("/art/cosmos.webp") center 57% / cover;
+  background-color: #201b48;
+}
+.cosmic-kicker {
+  font-size: 0.67rem;
+  text-transform: uppercase;
+  letter-spacing: 0.32em;
+  font-weight: 600;
+}
+.insights-hero h1 {
+  font-size: clamp(2.6rem, 4.2vw, 5rem);
+  line-height: 1.13;
+  margin: 5px 0;
+}
+.insights-intro {
+  max-width: 65ch;
+  margin: 0 auto;
+  font-size: 0.94rem;
+  line-height: 1.4;
+  text-wrap: balance;
+}
+.insights-search {
+  margin: 16px auto 12px;
+  max-width: 560px;
+  border-radius: 28px;
+  background: #fff;
+  color: #201b35;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 17px;
+}
+.insights-search input {
+  width: 100%;
+  min-width: 0;
+  background: transparent;
+  color: inherit;
+}
+.insights-search input::placeholder {
+  color: #514a61;
+}
+.cosmic-filters,
+.collection-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+.cosmic-filters button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid #ffffff80;
+  padding: 6px 13px;
+  border-radius: 22px;
+  color: white;
+  background: #201c47b0;
+  font-size: 0.8rem;
+}
+.cosmic-filters button:is(:hover, [aria-pressed="true"]) {
+  color: #1b1731;
+  background: white;
+}
+.editorial-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  padding: 20px clamp(16px, 3.7vw, 60px) 0;
+}
+.editorial-card {
+  position: relative;
+  border-radius: 17px;
+  border: 1px solid var(--border-soft);
+  background: var(--surface);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow);
+  transition:
+    transform 0.22s,
+    box-shadow 0.22s;
+  animation: editorial-in 0.35s ease-out;
+}
+.editorial-card:hover {
+  transform: translateY(-3px);
+}
+.editorial-card img {
+  border-radius: 11px;
+  width: calc(100% - 28px);
+  aspect-ratio: 1.9;
+  object-fit: cover;
+}
+.editorial-card h2 {
+  font: 600 clamp(1.15rem, 1.55vw, 1.7rem) / 1.12 var(--serif);
+  letter-spacing: -0.036em;
+  margin: 12px 2px 6px;
+}
+.editorial-card p {
+  font-size: 0.91rem;
+  color: var(--muted);
+  line-height: 1.42;
+  padding: 0 2px;
+}
+.editorial-card small {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.75rem;
+  margin-top: auto;
+  padding: 18px 2px 2px;
+  color: var(--muted);
+}
+.editorial-card small i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.bookmark {
+  color: var(--x1-accent-ink);
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 32px;
+  border-radius: 8px;
+}
+.editorial-card .bookmark {
+  position: absolute;
+  right: 4px;
+  top: 12px;
+}
+.insights-status,
+.collection-links {
+  text-align: center;
+  padding: 12px;
+}
+.insights-status:empty {
+  display: none;
+}
+.collection-links a,
+.insights-status button {
+  font-size: 0.83rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  color: var(--x1-accent-ink);
+}
+@keyframes editorial-in {
+  from {
+    opacity: 0.2;
+    transform: translateY(7px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (max-width: 960px) {
+  .editorial-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 560px) {
+  .editorial-grid {
+    grid-template-columns: 1fr;
+  }
+  .insights-hero {
+    padding-block: 25px;
+  }
+  .cosmic-filters {
+    gap: 5px;
+  }
+  .cosmic-filters button {
+    padding: 6px 9px;
+  }
+  .insights-intro {
+    font-size: 0.87rem;
+  }
+}

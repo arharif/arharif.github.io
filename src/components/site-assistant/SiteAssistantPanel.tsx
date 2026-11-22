@@ -16,36 +16,11 @@ interface Message {
   quickActions?: QuickAction[];
 }
 
-function useThemeClass() {
-  const [themeClass, setThemeClass] = useState('theme-dark');
-
-  useEffect(() => {
-    const read = () => {
-      const root = document.documentElement.classList;
-      if (root.contains('theme-light')) setThemeClass('theme-light');
-      else if (root.contains('theme-purple')) setThemeClass('theme-purple');
-      else if (root.contains('theme-rainbow')) setThemeClass('theme-rainbow');
-      else if (root.contains('theme-egyptian')) setThemeClass('theme-egyptian');
-      else if (root.contains('theme-horror')) setThemeClass('theme-horror');
-      else if (root.contains('theme-elite-green')) setThemeClass('theme-elite-green');
-      else setThemeClass('theme-dark');
-    };
-
-    read();
-    const observer = new MutationObserver(read);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-    return () => observer.disconnect();
-  }, []);
-
-  return themeClass;
-}
-
 const mkId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 export function SiteAssistantPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
   const location = useLocation();
   const welcome = useMemo(() => getAssistantWelcome(location.pathname), [location.pathname]);
-  const themeClass = useThemeClass();
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -126,7 +101,7 @@ export function SiteAssistantPanel({ open, onClose }: { open: boolean; onClose: 
         <motion.section
           ref={panelRef}
           id="x1-assistant-panel"
-          className={`assistant-panel ${themeClass}`}
+          className="assistant-panel"
           aria-label="X1 assistant"
           role="dialog"
           aria-modal="true"
@@ -156,7 +131,7 @@ export function SiteAssistantPanel({ open, onClose }: { open: boolean; onClose: 
                 {m.sources && m.sources.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-2">
                     {m.sources.slice(0, 4).map((s) => (
-                      <Link key={`${m.id}-${s.route}`} to={s.route} className="assistant-source" onClick={onClose}>{s.title}</Link>
+                      <Link key={`${m.id}-${s.title}-${s.route}`} to={s.route} className="assistant-source" onClick={onClose}>{s.title}</Link>
                     ))}
                   </div>
                 )}

@@ -1,4 +1,4 @@
-export type AssistantSectionKey = 'landing' | 'professional' | 'personal' | 'security' | 'games' | 'search' | 'submitting' | 'admin' | 'default';
+export type AssistantSectionKey = 'landing' | 'academic' | 'insights' | 'professional' | 'personal' | 'security' | 'games' | 'search' | 'submitting' | 'admin' | 'default';
 
 export interface AssistantWelcome {
   section: AssistantSectionKey;
@@ -9,6 +9,8 @@ export interface AssistantWelcome {
 }
 
 export function resolveAssistantSection(pathname: string): AssistantSectionKey {
+  if (pathname.startsWith('/x1-academic')) return 'academic';
+  if (pathname === '/insights-innovation') return 'insights';
   if (pathname === '/') return 'landing';
   if (pathname.startsWith('/professional')) return 'professional';
   if (pathname.startsWith('/personal')) return 'personal';
@@ -21,10 +23,20 @@ export function resolveAssistantSection(pathname: string): AssistantSectionKey {
 }
 
 const welcomes: Record<AssistantSectionKey, AssistantWelcome> = {
+  academic: {
+    section: 'academic', title: 'Academic guide',
+    body: 'Find a framework, open a simulator or explore privacy assessments.',
+    hint: 'Try “Show me the NIST CSF simulator.”', visual: '◈',
+  },
+  insights: {
+    section: 'insights', title: 'Explore Insights',
+    body: 'Find published articles by topic, title and keyword.',
+    hint: 'Try “Find philosophy articles.”', visual: '✧',
+  },
   landing: {
     section: 'landing',
     title: 'Welcome to X1',
-    body: 'I can help you navigate the Technology & Innovation and Curiosities & Philosophy areas quickly.',
+    body: 'Explore X1 Academic, find a published article or choose a game.',
     hint: 'Try: “Show me cybersecurity topics” or “Find curiosity essays.”',
     visual: '✨',
   },
@@ -51,8 +63,8 @@ const welcomes: Record<AssistantSectionKey, AssistantWelcome> = {
   },
   games: {
     section: 'games',
-    title: 'Games Zone',
-    body: 'I can point you to lightweight learning and trivia games, including cyber awareness.',
+    title: 'X1 Arcade',
+    body: 'Find arcade games, read the controls or open a learning quiz.',
     hint: 'Try: “Recommend a cybersecurity game.”',
     visual: '🎮',
   },

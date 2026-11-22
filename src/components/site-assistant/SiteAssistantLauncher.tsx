@@ -1,6 +1,6 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { X1Mark } from '@/components/branding/X1Mark';
+import { Sparkle } from 'lucide-react';
 import { resolveAssistantSection } from './assistantContext';
 import { safeStorage } from '@/lib/storage';
 
@@ -25,6 +25,8 @@ const readSeen = (): Record<string, boolean> => {
 const writeSeen = (value: Record<string, boolean>) => safeStorage.set(SEEN_KEY, JSON.stringify(value));
 
 export function SiteAssistantLauncher() {
+  const trigger = useRef<HTMLButtonElement>(null);
+  const close = useCallback(() => { setOpen(false); trigger.current?.focus({ preventScroll: true }); }, []);
   const [open, setOpen] = useState(false);
   const [hasOpened, setHasOpened] = useState(false);
   const [enabled, setEnabled] = useState(true);
@@ -82,6 +84,7 @@ export function SiteAssistantLauncher() {
   return (
     <>
       <button
+        ref={trigger}
         className="assistant-launcher"
         onClick={() => {
           setOpen((v) => {
@@ -94,12 +97,12 @@ export function SiteAssistantLauncher() {
         aria-expanded={open}
         aria-controls="x1-assistant-panel"
       >
-        <span className="assistant-launcher-logo"><X1Mark size="sm" /></span>
+        <Sparkle aria-hidden="true" size={24} fill="currentColor" strokeWidth={1.5}/>
         {showBadge && <span className="assistant-launcher-badge" aria-hidden="true" />}
       </button>
       {hasOpened && (
         <Suspense fallback={<span className="sr-only" role="status" aria-live="polite">Loading X1 assistant…</span>}>
-          <SiteAssistantPanel open={open} onClose={() => setOpen(false)} />
+          <SiteAssistantPanel open={open} onClose={close} />
         </Suspense>
       )}
     </>

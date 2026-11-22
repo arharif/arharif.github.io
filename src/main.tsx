@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import './styles/index.css';
+import './styles/universe.css';
 
 const restoreGithubPagesRoute = () => {
   const redirectPath = window.location.search.match(/^\?\/([^&]*)/);

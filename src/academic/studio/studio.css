@@ -5,7 +5,7 @@
   font-size: 15px;
   line-height: 1.7;
 }
-.xa.xs-academy[data-theme="light"] {
+.xa.xs-academy[data-scheme="light"] {
   --xs-blue: #345fa6;
 }
 .xs-academy .xa-top-inner {
