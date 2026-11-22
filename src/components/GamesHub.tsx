@@ -1,400 +1,536 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { listPublishedContent } from '@/lib/cms';
-import { ContentRecord } from '@/content/types';
-import { MemoryPuzzleGame } from '@/components/games/MemoryPuzzleGame';
-import { safeStorage } from '@/lib/storage';
-import { MCQQuizEngine } from '@/components/games/MCQQuizEngine';
-import { PacmanGame } from '@/components/games/PacmanGame';
-import { RetroCarRacingGame } from '@/components/games/RetroCarRacingGame';
-import { gamesZoneQuizzes } from '@/data/gamesZoneData';
-import { GamesZoneCategory } from '@/types/games';
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import {
+  Award,
+  BarChart3,
+  BookOpen,
+  CalendarDays,
+  Dice5,
+  Flame,
+  Gamepad2,
+  GraduationCap,
+  Heart,
+  Home,
+  Play,
+  Search,
+  Star,
+  Trophy,
+  UserRound,
+  X,
+  Zap,
+} from "lucide-react";
+import { listPublishedContent } from "@/lib/cms";
+import type { ContentRecord } from "@/content/types";
+import { safeStorage } from "@/lib/storage";
+import { originals, type OriginalKey } from "./arcade/catalog";
+import { legacyCatalog, type GameKey } from "./arcade/legacyCatalog";
+import {
+  addRound,
+  emptyProgress,
+  playerProgress,
+  utcDay,
+  type Progress,
+} from "./arcade/progress";
+import "./arcade/arcade.css";
 
-type GameKey =
-  | 'full-ciso-qsa-pack' | 'security-awareness-qsm' | 'ai-topic-qsm' | 'otaku-general-culture-quiz' | 'countries-capitals-locations-quiz' | 'fc-barcelona-hardcore-fan-quiz'
-  | 'snake' | 'tictactoe' | 'reaction' | 'rps' | 'pacman' | 'retro-car-racing'
-  | 'memory' | 'hangman-x1' | 'mystery-box' | 'truth-or-dare-x1';
-
-type GameEntry = {
-  key: GameKey;
-  title: string;
-  desc: string;
-  color: string;
-  icon: string;
-  category: GamesZoneCategory;
-  typeLabel: string;
-  questionCount?: number;
-  difficulty?: string;
-  sortOrder: number;
-};
-
-const staticGames: GameEntry[] = [
-  { key: 'memory', title: 'Memory Puzzle', desc: 'Pattern recall challenge with calm pacing.', color: 'token', icon: '🧠', category: 'Entertainment', typeLabel: 'Puzzle', sortOrder: 23 },
-  { key: 'rps', title: 'Rock Paper Scissors', desc: 'Classic duel versus computer.', color: 'token', icon: '🪨', category: 'Entertainment', typeLabel: 'Classic', sortOrder: 24 },
-  { key: 'snake', title: 'Snake', desc: 'Precision movement with increasing pressure.', color: 'token', icon: '🐍', category: 'Entertainment', typeLabel: 'Arcade', sortOrder: 25 },
-  { key: 'tictactoe', title: 'Tic Tac Toe', desc: 'Fast strategic duels.', color: 'token', icon: '✖️', category: 'Entertainment', typeLabel: 'Classic', sortOrder: 27 },
-  { key: 'reaction', title: 'Reaction Time', desc: 'Measure and improve your response speed.', color: 'token', icon: '⚡', category: 'Entertainment', typeLabel: 'Arcade', sortOrder: 28 },
-  { key: 'pacman', title: 'Pac-Man Arcade', desc: 'Navigate the maze, collect pellets, and avoid ghosts.', color: 'token', icon: '🟡', category: 'Entertainment', typeLabel: 'Arcade', sortOrder: 30 },
-  { key: 'retro-car-racing', title: 'Retro Car Racing', desc: 'Nokia-style lane dodging challenge with arcade pacing.', color: 'token', icon: '🏎️', category: 'Entertainment', typeLabel: 'Arcade', sortOrder: 31 },
-  { key: 'hangman-x1', title: 'Hangman X1', desc: 'Premium word-guessing with categories and hints.', color: 'token', icon: '🔤', category: 'Entertainment', typeLabel: 'Word Game', sortOrder: 32 },
-  { key: 'mystery-box', title: 'Mystery Box', desc: 'Open the glowing box to reveal facts, riddles, and mini challenges.', color: 'token', icon: '🎁', category: 'Entertainment', typeLabel: 'Surprise', sortOrder: 33 },
-  { key: 'truth-or-dare-x1', title: 'Truth or Dare X1', desc: 'Safe, friendly prompts for everyone.', color: 'token', icon: '🎭', category: 'Entertainment', typeLabel: 'Party', sortOrder: 34 },
+const Action = lazy(() => import("./arcade/ActionGame")),
+  Memory = lazy(() => import("./arcade/MemoryGame"));
+const Maze = lazy(() => import("./arcade/MazeGame")),
+  Quiz = lazy(() => import("./arcade/QuizGame")),
+  Legacy = lazy(() => import("./arcade/LegacyGame"));
+const library = [
+  ...originals.map((g) => ({
+    ...g,
+    original: true,
+    category: "Entertainment",
+  })),
+  ...legacyCatalog.map((g) => ({
+    ...g,
+    type: g.typeLabel,
+    original: false,
+    instructions: g.desc,
+  })),
 ];
-
-const quizEntries: GameEntry[] = gamesZoneQuizzes.map((quiz) => ({
-  key: quiz.slug as GameKey,
-  title: quiz.title,
-  desc: quiz.shortDescription,
-  color: 'token',
-  icon:
-    quiz.slug === 'countries-capitals-locations-quiz'
-      ? '🧭'
-      : quiz.slug === 'fc-barcelona-hardcore-fan-quiz'
-        ? '⚽'
-        : quiz.category === 'Security'
-          ? '🛡️'
-          : '🎌',
-  category: quiz.category,
-  typeLabel: quiz.type,
-  questionCount: quiz.questionCount,
-  difficulty: quiz.difficulty,
-  sortOrder: quiz.sortOrder,
-}));
-
-const catalog: GameEntry[] = [...quizEntries, ...staticGames].sort((a, b) => a.sortOrder - b.sortOrder);
-
-const readBest = (key: string) => {
-  const value = safeStorage.get(key);
-  const num = Number(value || 0);
-  return Number.isFinite(num) ? num : 0;
-};
-
-const saveBest = (key: string, value: number) => safeStorage.set(key, String(value));
-
-export function GamesHub() {
-  const [active, setActive] = useState<GameKey>('full-ciso-qsa-pack');
-  const [games, setGames] = useState<ContentRecord[]>([]);
-  const [category, setCategory] = useState<'All' | GamesZoneCategory>('All');
-  const [search, setSearch] = useState('');
-  const location = useLocation();
-  const gamesZoneRef = useRef<HTMLElement | null>(null);
-
+type Game = (typeof library)[number];
+const sections = [
+  ["Arcade", Gamepad2],
+  ["Games", Flame],
+  ["Challenges", CalendarDays],
+  ["Achievements", Trophy],
+  ["My Stats", BarChart3],
+  ["Favorites", Heart],
+] as const;
+const favKey = (id: string) => "x1-arcade-favorite:" + id;
+function PlayRoom({
+  game,
+  close,
+  finish,
+}: {
+  game: Game;
+  close: () => void;
+  finish: (id: string, score: number) => void;
+}) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  const [round, setRound] = useState(0),
+    [result, setResult] = useState<number | null>(null);
+  const ended = useRef(false);
+  const gameHeading = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
-    listPublishedContent().then((rows) => setGames(rows.filter((r) => r.contentType === 'game'))).catch(() => setGames([]));
+    const node = dialog.current;
+    node?.showModal();
+    gameHeading.current?.focus();
+    return () => node?.close();
   }, []);
-
-  useEffect(() => {
-    if (location.pathname !== '/games') return;
-    const shouldScroll = !location.hash || location.hash === '#games-zone';
-    if (!shouldScroll) return;
-    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const frame = window.requestAnimationFrame(() => {
-      gamesZoneRef.current?.scrollIntoView({ behavior: prefersReduced ? 'auto' : 'smooth', block: 'start' });
-      gamesZoneRef.current?.focus({ preventScroll: true });
-    });
-    return () => window.cancelAnimationFrame(frame);
-  }, [location.pathname, location.hash]);
-
-  const filteredCatalog = useMemo(() => {
-    return catalog.filter((game) => {
-      const categoryMatch = category === 'All' || game.category === category;
-      const searchMatch = game.title.toLowerCase().includes(search.toLowerCase());
-      return categoryMatch && searchMatch;
-    });
-  }, [category, search]);
-
-  const selectGame = (key: GameKey) => {
-    setActive(key);
-    window.requestAnimationFrame(() => gamesZoneRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
-  };
-
-  const activeQuiz = gamesZoneQuizzes.find((game) => game.slug === active);
-
+  const complete = useCallback(
+    (score: number) => {
+      if (ended.current) return;
+      ended.current = true;
+      setResult(score);
+      finish(game.key, score);
+    },
+    [game.key, finish],
+  );
+  const id = game.key as OriginalKey;
   return (
-    <section className="space-y-5">
-      <header className="game-store rounded-3xl p-6">
-        <p className="text-xs uppercase tracking-[0.25em] text-muted">Games Zone</p>
-        <h1 className="mt-2 text-3xl font-semibold">Games</h1>
-        <p className="mt-2 text-sm text-muted">Explore professional security practice packs and fun culture or entertainment quizzes with polished filtering and discovery.</p>
-      </header>
-
-      {games.length > 0 && (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {games.map((g) => (
-            <article key={g.id} className="game-card rounded-2xl p-4">
-              <p className="text-xs text-muted">CMS Pick</p>
-              <h3 className="mt-1 text-lg font-semibold">{g.title}</h3>
-              <p className="mt-1 text-sm text-muted">{g.excerpt || 'No description yet.'}</p>
-            </article>
-          ))}
+    <dialog
+      className="play-room"
+      ref={dialog}
+      aria-labelledby="play-title"
+      onCancel={(e) => {
+        e.preventDefault();
+        close();
+      }}
+    >
+      <header>
+        <div>
+          <small>{game.type}</small>
+          <h2 ref={gameHeading} tabIndex={-1} id="play-title">
+            {game.title}
+          </h2>
         </div>
-      )}
-
-      <div className="flex flex-wrap gap-2">
-        {(['All', 'Security', 'Culture', 'Entertainment'] as const).map((chip) => (
-          <button key={chip} onClick={() => setCategory(chip)} className={`rounded-full px-4 py-2 text-sm token-chip ${category === chip ? 'ring-2 ring-[color:var(--active-border)]' : ''}`}>
-            {chip}
-          </button>
-        ))}
-        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search games" className="ml-auto rounded-full token-chip px-4 py-2 text-sm" />
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {filteredCatalog.map((game) => (
-          <button key={game.key} onClick={() => selectGame(game.key)} aria-pressed={active === game.key} className={`game-card token-card rounded-2xl p-5 text-left transition hover:-translate-y-1 hover:shadow-[0_14px_28px_var(--glow)] ${active === game.key ? 'ring-2 ring-[color:var(--active-border)] shadow-[0_0_0_1px_var(--accent-soft)]' : ''}`}>
-            <div className="flex items-center justify-between">
-              <p className="text-xl">{game.icon}</p>
-              <span className="rounded-full token-chip px-2 py-1 text-[11px] uppercase tracking-wide">{game.category}</span>
-            </div>
-            <h3 className="mt-2 text-lg font-semibold">{game.title}</h3>
-            <p className="mt-1 text-sm text-muted">{game.desc}</p>
-            <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted">
-              <span>{game.typeLabel}</span>
-              {game.questionCount && <span>{game.questionCount} questions</span>}
-              {game.difficulty && <span>{game.difficulty}</span>}
-            </div>
-            <span className="mt-3 inline-block rounded-lg token-chip px-3 py-1 text-xs">Open Quiz</span>
-          </button>
-        ))}
-      </div>
-
-      <div className="glass rounded-2xl p-4">
-        <p className="text-sm text-muted">Looking for the strategic cybersecurity landscape?</p>
-        <Link to="/Security_Mindmap" className="mt-2 inline-block rounded-xl token-chip px-4 py-2 text-sm hover:bg-[color:var(--card-hover)]">Explore Security Map</Link>
-      </div>
-
-      <section id="games-zone" ref={gamesZoneRef} tabIndex={-1} className="game-panel rounded-2xl p-4" aria-label="Interactive games zone">
-        {activeQuiz && <MCQQuizEngine game={activeQuiz} />}
-        {active === 'snake' && <SnakeGame />}
-        {active === 'tictactoe' && <TicTacToeGame />}
-        {active === 'reaction' && <ReactionGame />}
-        {active === 'memory' && <MemoryPuzzleGame />}
-        {active === 'rps' && <RPSGame />}
-        {active === 'pacman' && <PacmanGame />}
-        {active === 'retro-car-racing' && <RetroCarRacingGame />}
-        {active === 'hangman-x1' && <HangmanX1 />}
-        {active === 'mystery-box' && <MysteryBoxGame />}
-        {active === 'truth-or-dare-x1' && <TruthOrDareX1 />}
-      </section>
-    </section>
-  );
-}
-function SnakeGame() {
-  const size = 12;
-  const [snake, setSnake] = useState<number[]>([40, 39, 38]);
-  const [dir, setDir] = useState(1);
-  const [food, setFood] = useState(80);
-  const [running, setRunning] = useState(false);
-  const score = snake.length - 3;
-  const [best, setBest] = useState(() => readBest('game-best-snake'));
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowUp' && dir !== size) setDir(-size);
-      if (e.key === 'ArrowDown' && dir !== -size) setDir(size);
-      if (e.key === 'ArrowLeft' && dir !== 1) setDir(-1);
-      if (e.key === 'ArrowRight' && dir !== -1) setDir(1);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [dir]);
-
-  useEffect(() => {
-    if (!running) return;
-    const t = setInterval(() => {
-      setSnake((prev) => {
-        const head = prev[0];
-        const next = head + dir;
-        const hitWall = next < 0 || next >= size * size || (dir === 1 && head % size === size - 1) || (dir === -1 && head % size === 0);
-        const hitSelf = prev.includes(next);
-        if (hitWall || hitSelf) {
-          setRunning(false);
-          return [40, 39, 38];
-        }
-        const grown = next === food;
-        const updated = [next, ...prev.slice(0, grown ? prev.length : prev.length - 1)];
-        if (grown) {
-          let f = Math.floor(Math.random() * size * size);
-          while (updated.includes(f)) f = Math.floor(Math.random() * size * size);
-          setFood(f);
-        }
-        return updated;
-      });
-    }, 170);
-    return () => clearInterval(t);
-  }, [running, dir, food]);
-
-  useEffect(() => {
-    if (score > best) {
-      setBest(score);
-      saveBest('game-best-snake', score);
-    }
-  }, [score, best]);
-
-  return (
-    <div>
-      <div className="mb-3 flex items-center justify-between text-sm text-muted"><p>Score: {score} · Best: {best}</p><button onClick={() => setRunning((v) => !v)} className="rounded-lg token-btn px-3 py-1 text-xs">{running ? 'Pause' : 'Start'}</button></div>
-      <div className="grid grid-cols-12 gap-1">{Array.from({ length: size * size }).map((_, i) => <div key={i} className={`h-4 rounded ${snake.includes(i) ? 'bg-[color:var(--accent)]' : food === i ? 'bg-[color:var(--accent-secondary)]' : 'bg-[color:var(--surface-soft)]'}`} />)}</div>
-    </div>
-  );
-}
-
-function TicTacToeGame() {
-  const [cells, setCells] = useState<Array<'X' | 'O' | null>>(Array(9).fill(null));
-  const [xTurn, setXTurn] = useState(true);
-  const wins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
-  const winnerLine = wins.find(([a,b,c]) => cells[a] && cells[a] === cells[b] && cells[a] === cells[c]);
-  const winner = winnerLine ? cells[winnerLine[0]] : null;
-  const status = winner ? `Winner: ${winner}` : cells.every(Boolean) ? 'Draw' : `Turn: ${xTurn ? 'X' : 'O'}`;
-  const isWinningCell = (idx: number) => Boolean(winnerLine?.includes(idx));
-
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between text-sm text-muted">
-        <p>{status}</p>
-        <button onClick={() => { setCells(Array(9).fill(null)); setXTurn(true); }} className="rounded-lg token-btn px-3 py-1 text-xs">Restart</button>
-      </div>
-      <div className="relative grid grid-cols-3 gap-2">
-        {cells.map((cell, i) => (
+        <button aria-label="Close game" onClick={close}>
+          <X />
+        </button>
+      </header>
+      <p>{game.instructions}</p>
+      {game.original && (
+        <div className="game-controls">
+          {result !== null && (
+            <strong role="status">Round complete · Score {result}</strong>
+          )}
           <button
-            key={i}
-            className={`h-16 rounded text-xl font-semibold transition ${isWinningCell(i) ? 'bg-[color:var(--accent-soft)] ring-2 ring-[color:var(--active-border)]' : 'token-btn hover:token-chip'}`}
             onClick={() => {
-              if (cell || winner) return;
-              const next = [...cells];
-              next[i] = xTurn ? 'X' : 'O';
-              setCells(next);
-              setXTurn(!xTurn);
+              ended.current = false;
+              setResult(null);
+              setRound((r) => r + 1);
             }}
           >
-            {cell}
+            {round ? "Restart" : "Start game"}
           </button>
-        ))}
-      </div>
-      {winnerLine && <p className="text-xs status-success">Winning pattern highlighted.</p>}
-    </div>
+        </div>
+      )}
+      <Suspense fallback={<p role="status">Loading game…</p>}>
+        {!game.original ? (
+          <Legacy active={game.key as GameKey} />
+        ) : (
+          round > 0 &&
+          result === null && (
+            <div key={round}>
+              {id === "haunted-memory" ? (
+                <Memory onFinish={complete} />
+              ) : id === "neon-maze-escape" ? (
+                <Maze onFinish={complete} />
+              ) : id === "quiz-chaos" ? (
+                <Quiz onFinish={complete} />
+              ) : (
+                <Action mode={id} onFinish={complete} />
+              )}
+            </div>
+          )
+        )}
+      </Suspense>
+    </dialog>
   );
 }
-
-function ReactionGame() {
-  const [phase, setPhase] = useState<'idle' | 'wait' | 'go'>('idle');
-  const [start, setStart] = useState(0);
-  const [result, setResult] = useState<number | null>(null);
-  const [best, setBest] = useState(() => readBest('game-best-reaction'));
-
+export function GamesHub() {
+  const [params, setParams] = useSearchParams();
+  const game = library.find((g) => g.key === params.get("game"));
+  const [section, setSection] = useState("Arcade"),
+    [query, setQuery] = useState(""),
+    [category, setCategory] = useState("All");
+  const [favorites, setFavorites] = useState(() =>
+    library
+      .filter((g) => safeStorage.get(favKey(g.key)) === "1")
+      .map((g) => g.key as string),
+  );
+  const [progress, setProgress] = useState<Progress>(emptyProgress),
+    [session, setSession] = useState(0),
+    [warning, setWarning] = useState("");
+  const [cms, setCms] = useState<ContentRecord[]>([]),
+    [cmsError, setCmsError] = useState(false);
+  function fetchPicks() {
+    setCmsError(false);
+    listPublishedContent()
+      .then((rows) => setCms(rows.filter((r) => r.contentType === "game")))
+      .catch(() => setCmsError(true));
+  }
   useEffect(() => {
-    if (phase !== 'wait') return;
-    const t = setTimeout(() => { setPhase('go'); setStart(performance.now()); }, 900 + Math.random() * 1800);
-    return () => clearTimeout(t);
-  }, [phase]);
-
-  const onClick = () => {
-    if (phase === 'idle') { setResult(null); setPhase('wait'); return; }
-    if (phase === 'wait') { setPhase('idle'); setResult(null); return; }
-    const ms = Math.round(performance.now() - start);
-    setResult(ms);
-    if (!best || ms < best) { setBest(ms); saveBest('game-best-reaction', ms); }
-    setPhase('idle');
-  };
-
-  return <div><div className="mb-3 flex items-center justify-between text-sm text-muted"><p>{result ? `Last: ${result} ms` : 'Click to begin'}</p><p>Best: {best ? `${best} ms` : 'Not set'}</p></div><button onClick={onClick} className={`w-full rounded-xl px-4 py-10 text-lg font-semibold ${phase === 'go' ? 'bg-emerald-400/50' : phase === 'wait' ? 'bg-amber-300/40' : 'token-btn hover:token-chip'}`}>{phase === 'idle' ? 'Start' : phase === 'wait' ? 'Wait…' : 'Click!'}</button><p className="mt-2 text-xs text-muted">Clicking too early resets the round.</p></div>;
-}
-
-function RPSGame() {
-  const options = ['Rock', 'Paper', 'Scissors'] as const;
-  const [phase, setPhase] = useState<'idle' | 'shake' | 'reveal'>('idle');
-  const [playerChoice, setPlayerChoice] = useState<typeof options[number] | null>(null);
-  const [cpuChoice, setCpuChoice] = useState<typeof options[number] | null>(null);
-  const [result, setResult] = useState('Choose your move to start.');
-  const [score, setScore] = useState({ you: 0, cpu: 0 });
-  const [pulse, setPulse] = useState<'you' | 'cpu' | null>(null);
-
-  const play = (choice: typeof options[number]) => {
-    if (phase === 'shake') return;
-    const cpu = options[Math.floor(Math.random() * options.length)];
-    setPlayerChoice(choice);
-    setCpuChoice(null);
-    setResult('Ready…');
-    setPhase('shake');
-
-    window.setTimeout(() => {
-      setCpuChoice(cpu);
-      setPhase('reveal');
-      if (cpu === choice) {
-        setResult(`Draw · both chose ${choice}`);
-        setPulse(null);
-        return;
-      }
-      const win = (choice === 'Rock' && cpu === 'Scissors') || (choice === 'Paper' && cpu === 'Rock') || (choice === 'Scissors' && cpu === 'Paper');
-      if (win) {
-        setScore((prev) => ({ ...prev, you: prev.you + 1 }));
-        setResult(`You win · ${choice} beats ${cpu}`);
-        setPulse('you');
-      } else {
-        setScore((prev) => ({ ...prev, cpu: prev.cpu + 1 }));
-        setResult(`CPU wins · ${cpu} beats ${choice}`);
-        setPulse('cpu');
-      }
-
-      window.setTimeout(() => setPhase('idle'), 380);
-      window.setTimeout(() => setPulse(null), 550);
-    }, 420);
-  };
-
+    fetchPicks();
+    let live = true;
+    function refresh() {
+      playerProgress()
+        .then((p) => {
+          if (live) setProgress(p);
+        })
+        .catch(() => {
+          if (live)
+            setWarning("Progress storage is unavailable on this device.");
+        });
+    }
+    refresh();
+    window.addEventListener("focus", refresh);
+    return () => {
+      live = false;
+      window.removeEventListener("focus", refresh);
+    };
+  }, []);
+  const finish = useCallback((id: string, score: number) => {
+    setSession((n) => n + 1);
+    playerProgress({ game: id, score })
+      .then(setProgress)
+      .catch(() => {
+        setProgress((p) => addRound(p, id, score));
+        setWarning(
+          "This round is available for this visit. Device storage is unavailable.",
+        );
+      });
+  }, []);
+  function play(id: string) {
+    setParams((next) => {
+      next.set("game", id);
+      return next;
+    });
+  }
+  function toggle(id: string) {
+    if (favorites.includes(id)) {
+      safeStorage.remove(favKey(id));
+      setFavorites(favorites.filter((k) => k !== id));
+    } else {
+      safeStorage.set(favKey(id), "1");
+      setFavorites([...favorites, id]);
+    }
+  }
+  const dashboard = section === "Arcade" && !query;
+  const showGames =
+    dashboard || section === "Games" || section === "Favorites" || !!query;
+  const visible = library.filter(
+    (g) =>
+      (!dashboard || g.original) &&
+      (section !== "Favorites" || favorites.includes(g.key)) &&
+      (category === "All" || category === g.category) &&
+      (g.title + " " + g.type + " " + g.desc)
+        .toLowerCase()
+        .includes(query.toLowerCase()),
+  );
+  const daily = progress.day === utcDay() ? Math.min(progress.daily, 3) : 0;
+  const badges = [
+    ["First flight", progress.rounds >= 1],
+    ["Arcade regular", progress.rounds >= 5],
+    ["Explorer", Object.keys(progress.best).length >= 3],
+    ["Daily champion", progress.completedDays > 0],
+  ] as const;
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between text-sm">
-        <p className={`rounded-lg px-3 py-1 transition ${phase === 'reveal' ? 'token-btn' : ''}`}>{result}</p>
-        <p className="text-muted">
-          You <span className={`inline-block transition ${pulse === 'you' ? 'scale-125 status-info' : ''}`}>{score.you}</span>
-          {' · '}CPU <span className={`inline-block transition ${pulse === 'cpu' ? 'scale-125 status-error' : ''}`}>{score.cpu}</span>
-        </p>
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className={`rounded-xl border border-[color:var(--border)] token-card p-4 text-center transition ${phase === 'shake' ? 'animate-pulse' : ''}`}>
-          <p className="text-xs uppercase tracking-[0.12em] text-muted">You</p>
-          <p className="mt-2 text-xl font-semibold">{playerChoice || 'Not selected'}</p>
+    <div className="arcade-layout" id="games-zone">
+      <aside className="arcade-sidebar">
+        <Link to="/" aria-label="X1 home" className="arcade-logo">
+          X1
+        </Link>
+        <nav aria-label="Arcade navigation">
+          {sections.map(([name, Icon]) => (
+            <button
+              key={name}
+              aria-pressed={section === name}
+              onClick={() => {
+                setSection(name);
+                setQuery("");
+                setCategory("All");
+              }}
+            >
+              <Icon size={17} />
+              {name}
+            </button>
+          ))}
+        </nav>
+        <nav aria-label="Other universes">
+          <Link to="/">
+            <Home />
+            Home
+          </Link>
+          <Link to="/insights-innovation">
+            <BookOpen />
+            X1 Insights
+          </Link>
+          <Link to="/x1-academic">
+            <GraduationCap />
+            X1 Academic
+          </Link>
+        </nav>
+      </aside>
+      <div className="arcade-main">
+        <header className="arcade-top">
+          <span>
+            <Gamepad2 /> X1 Arcade
+          </span>
+          <label>
+            <Search size={15} />
+            <input
+              type="search"
+              aria-label="Search games"
+              placeholder="Search games..."
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setSection("Games");
+              }}
+            />
+          </label>
+          <Link aria-label="Account" to="/admin">
+            <UserRound size={18} />
+          </Link>
+        </header>
+        {dashboard && (
+          <header className="arcade-hero">
+            <img
+              className="arcade-mascot"
+              src="/art/mascot.webp"
+              width="260"
+              height="220"
+              alt=""
+            />
+            <h1>X1 Arcade</h1>
+            <p>Play • Challenge • Unlock • Have Fun</p>
+            <div>
+              <button onClick={() => play(originals[0].key)}>
+                <Play size={16} fill="currentColor" /> Play Now
+              </button>
+              <button
+                onClick={() =>
+                  play(library[Math.floor(Math.random() * library.length)].key)
+                }
+              >
+                <Dice5 size={17} /> Random Game
+              </button>
+            </div>
+          </header>
+        )}
+        <div className="arcade-content">
+          {params.has("game") && !game && (
+            <p role="status">
+              This game is unavailable. Choose a game from the library.
+            </p>
+          )}
+          {showGames && (
+            <section>
+              <header className="games-heading">
+                <h2>
+                  <Gamepad2 />
+                  {dashboard
+                    ? "Featured Games"
+                    : section === "Favorites"
+                      ? "Favorites"
+                      : "All Games"}
+                </h2>
+                {dashboard ? (
+                  <button onClick={() => setSection("Games")}>
+                    All games →
+                  </button>
+                ) : (
+                  <select
+                    value={category}
+                    aria-label="Game category"
+                    onChange={(e) => setCategory(e.target.value)}
+                  >
+                    {["All", "Security", "Culture", "Entertainment"].map(
+                      (c) => (
+                        <option key={c}>{c}</option>
+                      ),
+                    )}
+                  </select>
+                )}
+              </header>
+              <div className="arcade-cards">
+                {visible.map((g, i) => (
+                  <article
+                    key={g.key}
+                    className={"arcade-card neon-" + (i % 6)}
+                  >
+                    <button
+                      className="favorite-game"
+                      aria-label={
+                        (favorites.includes(g.key)
+                          ? "Unfavorite "
+                          : "Favorite ") + g.title
+                      }
+                      aria-pressed={favorites.includes(g.key)}
+                      onClick={() => toggle(g.key)}
+                    >
+                      <Heart
+                        size={16}
+                        fill={
+                          favorites.includes(g.key) ? "currentColor" : "none"
+                        }
+                      />
+                    </button>
+                    {g.original ? (
+                      <img
+                        src={"/art/" + g.key + ".webp"}
+                        alt=""
+                        loading="lazy"
+                        width={256}
+                        height={160}
+                      />
+                    ) : (
+                      <div className="legacy-icon">
+                        {legacyCatalog.find((l) => l.key === g.key)?.icon}
+                      </div>
+                    )}
+                    <div>
+                      <h3>{g.title}</h3>
+                      <p>{g.desc}</p>
+                      <small>{g.type}</small>
+                      <button
+                        aria-label={"Play " + g.title}
+                        onClick={() => play(g.key)}
+                      >
+                        <Play size={13} fill="currentColor" /> Play
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+              {!visible.length && (
+                <p role="status">
+                  {section === "Favorites"
+                    ? "Use the heart on a game to save it here."
+                    : "No games match this search and category."}
+                </p>
+              )}
+              {section === "Games" &&
+                cms
+                  .filter((p) =>
+                    p.title.toLowerCase().includes(query.toLowerCase()),
+                  )
+                  .map((p) => (
+                    <article className="arcade-widget" key={p.id}>
+                      <small>CMS Pick</small>
+                      <h3>{p.title}</h3>
+                      <p>{p.excerpt}</p>
+                    </article>
+                  ))}
+              {cmsError && section === "Games" && (
+                <button onClick={fetchPicks}>Retry loading CMS picks</button>
+              )}
+            </section>
+          )}
+          <div className="arcade-widgets">
+            {(dashboard || section === "Challenges") && (
+              <section className="arcade-widget">
+                <h2>
+                  <CalendarDays /> Daily Challenge
+                </h2>
+                <h3>Arcade triple play</h3>
+                <p>Finish three X1 Original rounds today.</p>
+                <progress max={3} value={daily} />
+                <small>{daily} / 3 rounds · Resets at 00:00 UTC</small>
+              </section>
+            )}
+            {(dashboard || section === "Achievements") && (
+              <section className="arcade-widget">
+                <h2>
+                  <Award /> Achievements
+                </h2>
+                <div className="badge-row">
+                  {badges.map(([name, earned]) => (
+                    <span
+                      key={name}
+                      data-earned={earned}
+                      title={earned ? "Earned" : "Locked"}
+                    >
+                      <Star />
+                      <small>{name}</small>
+                      <small>{earned ? "Earned" : "Locked"}</small>
+                    </span>
+                  ))}
+                </div>
+              </section>
+            )}
+            {(dashboard || section === "My Stats") && (
+              <section className="arcade-widget">
+                <h2>
+                  <BarChart3 /> My Arcade Stats
+                </h2>
+                <div className="stats-row">
+                  <strong>Lv. {1 + Math.floor(progress.xp / 250)}</strong>
+                  <dl>
+                    <dt>Total XP</dt>
+                    <dd>{progress.xp}</dd>
+                    <dt>Original rounds</dt>
+                    <dd>{progress.rounds}</dd>
+                    <dt>Daily challenges</dt>
+                    <dd>{progress.completedDays}</dd>
+                    <dt>This visit</dt>
+                    <dd>{session}</dd>
+                  </dl>
+                </div>
+              </section>
+            )}
+          </div>
+          {section === "My Stats" && (
+            <section className="arcade-widget">
+              <h2>
+                <Zap /> High scores
+              </h2>
+              <p>
+                Each completed Original awards 10 XP plus 1 XP per 10 points, up
+                to 110 XP. Every 250 XP earns a level. Scores are saved on this
+                device.
+              </p>
+              {originals.map((g) => (
+                <p key={g.key}>
+                  {g.title} · {progress.best[g.key] ?? "Unplayed"}
+                </p>
+              ))}
+            </section>
+          )}
+          {warning && <p role="status">{warning}</p>}
+          {section === "Games" && (
+            <Link to="/Security_Mindmap">Explore Security Map →</Link>
+          )}
         </div>
-        <div className={`rounded-xl border border-[color:var(--border)] token-card p-4 text-center transition ${phase === 'shake' ? 'animate-pulse' : ''}`}>
-          <p className="text-xs uppercase tracking-[0.12em] text-muted">CPU</p>
-          <p className="mt-2 text-xl font-semibold">{cpuChoice || (phase === 'shake' ? '…' : 'Not selected')}</p>
-        </div>
       </div>
-
-      <div className="flex flex-wrap gap-2">
-        {options.map((option) => (
-          <button
-            key={option}
-            onClick={() => play(option)}
-            disabled={phase === 'shake'}
-            className="rounded-xl border border-[color:var(--border)] token-btn px-4 py-2 transition duration-150 hover:-translate-y-1 hover:shadow-[0_14px_28px_var(--glow)] hover:bg-[color:var(--card-hover)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {option}
-          </button>
-        ))}
-      </div>
+      {game && (
+        <PlayRoom
+          key={game.key}
+          game={game}
+          finish={finish}
+          close={() =>
+            setParams(
+              (next) => {
+                next.delete("game");
+                return next;
+              },
+              { replace: true },
+            )
+          }
+        />
+      )}
     </div>
   );
 }
-
-
-const HANGMAN_WORDS = [
-  { word:'ZERO TRUST', category:'Cybersecurity', hint:'Security model: never trust, always verify.' },
-  { word:'ISO 27001', category:'Cybersecurity', hint:'Information security management standard.' },
-  { word:'QUANTUM', category:'Science', hint:'Computing paradigm using qubits.' },
-  { word:'MONONOKE', category:'Anime', hint:'Studio Ghibli classic with forest spirits.' },
-  { word:'PLATO', category:'Philosophy', hint:'Ancient Greek philosopher.' },
-  { word:'DUNE', category:'Books', hint:'Epic sci-fi saga by Frank Herbert.' },
-  { word:'NEURAL NETWORK', category:'Technology', hint:'Core AI architecture.' },
-];
-function HangmanX1(){const [idx,setIdx]=useState(()=>Math.floor(Math.random()*HANGMAN_WORDS.length));const [used,setUsed]=useState<string[]>([]);const item=HANGMAN_WORDS[idx];const misses=used.filter(c=>!item.word.includes(c)).length;const won=[...new Set(item.word.replace(/[^A-Z0-9]/g,'').split(''))].every(c=>used.includes(c));const lost=misses>=7;const letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.split('');const guess=(c:string)=>!won&&!lost&&setUsed(u=>u.includes(c)?u:[...u,c]);useEffect(()=>{const on=(e:KeyboardEvent)=>{const k=e.key.toUpperCase();if(letters.includes(k))guess(k)};window.addEventListener('keydown',on);return()=>window.removeEventListener('keydown',on)},[won,lost]);return <div className='space-y-3'><p className='text-sm text-muted'>Category: {item.category} · Misses: {misses}/7</p><p className='text-xs text-muted'>Hint: {item.hint}</p><p className='text-2xl tracking-[0.4em]'>{item.word.split('').map(ch=>/[A-Z0-9]/.test(ch)?(used.includes(ch)?ch:'_'):ch).join(' ')}</p><div className='grid grid-cols-6 gap-2'>{letters.map(l=><button key={l} onClick={()=>guess(l)} disabled={used.includes(l)||won||lost} className='rounded token-btn px-2 py-1 text-xs disabled:opacity-40'>{l}</button>)}</div><div className='flex gap-2'><button onClick={()=>{setIdx(Math.floor(Math.random()*HANGMAN_WORDS.length));setUsed([])}} className='rounded-lg token-btn px-3 py-1 text-xs'>Restart</button>{won&&<p className='status-success text-sm'>Great job!</p>}{lost&&<p className='text-rose-300 text-sm'>Round over. Word: {item.word}</p>}</div></div>}
-
-const MYSTERY_ITEMS=[
-'Fun Fact: Honey never spoils when sealed well.', 'Quote: “The future depends on what you do today.” (Gandhi)', 'Mini Challenge: Name 3 things you learned this week.', 'Riddle: What has keys but cannot open locks? (A keyboard)', 'Curiosity: Which innovation changed your daily life most?', 'Motivation: Small progress daily creates big outcomes.'
-];
-function MysteryBoxGame(){const [open,setOpen]=useState(false);const [item,setItem]=useState('');const reveal=()=>{setOpen(true);setItem(MYSTERY_ITEMS[Math.floor(Math.random()*MYSTERY_ITEMS.length)])};return <div className='space-y-3 text-center'><button onClick={reveal} className={`mx-auto rounded-2xl px-8 py-8 text-4xl transition ${open?'token-card':'token-btn hover:-translate-y-1 hover:shadow-[0_14px_28px_var(--glow)]'}`}>🎁</button><p className='text-sm text-muted'>{open?item:'Open the mystery box for a premium surprise.'}</p><button onClick={()=>{setOpen(false);setItem('')}} className='rounded-lg token-btn px-3 py-1 text-xs'>Open again</button></div>}
-
-const TRUTHS = Array.from({length:30},(_,i)=>['What is one dream you want to achieve?','What book, movie, or anime influenced you most?','What skill do you want to learn next?','What is your favorite memory with friends?','What motivates you on hard days?'][i%5]);
-const DARES = Array.from({length:30},(_,i)=>['Do your best robot voice for 10 seconds.','Describe yourself using only three words.','Say one positive thing about someone nearby.','Act like a movie trailer narrator for 15 seconds.','Create a superhero name for yourself.'][i%5]);
-function TruthOrDareX1(){const [mode,setMode]=useState<'truth'|'dare'>('truth');const [text,setText]=useState(TRUTHS[0]);const next=(m?:'truth'|'dare'|'random')=>{const md=m==='random'?(Math.random()>0.5?'truth':'dare'):(m||mode);setMode(md);const pool=md==='truth'?TRUTHS:DARES;setText(pool[Math.floor(Math.random()*pool.length)])};return <div className='space-y-3'><div className='flex flex-wrap gap-2'>{['truth','dare','random'].map(b=><button key={b} onClick={()=>next(b as any)} className='rounded-lg token-btn px-3 py-1 text-xs capitalize'>{b}</button>)}<button onClick={()=>next()} className='rounded-lg token-btn px-3 py-1 text-xs'>Next</button></div><div className='rounded-2xl border border-[color:var(--border)] token-card p-4'><p className='text-xs uppercase text-muted'>{mode}</p><p className='mt-2 text-base'>{text}</p></div></div>}
