@@ -1,0 +1,533 @@
+{
+  "testedCommit": "e403d91a00228e51190c74eebd3cc847c8ff4407",
+  "runtime": "v24.22.1",
+  "browser": "Chromium 156.0.8078.79 built on Debian GNU/Linux 13 (trixie)",
+  "lint": {
+    "command": "npm run lint",
+    "result": "passed"
+  },
+  "build": {
+    "command": "npm run build",
+    "result": "passed",
+    "output": [
+      "✓ built in 11.93s",
+      "Prerendered 59 academic routes and extended the sitemap."
+    ]
+  },
+  "unit": {
+    "command": "npm test",
+    "passed": 44,
+    "failed": 0,
+    "cases": [
+      {
+        "test": "risk indices enforce rating bounds and category edges",
+        "duration": "1.749558ms"
+      },
+      {
+        "test": "control assertions require owner, evidence and exclusion justification",
+        "duration": "0.258249ms"
+      },
+      {
+        "test": "incident actions depend on evidence and reject unknown actions",
+        "duration": "0.147282ms"
+      },
+      {
+        "test": "metrics match hand-counted inputs including zero division",
+        "duration": "0.209116ms"
+      },
+      {
+        "test": "experiments reproduce exactly and threshold moves counts monotonically",
+        "duration": "1.515134ms"
+      },
+      {
+        "test": "budget calculation deduplicates selections and reports constraints",
+        "duration": "0.196657ms"
+      },
+      {
+        "test": "CSV quotes content and neutralises spreadsheet formula injection",
+        "duration": "0.248064ms"
+      },
+      {
+        "test": "case import validates format, size and scenario identifiers",
+        "duration": "0.609129ms"
+      },
+      {
+        "test": "progress round-trip validates stored data and experimental bounds",
+        "duration": "0.463279ms"
+      },
+      {
+        "test": "published content, frameworks and case identifiers are coherent",
+        "duration": "0.252581ms"
+      },
+      {
+        "test": "resource filtering composes domain, role and keywords",
+        "duration": "0.332822ms"
+      },
+      {
+        "test": "reasoning coverage reports gaps instead of claiming semantic judgement",
+        "duration": "0.562518ms"
+      },
+      {
+        "test": "imports reject deeply nested payloads and invalid time metadata",
+        "duration": "0.233972ms"
+      },
+      {
+        "test": "academic policy preserves the configured HTTPS backend and rejects unsafe origins",
+        "duration": "0.261124ms"
+      },
+      {
+        "test": "selection changes profile recommendations and excludes the selection",
+        "duration": "7.042587ms"
+      },
+      {
+        "test": "each required explorer selection has distinct, self-excluding recommendations",
+        "duration": "2.552959ms"
+      },
+      {
+        "test": "every catalogue roadmap is schedulable, traceable, serialisable and idempotent",
+        "duration": "22.590267ms"
+      },
+      {
+        "test": "a complete 106-gap profile retains assessment claims and bounded dependency fan-in",
+        "duration": "6.073998ms"
+      },
+      {
+        "test": "roadmap size limits reject generation without losing existing learner work",
+        "duration": "0.776972ms"
+      },
+      {
+        "test": "expanded standards preserve official NIST editions and distinguish legal instruments",
+        "duration": "0.33122ms"
+      },
+      {
+        "test": "CSF architecture uses all six Functions and source-linked category identifiers",
+        "duration": "0.124027ms"
+      },
+      {
+        "test": "Gantt calendar-month ticks handle leap years and bound rendering work",
+        "duration": "0.236657ms"
+      },
+      {
+        "test": "maturity uses eligible population, explicit zero, justified exclusions and unknowns",
+        "duration": "0.597801ms"
+      },
+      {
+        "test": "maturity boundary/property sweep reproduces all small weighted means",
+        "duration": "1.113379ms"
+      },
+      {
+        "test": "recording a stale profile draft preserves stable identity and later risk/action links",
+        "duration": "0.216747ms"
+      },
+      {
+        "test": "reviewed/tested evidence requires reference/reviewer; invalid levels and unjustified exclusions fail",
+        "duration": "0.893417ms"
+      },
+      {
+        "test": "scheduler respects weekends/holidays, finish-to-start, zero-work milestone and cost",
+        "duration": "0.29172ms"
+      },
+      {
+        "test": "resource levelling differs from dependency-only slack; cycles/missing links and excessive work fail",
+        "duration": "0.414786ms"
+      },
+      {
+        "test": "scheduler property: dependency dates and same-resource intervals never overlap",
+        "duration": "0.747436ms"
+      },
+      {
+        "test": "privacy scoring enforces ordinal bounds and distinct inherent/residual judgements",
+        "duration": "0.224318ms"
+      },
+      {
+        "test": "validated tasks need progress/evidence/reviewer; proposals never mutate assessments",
+        "duration": "0.224819ms"
+      },
+      {
+        "test": "project round trip preserves drafts, enforces version/organisation/references and rejects hostile keys/size",
+        "duration": "9.931152ms"
+      },
+      {
+        "test": "report reconciles and remains detached from later source mutation",
+        "duration": "0.314524ms"
+      },
+      {
+        "test": "NIST source contains full active controls/objectives and four exact baseline profiles",
+        "duration": "8.4839ms"
+      },
+      {
+        "test": "XLSX ZIP preflight rejects malformed archives and expansion bombs before parser",
+        "duration": "34.891873ms"
+      },
+      {
+        "test": "all CMS content operations use the deployed content table contract",
+        "duration": "0.119691ms"
+      },
+      {
+        "test": "the keepalive probes the same deployed content table",
+        "duration": "0.097206ms"
+      },
+      {
+        "test": "keepalive uses job environment bindings in secret-dependent conditions",
+        "duration": "0.277398ms"
+      },
+      {
+        "test": "risk analysis excludes closed exposure and counts dated overdue, evidence and owner records",
+        "duration": "0.244458ms"
+      },
+      {
+        "test": "validation checks bounds, duplicate IDs, dates, statuses and fallback residual ratings",
+        "duration": "0.39803ms"
+      },
+      {
+        "test": "spreadsheet mapping validates rows atomically and identifies source row numbers",
+        "duration": "0.458581ms"
+      },
+      {
+        "test": "CSV handles quotes, BOM, CRLF and embedded newlines; rejects unclosed input",
+        "duration": "0.253853ms"
+      },
+      {
+        "test": "CSF source snapshot contains six Functions, 22 Categories and 106 unique outcomes",
+        "duration": "0.344189ms"
+      },
+      {
+        "test": "AI thresholds operate on the same reproducible data and preserve confusion count totals",
+        "duration": "0.464531ms"
+      }
+    ]
+  },
+  "browserTests": {
+    "command": "npm run test:e2e -- --project=chromium --workers=2",
+    "passed": 65,
+    "failed": 0,
+    "duration": "3.1m",
+    "cases": [
+      {
+        "file": "tests/e2e/console.spec.ts",
+        "test": "explore loads a complete editable nist-csf-2 scenario",
+        "duration": "3.8s"
+      },
+      {
+        "file": "tests/e2e/console.spec.ts",
+        "test": "assess-simulate loads a complete editable nist-csf-2 scenario",
+        "duration": "3.0s"
+      },
+      {
+        "file": "tests/e2e/console.spec.ts",
+        "test": "implement-plan loads a complete editable nist-csf-2 scenario",
+        "duration": "2.7s"
+      },
+      {
+        "file": "tests/e2e/academic.spec.ts",
+        "test": "academy sections, route refresh, metadata and static teaching content",
+        "duration": "12.8s"
+      },
+      {
+        "file": "tests/e2e/console.spec.ts",
+        "test": "explore loads a complete editable iso-27001 scenario",
+        "duration": "2.5s"
+      },
+      {
+        "file": "tests/e2e/console.spec.ts",
+        "test": "assess-simulate loads a complete editable iso-27001 scenario",
+        "duration": "2.6s"
+      },
+      {
+        "file": "tests/e2e/academic.spec.ts",
+        "test": "framework hierarchy, evidence validation, assessment and gap export",
+        "duration": "4.8s"
+      },
+      {
+        "file": "tests/e2e/console.spec.ts",
+        "test": "implement-plan loads a complete editable iso-27001 scenario",
+        "duration": "2.7s"
+      },
+      {
+        "file": "tests/e2e/console.spec.ts",
+        "test": "explore loads a complete editable pci-dss scenario",
+        "duration": "2.5s"
+      },
+      {
+        "file": "tests/e2e/academic.spec.ts",
+        "test": "risk workflow exports actual decisions and imports context in boardroom",
+        "duration": "5.0s"
+      },
+      {
+        "file": "tests/e2e/console.spec.ts",
+        "test": "assess-simulate loads a complete editable pci-dss scenario",
+        "duration": "2.9s"
+      },
+      {
+        "file": "tests/e2e/academic.spec.ts",
+        "test": "incident evidence, hypothesis, response and report generation",
+        "duration": "3.5s"
+      },
+      {
+        "file": "tests/e2e/console.spec.ts",
+        "test": "implement-plan loads a complete editable pci-dss scenario",
+        "duration": "1.7s"
+      },
+      {
+        "file": "tests/e2e/academic.spec.ts",
+        "test": "AI controls calculate, compare, persist and reset reproducible results",
+        "duration": "2.4s"
+      },
+      {
+        "file": "tests/e2e/academic.spec.ts",
+        "test": "boardroom constrains budgets and evaluates recorded decisions",
+        "duration": "2.7s"
+      },
+      {
+        "file": "tests/e2e/academic.spec.ts",
+        "test": "learning assessment, explicit completion, local progress and bookmarks",
+        "duration": "2.8s"
+      },
+      {
+        "file": "tests/e2e/academic.spec.ts",
+        "test": "navigator retrieves a real learning route and handles unknown material",
+        "duration": "1.2s"
+      },
+      {
+        "file": "tests/e2e/console.spec.ts",
+        "test": "personal work, demo edits, reset, blank and JSON recovery use independent slots",
+        "duration": "9.1s"
+      },
+      {
+        "file": "tests/e2e/console.spec.ts",
+        "test": "control ratings update profile, radar, evidence and linked remediation",
+        "duration": "2.9s"
+      },
+      {
+        "file": "tests/e2e/academic.spec.ts",
+        "test": "legacy routes still render and Pages fallback preserves query and fragment",
+        "duration": "5.4s"
+      },
+      {
+        "file": "tests/e2e/console.spec.ts",
+        "test": "CSV, Excel and manual risk records recalculate risk distribution and treatment simulation",
+        "duration": "4.5s"
+      },
+      {
+        "file": "tests/e2e/console.spec.ts",
+        "test": "editing Gantt dates and effort reschedules dependencies and moving a Kanban task updates progress",
+        "duration": "3.8s"
+      },
+      {
+        "file": "tests/e2e/academic.spec.ts",
+        "test": "accessibility and 320px layout /learning",
+        "duration": "6.0s"
+      },
+      {
+        "file": "tests/e2e/console.spec.ts",
+        "test": "graph inspection, experiment and privacy flow edits",
+        "duration": "3.3s"
+      },
+      {
+        "file": "tests/e2e/academic.spec.ts",
+        "test": "accessibility and 320px layout /labs/framework-explorer",
+        "duration": "12.3s"
+      },
+      {
+        "file": "tests/e2e/academic.spec.ts",
+        "test": "accessibility and 320px layout /labs/risk-decision",
+        "duration": "6.1s"
+      },
+      {
+        "file": "tests/e2e/academic.spec.ts",
+        "test": "accessibility and 320px layout /labs/cyber-incident",
+        "duration": "6.9s"
+      },
+      {
+        "file": "tests/e2e/console.spec.ts",
+        "test": "main-site navigation, resource links, themes, keyboard and responsive layouts",
+        "duration": "22.6s"
+      },
+      {
+        "file": "tests/e2e/console.spec.ts",
+        "test": "bookmarked dashboards open their rebuilt views and historic project links keep their editor",
+        "duration": "2.2s"
+      },
+      {
+        "file": "tests/e2e/academic.spec.ts",
+        "test": "accessibility and 320px layout /labs/ai-experiment",
+        "duration": "8.0s"
+      },
+      {
+        "file": "tests/e2e/academic.spec.ts",
+        "test": "accessibility and 320px layout /labs/ciso-boardroom",
+        "duration": "5.9s"
+      },
+      {
+        "file": "tests/e2e/academic.spec.ts",
+        "test": "accessibility and 320px layout /learning/risk-assessment",
+        "duration": "4.6s"
+      },
+      {
+        "file": "tests/e2e/academic.spec.ts",
+        "test": "accessibility and 320px layout /resources",
+        "duration": "8.9s"
+      },
+      {
+        "file": "tests/e2e/academic.spec.ts",
+        "test": "accessibility and 320px layout /knowledge-graph",
+        "duration": "6.7s"
+      },
+      {
+        "file": "tests/e2e/standards-premium.spec.ts",
+        "test": "three workspace choices expand by standard and retain the official themes",
+        "duration": "2.7s"
+      },
+      {
+        "file": "tests/e2e/standards-premium.spec.ts",
+        "test": "standards architecture differs by source and CSF category drill-down reaches official outcomes",
+        "duration": "2.3s"
+      },
+      {
+        "file": "tests/e2e/standards-premium.spec.ts",
+        "test": "completed CSF demo contains 106 real outcomes and preserves learner edits on repeat",
+        "duration": "3.6s"
+      },
+      {
+        "file": "tests/e2e/standards-premium.spec.ts",
+        "test": "framework-specific roadmap includes themed implementation and validation tasks",
+        "duration": "1.9s"
+      },
+      {
+        "file": "tests/e2e/standards-premium.spec.ts",
+        "test": "original library and security mindmap are available within academy routes",
+        "duration": "1.9s"
+      },
+      {
+        "file": "tests/e2e/standards-premium.spec.ts",
+        "test": "standards architecture and assessment accessibility dark",
+        "duration": "3.7s"
+      },
+      {
+        "file": "tests/e2e/console.spec.ts",
+        "test": "dashboard accessibility in dark and light themes",
+        "duration": "51.0s"
+      },
+      {
+        "file": "tests/e2e/standards-premium.spec.ts",
+        "test": "standards architecture and assessment accessibility light",
+        "duration": "4.1s"
+      },
+      {
+        "file": "tests/e2e/workspace.spec.ts",
+        "test": "risk XLSX template round trip, local analysis, chart filtering, editing and exports",
+        "duration": "6.1s"
+      },
+      {
+        "file": "tests/e2e/studio.spec.ts",
+        "test": "novice CSF profile → gap → risk → task → dependency schedule → immutable report → saved recovery",
+        "duration": "7.5s"
+      },
+      {
+        "file": "tests/e2e/workspace.spec.ts",
+        "test": "CSV column mapping, invalid dates and ratings produce row errors without changing data",
+        "duration": "2.9s"
+      },
+      {
+        "file": "tests/e2e/studio.spec.ts",
+        "test": "framework reset is scoped; unsaved editors survive navigation; full exports ignore display filters",
+        "duration": "4.6s"
+      },
+      {
+        "file": "tests/e2e/studio.spec.ts",
+        "test": "risk analysis uses current UTC date; pending date changes do not relabel the analysed snapshot",
+        "duration": "2.0s"
+      },
+      {
+        "file": "tests/e2e/workspace.spec.ts",
+        "test": "all CSF Functions drill into outcomes, evidence validation, gap filters and other editions",
+        "duration": "7.1s"
+      },
+      {
+        "file": "tests/e2e/studio.spec.ts",
+        "test": "privacy processing inventory → individual harm → edition-safe remediation and Gantt",
+        "duration": "4.5s"
+      },
+      {
+        "file": "tests/e2e/workspace.spec.ts",
+        "test": "graph selection, search, zoom, expansion, reset and accessible outline",
+        "duration": "2.8s"
+      },
+      {
+        "file": "tests/e2e/workspace.spec.ts",
+        "test": "AI confusion cells explain counts, curve points apply thresholds and prediction export reproduces metrics",
+        "duration": "2.1s"
+      },
+      {
+        "file": "tests/e2e/studio.spec.ts",
+        "test": "NIST official source, baseline comparison and explicit reviewed control decisions",
+        "duration": "5.9s"
+      },
+      {
+        "file": "tests/e2e/workspace.spec.ts",
+        "test": "dated observations use entered history and appear in risk report without changing current scores",
+        "duration": "3.5s"
+      },
+      {
+        "file": "tests/e2e/studio.spec.ts",
+        "test": "saved project rejects malformed lab data and bad versions without losing open state",
+        "duration": "2.6s"
+      },
+      {
+        "file": "tests/e2e/workspace.spec.ts",
+        "test": "mobile menu, risk analysis and explanation drawer remain operable",
+        "duration": "2.7s"
+      },
+      {
+        "file": "tests/e2e/studio.spec.ts",
+        "test": "planning dependencies, RACI, baseline and validation are editable without inventing assurance",
+        "duration": "4.1s"
+      },
+      {
+        "file": "tests/e2e/workspace.spec.ts",
+        "test": "assessment decisions remain available when navigating from graph to boardroom",
+        "duration": "2.6s"
+      },
+      {
+        "file": "tests/e2e/studio.spec.ts",
+        "test": "tutorial keyboard focus, search, consistent explanation mode and legacy lab draft recovery",
+        "duration": "1.9s"
+      },
+      {
+        "file": "tests/e2e/studio.spec.ts",
+        "test": "new route refresh, accessibility and responsive layout /standards",
+        "duration": "3.2s"
+      },
+      {
+        "file": "tests/e2e/studio.spec.ts",
+        "test": "new route refresh, accessibility and responsive layout /standards/800-53",
+        "duration": "5.0s"
+      },
+      {
+        "file": "tests/e2e/studio.spec.ts",
+        "test": "new route refresh, accessibility and responsive layout /simulate",
+        "duration": "2.3s"
+      },
+      {
+        "file": "tests/e2e/studio.spec.ts",
+        "test": "new route refresh, accessibility and responsive layout /simulate/privacy",
+        "duration": "3.5s"
+      },
+      {
+        "file": "tests/e2e/studio.spec.ts",
+        "test": "new route refresh, accessibility and responsive layout /assess",
+        "duration": "2.8s"
+      },
+      {
+        "file": "tests/e2e/studio.spec.ts",
+        "test": "new route refresh, accessibility and responsive layout /implement",
+        "duration": "2.7s"
+      },
+      {
+        "file": "tests/e2e/studio.spec.ts",
+        "test": "new route refresh, accessibility and responsive layout /report",
+        "duration": "2.4s"
+      }
+    ]
+  }
+}

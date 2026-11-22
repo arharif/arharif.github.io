@@ -47,3 +47,7 @@ node scripts/capture-academic-console.mjs
 ```
 
 The [workspace browser tests](../../../tests/e2e/console.spec.ts) exercise every standard and demo entry, edit propagation, evidence changes, remediation, imports, project recovery, dependency dates, Kanban movement, themes, accessibility and responsive layouts. The existing regression suite also covers educational content, historical projects, exports and Pages fallback.
+
+## Execution results
+
+The production build and TypeScript lint passed. Chromium passed all 65 Playwright cases in 3.1 minutes. All 44 unit cases passed. The populated dashboard audit covered the WCAG 2 A, AA and WCAG 2.1 AA axe tags across nine views in both light and dark themes. The responsive checks exercised every view at 320, 390 and 768 CSS pixels. The [execution record](validation.json) includes the tested commit, tool versions, case names and individual timings.
