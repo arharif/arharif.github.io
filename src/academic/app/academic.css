@@ -2304,3 +2304,6 @@
     font-size: 12px;
   }
 }
+
+.xa-brand-pair { display: flex; align-items: center; gap: 9px; }
+@media (max-width: 700px) { .xa-brand-pair .xa-brand { display: none; } }

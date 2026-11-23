@@ -685,7 +685,7 @@ export function RiskDashboard({
                         a.active.filter((r) => band(residualScore(r)) === b),
                       )
                     }
-                    style={{ background: palette[i] }}
+                    style={{ background: `color-mix(in srgb, ${palette[i]} 19%, var(--surface1))`, borderInlineStart: `3px solid ${palette[i]}` }}
                   >
                     {b}
                     <b>{dist[i]}</b>

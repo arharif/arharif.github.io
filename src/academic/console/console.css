@@ -2420,7 +2420,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: #172433;
+  color: var(--ink);
   padding: 0.4em;
   font-size: 0.8em;
 }
