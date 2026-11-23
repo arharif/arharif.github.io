@@ -57,17 +57,18 @@ export function AboutX1Page() {
         <p>My approach goes beyond determining whether an organisation is simply compliant or non compliant. I seek to understand what the business is protecting, where material exposure exists, whether controls are appropriately designed and operating effectively, and where management attention is most needed. From there, I help establish clear ownership, prioritise remediation based on risk and business impact, and provide leadership with the visibility, evidence and confidence required to make informed decisions and strengthen long term cyber resilience.</p>
         <p>Cybersecurity &amp; GRC Consultant specializing in enterprise security strategy, regulatory alignment, digital operational resilience, and AI governance across financial services and payment ecosystems.</p>
         <p>Backed by an Engineering degree (bac+5)  in AI &amp; Cybersecurity and  ISO 27001 Lead Implementer certification, I help organizations bridge the gap between complex regulatory expectations and practical, business-aligned execution. My advisory work focuses on moving financial and payment institutions from fragmented security controls to structured, measurable, and audit-ready governance programs.</p>
-        <p>Core Advisory &amp; Consulting Capabilities:</p>
+        <p><strong>Core Advisory &amp; Consulting Capabilities</strong></p>
         <ul className="list-disc pl-5">
-          <li>Governance, Risk &amp; Compliance (GRC): Enterprise risk management, security maturity assessments, control mapping, and executive reporting</li>
-          <li>Multi-Framework &amp; Payment Compliance: ISO/IEC 27001, NIST CSF, NIST SP 800-53, PCI DSS, and SOC 2</li>
-          <li>Regulatory &amp; Resilience Alignment: DORA (Digital Operational Resilience Act), NIS2, GDPR, and EU AI Act governance</li>
-          <li>Operational Resilience &amp; Continuity: ICT risk governance, third-party risk management, and BCP/DR testing</li>
-          <li>Identity, Privacy &amp; Emerging Tech: IAM governance, data protection, and AI security frameworks</li>
-          <li>Pre-Sales &amp; Client Advisory: Translating regulatory and architectural requirements into clear, risk-based executive roadmaps</li>
+          <li><strong>Governance, Risk &amp; Compliance (GRC):</strong> Enterprise risk management, security maturity assessments, control mapping, and executive reporting</li>
+          <li><strong>Multi-Framework &amp; Payment Compliance:</strong> ISO/IEC 27001, NIST CSF, NIST SP 800-53, PCI DSS, and SOC 2</li>
+          <li><strong>Regulatory &amp; Resilience Alignment:</strong> DORA (Digital Operational Resilience Act), NIS2, GDPR, and EU AI Act governance</li>
+          <li><strong>Operational Resilience &amp; Continuity:</strong> ICT risk governance, third-party risk management, and BCP/DR testing</li>
+          <li><strong>Identity, Privacy &amp; Emerging Tech:</strong> IAM governance, data protection, and AI security frameworks</li>
+          <li><strong>Pre-Sales &amp; Client Advisory:</strong> Translating regulatory and architectural requirements into clear, risk-based executive roadmaps</li>
         </ul>
         <p>I view cybersecurity not merely as a technical control layer, but as a core enabler of institutional trust, resilience, and sustainable growth.</p>
         <p>Beyond client engagements, I publish practical GRC frameworks, maturity assessment tools, and emerging technology governance resources on my independent platform.</p>
+        <p>Platform · <a href="https://arharif.github.io/">arharif.github.io</a></p>
       </div>
     </header>
 

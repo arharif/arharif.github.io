@@ -1,3 +1,4 @@
+import { ShieldCheck, FileText, CloudUpload, PenLine, Monitor, Send } from 'lucide-react';
 import { EditorialImage } from '../EditorialImage';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ContentInput, ContentRecord, TopicRecord } from '@/content/types';
@@ -130,8 +131,22 @@ export function AdminEditor({
       <header className="studio-heading"><h2>{value ? 'Edit article' : title}</h2>
         <span>{form.status === 'published' ? 'Published' : 'Private draft'}</span>
       </header>
+      <nav aria-label="Publishing workflow" className="studio-flow">
+        <span><ShieldCheck/><b>Login + MFA</b><small>Owner verified</small></span>
+        {([['details','Article details',FileText],['cover','Cover image',CloudUpload],['write','Write',PenLine],['preview','Preview',Monitor],['publish','Publish',Send]] as const).map(([step,label,Icon]) =>
+          <button key={step} type="button" onClick={() => {
+            if (step === 'preview') setPreviewMode(true);
+            requestAnimationFrame(() => {
+              const panel = document.getElementById('studio-'+step);
+              panel?.scrollIntoView({block:'center'});
+              const target = panel?.querySelector<HTMLElement>('input,select,button,textarea');
+              if (target) target.focus({preventScroll:true});
+              else if (panel) { panel.tabIndex = -1; panel.focus({preventScroll:true}); }
+            });
+          }}><Icon/><b>{label}</b></button>)}
+      </nav>
       {localError && <p className="mb-3 text-xs text-rose-300">{localError}</p>}
-      <div className="studio-fields">
+      <div className="studio-fields" id="studio-details">
         <label className="studio-title">Article title<input className="rounded-xl bg-white/10 p-2" placeholder="Title" aria-label="Article title" required value={form.title} onChange={(e) => { const nextTitle = e.target.value; update('title', nextTitle); if (!value) update('slug', nextTitle.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-')); }} /></label>
         <label>Topic<select className="rounded-xl bg-white/10 p-2" aria-label="Topic" value={form.topicId} onChange={(e) => update('topicId', e.target.value)}>
           {topics.map((topic) => <option key={topic.id} value={topic.id}>{topic.title}</option>)}
@@ -140,7 +155,27 @@ export function AdminEditor({
         <label className="studio-excerpt">Excerpt<textarea className="mt-3 w-full rounded-xl bg-white/10 p-2" rows={2} placeholder="Excerpt" value={form.excerpt} onChange={(e) => update('excerpt', e.target.value)} /></label>
       </div>
 
-      <div className="mt-3 grid gap-2 md:grid-cols-[200px_1fr_1fr]">
+      <section id="studio-cover" className="studio-media"><h3><CloudUpload/> Cover image</h3>
+        <input className="rounded-xl bg-white/10 p-2" placeholder="Inline image alt text" value={imageAlt} onChange={(e) => setImageAlt(e.target.value)} />
+        {(['Cover image', 'Inline image'] as const).map(label => <label key={label} className={label === 'Cover image' ? 'cover-drop' : undefined}>{label === 'Cover image' && <CloudUpload/>}{label}
+          <input type="file" aria-label={label} accept="image/jpeg,image/png,image/webp,image/gif" onChange={async e => {
+            const file = e.target.files?.[0]; e.target.value = '';
+            if (!file) return;
+            setUploading(true);
+            try {
+              const url = await onUpload(file);
+              if (label === 'Cover image') update('coverImageUrl', url);
+              else insertAtCursor(`![${imageAlt.replace(/[\[\]]/g,'')}](${url})`);
+              setLocalError('');
+            } catch { setLocalError('Upload failed. Choose a valid JPG, PNG, WebP or GIF up to 8 MiB.'); }
+            finally { setUploading(false); }
+          }}/>
+        </label>)}
+        {uploading && <p role="status">Uploading image…</p>}
+        {form.coverImageUrl && <><EditorialImage src={form.coverImageUrl} alt="Cover preview" className="h-16 w-24 rounded object-cover"/><button type="button" onClick={() => update('coverImageUrl','')}>Remove cover</button></>}
+      </section>
+
+      <div id="studio-write" className="mt-3 grid gap-2 md:grid-cols-[200px_1fr_1fr]">
         <select className="rounded-xl bg-white/10 p-2" aria-label="Editor mode" value={bodyFormat} onChange={(e)=>setBodyFormat(e.target.value as typeof bodyFormat)}>
           <option value="visual">Visual editor</option>
           <option value="markdown">Markdown</option>
@@ -168,28 +203,8 @@ export function AdminEditor({
         <input aria-label="Reading time override" className="ml-2 w-24 p-2" type="number" min={1} max={1440} placeholder={String(stats.automatic)}
           value={form.readingMinutes ?? ''} onChange={e => update('readingMinutes', e.target.value ? Math.min(1440,Math.max(1,Math.floor(Number(e.target.value)))) : undefined)}/> min
       </label>
-      {previewMode && <section className="mt-3 rounded-xl border p-4" aria-label="Live preview"><ArticleView item={{...form, id: value?.id || 'preview', createdAt:'', updatedAt:''}} preview/></section>}
+      {previewMode && <section className="mt-3 rounded-xl border p-4" id="studio-preview" aria-label="Live preview"><ArticleView item={{...form, id: value?.id || 'preview', createdAt:'', updatedAt:''}} preview/></section>}
       <input className="mt-3 w-full rounded-xl bg-white/10 p-2" placeholder="Video embed URL" value={form.videoUrl ?? ''} onChange={(e) => update('videoUrl', e.target.value)} />
-      <div className="mt-3 grid gap-2 md:grid-cols-[1fr_1fr_auto]">
-        <input className="rounded-xl bg-white/10 p-2" placeholder="Inline image alt text" value={imageAlt} onChange={(e) => setImageAlt(e.target.value)} />
-        {(['Cover image', 'Inline image'] as const).map(label => <label key={label}>{label}
-          <input type="file" aria-label={label} accept="image/jpeg,image/png,image/webp,image/gif" onChange={async e => {
-            const file = e.target.files?.[0]; e.target.value = '';
-            if (!file) return;
-            setUploading(true);
-            try {
-              const url = await onUpload(file);
-              if (label === 'Cover image') update('coverImageUrl', url);
-              else insertAtCursor(`![${imageAlt.replace(/[\[\]]/g,'')}](${url})`);
-              setLocalError('');
-            } catch { setLocalError('Upload failed. Choose a valid JPG, PNG, WebP or GIF up to 8 MiB.'); }
-            finally { setUploading(false); }
-          }}/>
-        </label>)}
-        {uploading && <p role="status">Uploading image…</p>}
-        {form.coverImageUrl && <><EditorialImage src={form.coverImageUrl} alt="Cover preview" className="h-16 w-24 rounded object-cover"/><button type="button" onClick={() => update('coverImageUrl','')}>Remove cover</button></>}
-      </div>
-
       <details className="studio-metadata"><summary>Publishing details</summary>
         <div className="studio-fields">
           <label>Article URL slug<input className="rounded-xl bg-white/10 p-2" placeholder="Slug" value={form.slug} onChange={(e) => update('slug', e.target.value.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-'))} /></label>
@@ -207,7 +222,7 @@ export function AdminEditor({
         <label><input type="checkbox" checked={Boolean(form.favorite)} onChange={(e)=>update('favorite', e.target.checked)} /> Favorite</label>
       </div>
       </details>
-      <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="Publishing actions">
+      <div className="mt-4 flex flex-wrap gap-2" id="studio-publish" role="group" aria-label="Publishing actions">
         <button type="button" disabled={incomplete} onClick={() => void save('draft')}>
           {saving ? 'Saving…' : form.status === 'published' ? 'Unpublish to draft' : 'Save draft'}
         </button>

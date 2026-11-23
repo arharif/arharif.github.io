@@ -4,7 +4,7 @@ import { existsSync } from "node:fs";
 const phase = process.argv[2];
 if (!["before", "after"].includes(phase))
   throw new Error("Choose before or after");
-const out = "docs/elite-review";
+const out = process.env.X1_REVIEW_DIR || "docs/elite-review";
 await mkdir(out, { recursive: true });
 const browser = await chromium.launch({
   executablePath:

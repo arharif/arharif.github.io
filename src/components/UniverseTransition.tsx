@@ -1,3 +1,4 @@
+import JourneyScene, { journeyMs, type Journey } from './JourneyScene';
 import {
   useEffect,
   useLayoutEffect,
@@ -57,6 +58,7 @@ export function UniverseTransition() {
   const [travel, setTravel] = useState<{
     card?: DOMRect;
     image?: string;
+    journey?: Journey;
     from: string;
     to: string;
     x: number;
@@ -84,16 +86,24 @@ export function UniverseTransition() {
     }
     const point = origin.current?.world === destination ? origin.current : null;
     origin.current = null;
+    const motion = matchMedia('(prefers-reduced-motion: reduce)');
+    if (navigation === 'POP' || motion.matches) { setTravel(null); return; }
+    const journey = from === 'home' && point?.card && destination !== 'home' ? destination as Journey : undefined;
+    const cancel = () => setTravel(null);
+    const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') cancel(); };
+    window.addEventListener('keydown', escape);
+    motion.addEventListener('change', cancel);
     setTravel({
+      journey,
       card: point?.card, image: point?.image,
       from,
       to: destination,
       x: point?.x ?? window.innerWidth / 2,
       y: point?.y ?? window.innerHeight / 2,
     });
-    const timer = window.setTimeout(() => setTravel(null), 720);
-    return () => window.clearTimeout(timer);
-  }, [destination]);
+    const timer = window.setTimeout(() => setTravel(null), journey ? journeyMs[journey] : 720);
+    return () => { window.clearTimeout(timer); window.removeEventListener('keydown', escape); motion.removeEventListener('change',cancel); };
+  }, [destination, location.key, navigation]);
   return (
     <>
       <span aria-live="polite" className="sr-only">
@@ -102,21 +112,22 @@ export function UniverseTransition() {
       {travel && (
         <div
           key={travel.to}
-          className="uni-transit"
+          className={travel.journey ? "uni-transit cinema" : "uni-transit"}
           style={
             {
+              "--duration": (travel.journey ? journeyMs[travel.journey] : 720) + "ms",
               "--entry-x": travel.x + "px",
               "--entry-y": travel.y + "px",
             } as CSSProperties
           }
           data-from={travel.from}
           data-to={travel.to}
-          aria-hidden="true"
+          aria-hidden={travel.journey ? undefined : true}
         >
-          {travel.card && travel.image && <img alt="" className="portal-art" src={travel.image}
+          {travel.journey && <><JourneyScene world={travel.journey}/><button className="journey-skip" onClick={() => setTravel(null)}>Skip journey</button></>}
+          {!travel.journey && travel.card && travel.image && <img alt="" className="portal-art" src={travel.image}
             style={{left:travel.card.left, top:travel.card.top,width:travel.card.width,height:travel.card.height}}/>}
-          <i />
-          <b />
+          {!travel.journey && <><i/><b/></>}
         </div>
       )}
     </>

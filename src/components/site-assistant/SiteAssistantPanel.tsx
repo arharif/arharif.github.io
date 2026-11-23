@@ -87,7 +87,7 @@ export function SiteAssistantPanel({ open, onClose }: { open: boolean; onClose: 
           aria-modal="true"
         >
           <div className="assistant-head">
-            <p className="text-sm font-semibold">{guide === 'phantom' ? 'Phantom · Arcade guide' : guide === 'astronaut' ? 'Astronaut · Insights guide' : 'X1 Assistant'}</p>
+            <p className="text-sm font-semibold">{guide === 'phantom' ? 'Phantom · Arcade guide' : guide === 'astronaut' ? 'Grok · Insights guide' : 'X1 Assistant'}</p>
             <button className="assistant-icon-btn" onClick={onClose} aria-label="Close X1 assistant">✕</button>
           </div>
 

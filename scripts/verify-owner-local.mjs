@@ -86,7 +86,7 @@ try {
   const page = await browser.newPage({
     viewport: { width: 1440, height: 900 },
   });
-  await page.route("https://x1-local.example/**", async (route) => {
+  const proxy = async (route) => {
     const response = await route.fetch({
       url:
         api +
@@ -97,7 +97,8 @@ try {
       response,
       headers: { ...response.headers(), "access-control-allow-origin": "*" },
     });
-  });
+  };
+  await page.route("https://x1-local.example/**", proxy);
   await page.goto("http://127.0.0.1:4177/login");
   async function login(account) {
     await page.getByLabel("Email", { exact: true }).fill(account.email);
@@ -153,7 +154,7 @@ try {
     .getByPlaceholder("Quick tags (optional, text only)")
     .fill("AI,Technology");
   await page.getByLabel("Reading time override").fill("4");
-  await page.getByRole("button", { name: "Preview", exact: true }).click();
+  await page.getByRole("navigation",{name:"Publishing workflow"}).getByRole("button",{name:"Preview"}).click();
   await expect(
     page.getByLabel("Live preview").getByText("emphasis", { exact: true }),
   ).toBeVisible();
@@ -205,7 +206,7 @@ try {
     "Topic creation, visual and Markdown editing, live preview, tags, manual reading time, cover upload/replacement/removal, reload recovery and private draft read boundaries",
   );
   const publishStarted = performance.now();
-  await page.getByRole("button", { name: "Publish", exact: true }).click();
+  await page.getByRole("group",{name:"Publishing actions"}).getByRole("button",{name:"Publish",exact:true}).click();
   await expect(
     page.getByText("Published and verified on the public content service."),
   ).toBeVisible();
@@ -213,6 +214,37 @@ try {
   assert.equal((await select())[0].reading_minutes, 4);
   assert.deepEqual((await select())[0].tags, ["AI", "Technology"]);
   assert.equal(await imageStatus(), 200);
+  const visitor = await browser.newPage();
+  await visitor.route("https://x1-local.example/**",proxy);
+  async function publicCover(file) {
+    const expected = (await readFile(file)).toString("base64");
+    await visitor.goto("http://127.0.0.1:4177/insights-innovation");
+    const card = visitor.locator(".editorial-card").filter({hasText:title});
+    async function matchImage(image) {
+      await expect.poll(() => image.evaluate(async el => {
+        if (!el.complete || !el.naturalWidth || !el.src.startsWith("blob:")) return "";
+        const bytes = new Uint8Array(await (await fetch(el.src)).arrayBuffer());
+        return btoa(Array.from(bytes,b => String.fromCharCode(b)).join(""));
+      })).toBe(expected);
+    }
+    await matchImage(card.locator("img"));
+    await card.getByRole("link").click();
+    await matchImage(visitor.getByRole("img",{name:title,exact:true}));
+  }
+  await publicCover("public/art/insights-small.webp");
+  await page.getByLabel("Cover image",{exact:true}).setInputFiles("public/art/academic-small.webp");
+  await expect(image).toHaveJSProperty("naturalHeight",200);
+  await page.getByRole("button",{name:"Update published",exact:true}).click();
+  await expect.poll(imageStatus).not.toBe(200);
+  await publicCover("public/art/academic-small.webp");
+  await page.getByRole("button",{name:"Remove cover"}).click();
+  await page.getByRole("button",{name:"Update published",exact:true}).click();
+  await expect.poll(async () => Boolean((await select())[0].cover_image_url)).toBe(false);
+  await visitor.reload();
+  await expect(visitor.getByRole("heading",{name:title,exact:true}).last()).toBeVisible();
+  await expect(visitor.getByRole("img",{name:title,exact:true})).toHaveCount(0);
+  await visitor.close();
+  evidence.push("Anonymous Insights card and full article rendered byte-identical uploaded and replaced covers. Published removal cleared the full article cover.");
   await page.getByLabel("Article Markdown").fill("Published revision.");
   const mutation = /https:\/\/x1-local\.example\/rest\/v1\/content\?.*/;
   await page.route(mutation, route => route.request().method() === "PATCH" ? route.abort() : route.fallback());
