@@ -20,7 +20,7 @@ export function AdminEditor({
   value?: ContentRecord;
   ownerId: string;
   topics: TopicRecord[];
-  onSave: (payload: ContentInput, revision?: string) => Promise<ContentRecord>;
+  onSave: (payload: ContentInput, id: string, revision?: string) => Promise<ContentRecord>;
   onUpload: (file: File) => Promise<string>;
   saving: boolean;
   title?: string;
@@ -50,9 +50,10 @@ export function AdminEditor({
   const [recovery] = useState(() => {
     try {
       const cached = JSON.parse(safeStorage.get(cacheKey,'session') || 'null');
-      return typeof cached?.form?.body === 'string' ? cached as {form: ContentInput; revision?:string} : undefined;
+      return typeof cached?.form?.body === 'string' ? cached as {form: ContentInput; revision?:string; id?:string} : undefined;
     } catch { return undefined; }
   });
+  const [entryId] = useState(() => value?.id ?? recovery?.id ?? crypto.randomUUID());
   const [form, setForm] = useState<ContentInput>(recovery?.form ?? value ?? blankForm);
   const [revision, setRevision] = useState(recovery?.revision ?? value?.updatedAt);
   const [localError, setLocalError] = useState('');
@@ -69,11 +70,11 @@ export function AdminEditor({
   }, [defaultTopic]);
   useEffect(() => {
     if (!dirty) return;
-    safeStorage.set(cacheKey, JSON.stringify({form, revision}), 'session');
+    safeStorage.set(cacheKey, JSON.stringify({form, revision, id:entryId}), 'session');
     const warn = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ''; };
     window.addEventListener('beforeunload', warn);
     return () => window.removeEventListener('beforeunload', warn);
-  }, [dirty, form, cacheKey, revision]);
+  }, [dirty, form, cacheKey, revision, entryId]);
   const update = <K extends keyof ContentInput>(key: K, val: ContentInput[K]) => {
     setDirty(true);
     setForm(f => ({ ...f, [key]: val }));
@@ -118,7 +119,7 @@ export function AdminEditor({
       setLocalError('');
       const saved = await onSave({...form, title: form.title.trim(), slug: form.slug.trim(), status,
         tags: form.tags?.map(tag => tag.trim()).filter(Boolean),
-        publishedAt: status === 'published' ? form.publishedAt || new Date().toISOString() : undefined}, revision);
+        publishedAt: status === 'published' ? form.publishedAt || new Date().toISOString() : undefined}, entryId, revision);
       setForm(saved); setRevision(saved.updatedAt);
       safeStorage.remove(cacheKey, 'session'); setDirty(false);
     } catch { setLocalError('Save failed. Your edits are retained in this tab.'); }

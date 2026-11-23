@@ -378,7 +378,7 @@ export function Planner() {
               )}
             </small>
             <Trend
-              colors={["#4f9fe1", "#35b78d"]}
+              colors={["var(--chart-target)", "var(--chart-current)"]}
               series={[false, true].map((earned) =>
                 ticks.map((t, i) =>
                   rows
@@ -419,7 +419,7 @@ export function Planner() {
               />
               <Ring
                 values={[rows.length - late.length, late.length]}
-                colors={["#2eb185", "#e7835a"]}
+                colors={["var(--chart-low)", "var(--chart-high)"]}
                 center={late.length}
                 caption="delayed tasks"
                 onPick={() =>

@@ -2,7 +2,7 @@
 
 A React and TypeScript site containing the professional gateway, published content, games, administration and X1 Academic. The academy is rooted at `/x1-academic` and adds connected learning, fictional case studies and five interactive laboratories for cybersecurity, governance, risk and AI.
 
-Use Node.js 24 and npm. Install with `npm ci`, then run `npm run dev -- --host 0.0.0.0 --port 5173 --strictPort`. Local academic learning works without credentials. Optional Supabase setup for the original site is documented in [the onboarding guide](docs/ONBOARDING_GUIDE.md).
+Use Node.js 24 and npm. Install with `npm ci`, then run `npm run dev -- --host 0.0.0.0 --port 5173 --strictPort`. Local academic learning works without credentials. The owner publishing setup, security changes and measured browser results are documented in the [Elite release review](docs/elite-review/README.md).
 
 Run `npm run lint`, `npm test` and `npm run build`. The build includes static academic route documents, lesson text, canonical metadata and an extended sitemap. Run `npm run test:e2e` after building, with system Chromium or Playwright Chromium installed. Run `npm run check:links` to update the source reachability report.
 

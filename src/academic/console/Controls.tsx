@@ -508,7 +508,7 @@ export function Governance() {
         ))}
       </div>
       <div className="xc-legend">
-        {dot("#5378ce")} Target score {dot("#15b89a")} Current score
+        {dot("var(--chart-target)")} Target score {dot("var(--chart-current)")} Current score
       </div>
       {selection && <ControlTable {...selection} close={() => pick(null)} />}
     </div>

@@ -168,15 +168,9 @@ index.html
 
 This keeps the site functional even when env config is missing.
 
-### 2. Admin authentication strategy (critical)
-`useAuth.tsx` enforces a two-step flow:
-1. Password sign-in.
-2. Immediately logout + OTP challenge email.
-3. Verify OTP.
-4. Grant admin only if user email equals `VITE_ADMIN_EMAIL`.
+### 2. Owner authentication and publishing
 
-### 3. Publish-only workflow (business assumption)
-Admin topic/content forms effectively publish immediately (`status: 'published'`) with no true moderation queue.
+The existing Supabase owner signs in with a password and verifies a TOTP factor. Membership is bound to the configured Auth user UUID. Database policies require that owner and a verified AAL2 session. The studio saves private drafts, publishes, edits and unpublishes existing entries. Public contributions go to the existing review mailbox. [Deployment and verification](elite-review/README.md)
 
 ### 4. Assistant safety model
 `siteAssistant.ts` blocks terms related to secrets/admin internals and only summarizes public-like content sources.
@@ -184,11 +178,7 @@ Admin topic/content forms effectively publish immediately (`status: 'published'`
 ### 5. Security map rendering complexity
 `SecurityRolesMap` handles filtering, graph layout, edge/node rendering, interaction states, drag, zoom, fit-to-view, and detail panel context.
 
-### Risky/hidden assumptions
-- Auth/session tokens are kept in localStorage (XSS risk if client compromised).
-- Admin identity is tied to exact email match, not role claims.
-- No backend of this repo; security depends heavily on Supabase RLS and policies.
-- Large monolithic `App.tsx` and `GamesHub.tsx` increase maintenance friction.
+The owner session and unsaved editor recovery use tab-scoped session storage. Published pages and the assistant use anonymous reads.
 
 ---
 
@@ -197,18 +187,14 @@ Admin topic/content forms effectively publish immediately (`status: 'published'`
 Environment variables consumed (via `src/lib/config.ts`):
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_ANON_KEY`
-- `VITE_ADMIN_EMAIL`
-- `VITE_SUPABASE_MEDIA_BUCKET` (default: `content-media`)
 - `VITE_LINKEDIN_URL` (default value provided)
 
 Flags:
 - `hasSupabaseCoreConfig` = URL + anon key present.
-- `hasSupabaseAuthConfig` = URL + anon key + admin email present.
 - `isSupabaseConfigured` mirrors core config.
 
 Secrets usage in CI:
 - URL and anon key from GitHub **secrets**.
-- Admin email and media bucket from GitHub **vars**.
 
 Runtime assumptions:
 - Supabase project has schema, RLS, and storage policies from `docs/supabase.sql`.
@@ -220,10 +206,10 @@ Runtime assumptions:
 ## 8) API / UI / database
 
 ### API behavior in this app
-No custom server API in repo. The app directly calls Supabase endpoints:
-- `/auth/v1/token`, `/auth/v1/otp`, `/auth/v1/verify`, `/auth/v1/user`, `/auth/v1/logout`
+The app uses Supabase Auth, PostgREST, Storage and the editorial upload Edge Function.
+- `/auth/v1/token`, `/auth/v1/factors/:id/challenge`, `/auth/v1/factors/:id/verify`, `/auth/v1/user`, `/auth/v1/logout`
 - `/rest/v1/*` for topics/content/collections
-- `/storage/v1/object/*` for media uploads
+- `/functions/v1/editorial-upload` for validated uploads and `/storage/v1/object/authenticated/*` for private image reads
 
 ### UI structure
 Main pages:
@@ -244,17 +230,17 @@ State style:
 ### Database (Supabase)
 `docs/supabase.sql` defines:
 - `topics`
-- `content_entries`
+- `content`
 - `tags`
 - `collections`
 - junction tables for tags/collections
 - triggers for `updated_at`
 - RLS policies:
   - public read for topics/collections + published content
-  - admin email-based manage policies
-- storage bucket `content-media` + policies
+  - owner UUID and AAL2 write policies
+- private `x1-editorial` bucket and existing public media
 
-The frontend and SQL schema both use the `content_entries` REST resource.
+The frontend and SQL schema both use the `content` REST resource.
 
 ---
 
@@ -268,8 +254,6 @@ The frontend and SQL schema both use the `content_entries` REST resource.
 4. Optional env setup (create `.env.local`)
    - `VITE_SUPABASE_URL=...`
    - `VITE_SUPABASE_ANON_KEY=...`
-   - `VITE_ADMIN_EMAIL=...`
-   - `VITE_SUPABASE_MEDIA_BUCKET=content-media`
 5. Build production bundle
    - `npm run build`
 6. Preview build
@@ -320,7 +304,7 @@ Read in this order:
 2. It includes a security role map, games section, and local assistant.
 3. Content can come from Supabase or local fallback seed/localStorage.
 4. Routing and most orchestration live in a large `App.tsx`.
-5. Admin access uses password + OTP then strict email match.
+5. Admin access uses password, authenticator TOTP and the server-side owner UUID check.
 6. Admin editing is publish-first (no staged draft workflow in UI path).
 7. Markdown is rendered client-side with custom safe-link/image checks.
 8. Deployment targets GitHub Pages via a build-and-deploy GitHub Action.
@@ -331,4 +315,4 @@ Read in this order:
 Think of this project as a **single website app** that has two “worlds” (Professional and Personal), plus a cyber map and mini-games. It can work with a real cloud database (Supabase), but if that is not configured, it still works using built-in example data in your browser. There is also an admin mode for the site owner to publish content.
 
 ## Developer-level explanation
-Architecturally this is a client-only SPA with route-level feature modules and a thin data-access abstraction (`cms.ts`) that multiplexes between Supabase REST/storage and browser-local persistence. Auth is managed in a context provider with OTP challenge and explicit email allowlisting, while authorization at data-level is delegated to Supabase RLS. The project is deployment-oriented for static hosting (GitHub Pages), so all backend behavior is externalized to Supabase APIs.
+Architecturally this is a client-only SPA with route-level feature modules and a thin data-access abstraction (`cms.ts`) that multiplexes between Supabase REST/storage and browser-local persistence. Auth is managed in a context provider with a Supabase TOTP challenge and UUID-based owner policies, while authorization at data-level is delegated to Supabase RLS. The project is deployment-oriented for static hosting (GitHub Pages), so all backend behavior is externalized to Supabase APIs.

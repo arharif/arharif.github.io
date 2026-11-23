@@ -8,7 +8,7 @@ const keepalive = readFileSync(new URL('../.github/workflows/keepalive.yml', imp
 test('all CMS content operations use the deployed content table contract', () => {
   assert.match(cms, /`content\?select=\$\{select\}/);
   assert.match(cms, /'content\?select=\*&order=updated_at\.desc'/);
-  assert.match(cms, /supabaseRest\('content', \{ method: 'POST'/);
+  assert.match(cms, /supabaseRest(?:<[^\n]*>)?\('content', \{ method: 'POST'/);
   assert.doesNotMatch(cms, /content_entries/);
 });
 

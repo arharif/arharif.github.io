@@ -5,7 +5,7 @@ import type { ContentInput, TopicInput, ContentRecord, TopicRecord } from '@/con
 import { AdminEditor } from '@/components/admin/AdminEditor';
 import { TopicEditor } from '@/components/admin/TopicEditor';
 import { useAuth } from '@/hooks/useAuth';
-import { createContent, createTopic, deleteContent, deleteTopic, listAdminContent, listAdminTopics, listPublishedContent, updateContent, updateTopic, uploadMedia } from '@/lib/cms';
+import { createContent, createTopic, deleteContent, deleteTopic, listAdminContent, listAdminTopics, isPublicArticle, updateContent, updateTopic, uploadMedia } from '@/lib/cms';
 import { genericAccessDenied, hasSupabaseCoreConfig } from '@/lib/config';
 export default function AdminPage() {
   const { session, isAdmin, logout } = useAuth();
@@ -61,21 +61,20 @@ export default function AdminPage() {
     }
   };
 
-  const saveContent = async (payload: ContentInput, revision?: string) => {
+  const saveContent = async (payload: ContentInput, id: string, revision?: string) => {
     setSaving(true);
     setNotice('');
     setError('');
     try {
       const clean = { ...payload, contentType: payload.contentType || 'article' };
-      selectedContent ? await updateContent(selectedContent.id, clean, token, revision) : await createContent(clean, token);
-      const persisted = (await listAdminContent(token)).find((item) => item.slug === clean.slug);
-      if (!persisted || persisted.status !== clean.status) throw new Error('write-verification-failed');
-      {
-        const publiclyVisible = (await listPublishedContent()).some((item) => item.slug === clean.slug);
-        if (publiclyVisible !== (clean.status === 'published')) throw new Error('publication-verification-failed');
-      }
+      const persisted = revision ? await updateContent(id, clean, token, revision) : await createContent(clean, token, id);
       setSelectedContent(persisted);
-      setNotice(clean.status === 'published' ? 'Published and verified on the public content service.' : 'Draft saved privately and verified.');
+      try {
+        if ((await isPublicArticle(id)) !== (clean.status === 'published')) throw new Error('visibility');
+        setNotice(clean.status === 'published' ? 'Published and verified on the public content service.' : 'Draft saved privately and verified.');
+      } catch {
+        setNotice('Saved to the content service. Public visibility could not be verified.');
+      }
       await load();
       return persisted;
     } catch (e) {

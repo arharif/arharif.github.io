@@ -10,6 +10,10 @@ permissions:
 
 jobs:
   quality:
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -22,15 +26,15 @@ jobs:
       - run: npm run build
       - run: npm run lint
       - run: npm test
-      - run: npx playwright install --with-deps chromium firefox webkit
-      - run: npm run test:e2e
+      - run: npx playwright install --with-deps ${{ matrix.browser }}
+      - run: npm run test:e2e -- --project=${{ matrix.browser }}
         env:
           X1_ALL_BROWSERS: '1'
       - name: Retain browser failure traces
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: browser-failure-traces
+          name: browser-failure-traces-${{ matrix.browser }}
           path: test-results/
           retention-days: 7
       - run: npm audit --omit=dev --audit-level=high

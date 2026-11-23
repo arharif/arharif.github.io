@@ -1,4 +1,6 @@
-# X1 production hardening review
+# Earlier production hardening review
+
+This review describes the pre-Elite release. The current owner, MFA, media, CSP and verification details are in the [Elite release review](elite-review/README.md).
 
 ## Architecture and trust boundaries
 

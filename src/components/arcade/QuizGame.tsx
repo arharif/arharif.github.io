@@ -83,7 +83,7 @@ export default function QuizGame({ onFinish }: PlayProps) {
           <button
             onClick={() => {
               if (index + 1 === questions.length) {
-                onFinish(score);
+                onFinish(score, score >= 300 ? "win" : "loss");
                 return;
               }
               setIndex(index + 1);

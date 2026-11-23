@@ -87,7 +87,7 @@ export function Empty({ children }: { children: ReactNode }) {
   return <p className="xc-empty">{children}</p>;
 }
 export const bands = ["Critical", "High", "Medium", "Low"];
-export const palette = ["#f15c74", "#ff9952", "#e9c74d", "#36bf88"];
+export const palette = ["var(--chart-critical)", "var(--chart-high)", "var(--chart-medium)", "var(--chart-low)"];
 export function dot(colour: string) {
   return <i className="xc-dot" style={{ background: colour }} />;
 }
@@ -378,9 +378,9 @@ export function Radar({
           <polygon
             key={k}
             points={points((j) => (axes[j]?.[k] ?? 0) * 19)}
-            fill={i ? "#17b99c" : "#5074cb"}
+            fill={i ? "var(--chart-current)" : "var(--chart-target)"}
             fillOpacity=".55"
-            stroke={i ? "#14b39a" : "#5378ce"}
+            stroke={i ? "var(--chart-current)" : "var(--chart-target)"}
             strokeWidth="1.6"
           />
         ))}

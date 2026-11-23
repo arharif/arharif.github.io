@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { Link, useLocation } from 'react-router-dom';
-import { GuidePortrait } from './GuidePortrait';
+import { originals } from '../arcade/catalog';
+import { GuidePortrait, guideFor } from './GuidePortrait';
 import { getAssistantWelcome } from './assistantContext';
 
 interface QuickAction { label: string; route?: string; prompt?: string }
@@ -11,8 +12,6 @@ interface Message {
   role: 'user' | 'assistant';
   text: string;
   sources?: Array<{ title: string; route: string }>;
-  kind?: 'welcome' | 'default';
-  section?: string;
   quickActions?: QuickAction[];
 }
 
@@ -24,28 +23,10 @@ export function SiteAssistantPanel({ open, onClose }: { open: boolean; onClose: 
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
-  const seenSections = useRef<Set<string>>(new Set());
+  const selectedGame = welcome.section === 'games' ? originals.find(game => game.key === new URLSearchParams(location.search).get('game')) : undefined;
+  const guide = guideFor(welcome.section);
   const panelRef = useRef<HTMLElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const shouldShowWelcome = !seenSections.current.has(welcome.section);
-    if (!shouldShowWelcome) return;
-
-    seenSections.current.add(welcome.section);
-    setMessages((prev) => {
-      if (prev[0]?.kind === 'welcome' && prev[0].section === welcome.section) return prev;
-      const welcomeMessage: Message = {
-        id: mkId(),
-        role: 'assistant',
-        kind: 'welcome',
-        section: welcome.section,
-        text: welcome.body,
-      };
-      return [welcomeMessage, ...prev].slice(0, 18);
-    });
-  }, [open, welcome]);
 
   useEffect(() => {
     if (!open) return;
@@ -73,13 +54,12 @@ export function SiteAssistantPanel({ open, onClose }: { open: boolean; onClose: 
     setLoading(true);
     try {
       const { querySiteAssistant } = await import('@/lib/siteAssistant');
-      const reply = await querySiteAssistant(q, location.pathname);
+      const reply = await querySiteAssistant(q, location.pathname, selectedGame?.key);
       const replyMessage: Message = {
         id: mkId(),
         role: 'assistant',
         text: reply.text,
         sources: reply.sources?.map((s) => ({ title: s.title, route: s.route })),
-        kind: 'default',
         quickActions: reply.quickActions,
       };
       setMessages((m) => [...m, replyMessage].slice(-18));
@@ -87,7 +67,6 @@ export function SiteAssistantPanel({ open, onClose }: { open: boolean; onClose: 
       const fallback: Message = {
         id: mkId(),
         role: 'assistant',
-        kind: 'default',
         text: 'I had trouble checking the website content just now. Please retry with shorter keywords.',
       };
       setMessages((m) => [...m, fallback].slice(-18));
@@ -108,22 +87,27 @@ export function SiteAssistantPanel({ open, onClose }: { open: boolean; onClose: 
           aria-modal="true"
         >
           <div className="assistant-head">
-            <p className="text-sm font-semibold">X1 Assistant</p>
+            <p className="text-sm font-semibold">{guide === 'phantom' ? 'Phantom · Arcade guide' : guide === 'astronaut' ? 'Astronaut · Insights guide' : 'X1 Assistant'}</p>
             <button className="assistant-icon-btn" onClick={onClose} aria-label="Close X1 assistant">✕</button>
           </div>
 
           <div className="assistant-welcome-card" aria-live="polite">
             <div className="assistant-welcome-visual" aria-hidden="true"><GuidePortrait section={welcome.section}/></div>
             <div>
-              <p className="assistant-welcome-title">{welcome.title}</p>
-              <p className="assistant-welcome-body">{welcome.body}</p>
+              <p className="assistant-welcome-title">{selectedGame?.title ?? welcome.title}</p>
+              <p className="assistant-welcome-body">{selectedGame?.instructions ?? welcome.body}</p>
               <p className="assistant-welcome-hint">{welcome.hint}</p>
             </div>
           </div>
 
           <div className="assistant-body">
+            {welcome.section === 'landing' && !messages.length && <nav aria-label="Explore X1" className="flex flex-wrap gap-2 p-2">
+              <Link className="assistant-source" to="/games" onClick={onClose}>Games</Link>
+              <Link className="assistant-source" to="/insights-innovation" onClick={onClose}>Insights</Link>
+              <Link className="assistant-source" to="/x1-academic" onClick={onClose}>Academic</Link>
+            </nav>}
             {messages.map((m) => (
-              <div key={m.id} className={`assistant-msg ${m.role === 'user' ? 'is-user' : 'is-bot'} ${m.kind === 'welcome' ? 'is-welcome' : ''}`}>
+              <div key={m.id} className={`assistant-msg ${m.role === 'user' ? 'is-user' : 'is-bot'}`}>
                 <p className="text-sm whitespace-pre-line">{m.text}</p>
                 {m.sources && m.sources.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-2">

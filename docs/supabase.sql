@@ -91,10 +91,14 @@ create unique index if not exists academic_resources_name_unique on public.acade
 -- Migration safety for existing projects
 alter table public.topics add column if not exists status text not null default 'published';
 alter table public.topics alter column status set default 'published';
+alter table public.topics add column if not exists palette text,
+  add column if not exists mood text,
+  add column if not exists featured boolean default false;
 alter table public.topics drop constraint if exists topics_status_check;
 alter table public.topics add constraint topics_status_check check (status in ('draft','published'));
 
 alter table public.content alter column status set default 'draft';
+alter table public.academic_resources add column if not exists status text not null default 'published';
 
 -- Existing draft records are intentionally preserved. Publishing must be an
 -- explicit administrator action, never a side effect of applying a migration.
@@ -152,6 +156,8 @@ begin
     execute format('create policy x1_update on public.%I as restrictive for update using(public.can_publish_x1()) with check(public.can_publish_x1())',target);
     execute format('drop policy if exists x1_delete on public.%I', target);
     execute format('create policy x1_delete on public.%I as restrictive for delete using(public.can_publish_x1())',target);
+    execute format('grant select on public.%I to anon, authenticated',target);
+    execute format('grant insert, update, delete on public.%I to authenticated',target);
     execute format('revoke truncate, references, trigger on public.%I from anon, authenticated, public',target);
   end loop;
 end $$;
@@ -198,8 +204,7 @@ using(bucket_id = 'content-media' and public.can_publish_x1())
 with check(bucket_id = 'content-media' and public.can_publish_x1());
 -- Apply when upgrading an existing academic_resources table.
 alter table public.academic_resources drop constraint if exists academic_resources_type_check;
-alter table public.academic_resources add column if not exists status text not null default 'published';
 alter table public.academic_resources add constraint academic_resources_type_check check (type in ('course','pdf','guide','framework','research','other'));
 alter table public.academic_resources drop constraint if exists academic_resources_url_check;
-alter table public.academic_resources add constraint academic_resources_url_check check (url ~* '^https://');
+alter table public.academic_resources add constraint academic_resources_url_check check (url ~* '^https://') not valid;
 commit;

@@ -30,7 +30,7 @@ const quickBySection = {
   landing: [{ label: 'Recommend a path', prompt: 'Where should I start?' }, { label: 'Explore Compliance Frameworks', route: '/compliance-frameworks' }],
 };
 
-export async function querySiteAssistant(rawQuery: string, pathname = '/'): Promise<AssistantReply> {
+export async function querySiteAssistant(rawQuery: string, pathname = '/', activeGame?: string): Promise<AssistantReply> {
   const query = normalize(rawQuery).slice(0, 240);
   const section = resolveAssistantSection(pathname);
   const contextual = (quickBySection as Record<string, AssistantReply['quickActions']>)[section] ?? [{ label: 'Guide me through the platform', prompt: 'What content is available on this website?' }];
@@ -46,6 +46,9 @@ export async function querySiteAssistant(rawQuery: string, pathname = '/'): Prom
     text, sources: [{ title, route, excerpt: text }], quickActions: contextual,
   });
   const game = originals.find(game => query.includes(game.title.toLowerCase()));
+  const selected = section === 'games' && /controls?|instructions?|how (do|to)|help me play/.test(query)
+    ? originals.find(item => item.key === activeGame) : undefined;
+  if (!game && selected) return answer(selected.instructions,selected.title,'/games?game='+selected.key);
   if (game) return answer(game.instructions, game.title, '/games?game='+game.key);
   const classic = legacyCatalog.find(game => query.includes(game.title.toLowerCase()));
   if (classic) return answer(classic.desc, classic.title, '/games?game='+classic.key);

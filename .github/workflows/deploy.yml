@@ -39,8 +39,6 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-          VITE_ADMIN_EMAIL: ${{ vars.VITE_ADMIN_EMAIL }}
-          VITE_SUPABASE_MEDIA_BUCKET: ${{ vars.VITE_SUPABASE_MEDIA_BUCKET }}
 
       - name: Verify built index references compiled assets
         run: |

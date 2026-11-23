@@ -509,7 +509,7 @@ export function RiskDashboard({
     <div className="xc-donutrow">
       <Ring
         values={[s.verified, s.rows.length - s.verified]}
-        colors={["#31c69b", "#526c9d"]}
+        colors={["var(--chart-low)", "var(--chart-target)"]}
         center={Math.round((s.verified / s.rows.length) * 100) + "%"}
         caption="reviewed"
         labels={["Reviewed evidence", "Outstanding evidence"]}
@@ -534,7 +534,7 @@ export function RiskDashboard({
             )
           }
         >
-          {dot("#31c69b")}Reviewed <b>{s.verified}</b>
+          {dot("var(--chart-low)")}Reviewed <b>{s.verified}</b>
         </button>
         <button
           onClick={() =>
@@ -546,7 +546,7 @@ export function RiskDashboard({
             )
           }
         >
-          {dot("#7792bc")}Outstanding <b>{s.rows.length - s.verified}</b>
+          {dot("var(--chart-target)")}Outstanding <b>{s.rows.length - s.verified}</b>
         </button>
       </div>
     </div>
@@ -582,7 +582,7 @@ export function RiskDashboard({
         <path
           d="M8 49 A42 42 0 0 1 92 49"
           pathLength="100"
-          stroke="#5fc6be"
+          stroke="var(--chart-current)"
           fill="none"
           strokeWidth="9"
           strokeDasharray={value + " 100"}

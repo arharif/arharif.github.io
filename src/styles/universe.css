@@ -649,6 +649,12 @@ body {
   --warning: light-dark(#775012, #f3c56f);
   --error: light-dark(#973247, #ffadb7);
   --info: var(--x1-accent-ink);
+  --chart-current: var(--accent);
+  --chart-target: color-mix(in srgb, var(--accent) 28%, light-dark(#51438d, #b1a1df));
+  --chart-critical: color-mix(in srgb, var(--error) 88%, var(--accent));
+  --chart-high: color-mix(in srgb, light-dark(#b85b20,#ff9952) 86%, var(--accent));
+  --chart-medium: color-mix(in srgb, light-dark(#95720c,#e9c74d) 88%, var(--accent));
+  --chart-low: color-mix(in srgb, var(--success) 84%, var(--accent));
 }
 .universe-shell :is(.text-amber-300, .text-yellow-300) {
   color: var(--warning);
@@ -719,3 +725,7 @@ a:is(:focus-visible,:hover) .universe-mark { transform: rotate(-7deg) scale(1.04
   .assistant-panel { animation: editorial-in .18s ease-out; }
 }
 .studio-editor input::placeholder, .studio-editor textarea::placeholder { color: var(--muted); }
+.owner-login label { display: grid; gap: .35rem; margin: 1rem 0; font-size: .9rem; }
+.owner-login input { border: 1px solid var(--border-soft); background: var(--surface-strong); padding: .65rem .8rem; border-radius: .7rem; color: var(--text); }
+.owner-submit { width: 100%; margin-top: .8rem; padding: .65rem; border-radius: .7rem; background: var(--accent); color: var(--surface); font-weight: 600; }
+.owner-submit:disabled { opacity:.65; }

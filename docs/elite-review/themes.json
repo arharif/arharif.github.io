@@ -1,0 +1,122 @@
+[
+  {
+    "id": "editorial-ivory",
+    "label": "Editorial Ivory",
+    "bg": "#F7F6F2",
+    "surface": "#FFFFFF",
+    "ink": "#1D2926",
+    "accent": "#24685C",
+    "muted": "#53645C",
+    "routes": [
+      "/",
+      "/insights-innovation",
+      "/x1-academic",
+      "/about-x1"
+    ]
+  },
+  {
+    "id": "obsidian-sage",
+    "label": "Obsidian Sage",
+    "bg": "#111915",
+    "surface": "#1B2821",
+    "ink": "#EAF1EA",
+    "accent": "#ACD4BC",
+    "muted": "#B8C7BC",
+    "routes": [
+      "/",
+      "/insights-innovation",
+      "/x1-academic",
+      "/about-x1"
+    ]
+  },
+  {
+    "id": "midnight-slate",
+    "label": "Midnight Slate",
+    "bg": "#121B29",
+    "surface": "#1F2C3C",
+    "ink": "#F4F7FA",
+    "accent": "#9CC6DA",
+    "muted": "#B6C7D2",
+    "routes": [
+      "/",
+      "/insights-innovation",
+      "/x1-academic",
+      "/about-x1"
+    ]
+  },
+  {
+    "id": "sandstone",
+    "label": "Sandstone",
+    "bg": "#F7F2EB",
+    "surface": "#FFFDF9",
+    "ink": "#332D27",
+    "accent": "#8A6147",
+    "muted": "#706155",
+    "routes": [
+      "/",
+      "/insights-innovation",
+      "/x1-academic",
+      "/about-x1"
+    ]
+  },
+  {
+    "id": "pearl-teal",
+    "label": "Pearl Teal",
+    "bg": "#F2F8F6",
+    "surface": "#FFFFFF",
+    "ink": "#173633",
+    "accent": "#0B706A",
+    "muted": "#526B67",
+    "routes": [
+      "/",
+      "/insights-innovation",
+      "/x1-academic",
+      "/about-x1"
+    ]
+  },
+  {
+    "id": "aubergine",
+    "label": "Aubergine",
+    "bg": "#1E1827",
+    "surface": "#302637",
+    "ink": "#F6F0F6",
+    "accent": "#DEB7D8",
+    "muted": "#CFBFCD",
+    "routes": [
+      "/",
+      "/insights-innovation",
+      "/x1-academic",
+      "/about-x1"
+    ]
+  },
+  {
+    "id": "crimson-red",
+    "label": "Crimson Red",
+    "bg": "#221519",
+    "surface": "#342126",
+    "ink": "#FAF1F3",
+    "accent": "#F0A4AD",
+    "muted": "#D8BBC0",
+    "routes": [
+      "/",
+      "/insights-innovation",
+      "/x1-academic",
+      "/about-x1"
+    ]
+  },
+  {
+    "id": "imperial-gold",
+    "label": "Imperial Gold",
+    "bg": "#1B1915",
+    "surface": "#2C271F",
+    "ink": "#F8F2E8",
+    "accent": "#DFC47C",
+    "muted": "#D7C9AC",
+    "routes": [
+      "/",
+      "/insights-innovation",
+      "/x1-academic",
+      "/about-x1"
+    ]
+  }
+]

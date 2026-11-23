@@ -256,10 +256,8 @@ for (const path of ["/", "/games", "/insights-innovation", "/submitting"]) {
     ).toEqual([]);
   });
 }
-test("all original games have playable entry points and restart", async ({
-  page,
-}) => {
-  for (const g of originals) {
+for (const g of originals) {
+  test(g.title + " starts, accepts controls and restarts", async ({page}) => {
     await page.goto("/games?game=" + g.key);
     const room = page.getByRole("dialog");
     await expect(room.getByRole("heading", { name: g.title })).toBeVisible();
@@ -278,15 +276,15 @@ test("all original games have playable entry points and restart", async ({
       await expect(room.locator(".play-status")).toContainText("Question 2");
     } else {
       await expect(room.locator("canvas")).toBeFocused();
-      await page.keyboard.press("Space");
+      if (g.key !== "neon-stack") await page.keyboard.press("Space");
       await room.getByRole("button", { name: "Pause" }).click();
       await room.getByRole("button", { name: "Resume" }).click();
     }
     await room.getByRole("button", { name: "Restart" }).click();
     await room.getByLabel("Close game").click();
     await expect(room).toHaveCount(0);
-  }
-});
+  });
+}
 test("finished rounds, favorites, earned badge and high score survive refresh", async ({
   page,
 }) => {
@@ -358,4 +356,23 @@ test("invalid game deep link recovers to a playable catalogue", async ({
   await expect(page.getByText(/This game is unavailable/)).toBeVisible();
   await page.getByLabel("Play Rocket Boom").click();
   await expect(page.getByRole("dialog")).toBeVisible();
+});
+
+test("each world opens its compact guide and the game guide follows the active round", async ({page}) => {
+  for (const [path,persona] of [["/","orb"],["/insights-innovation","astronaut"],["/games","phantom"]]) {
+    await page.goto(path);
+    const trigger = page.getByRole("button",{name:"Open X1 assistant",exact:true});
+    await expect(trigger).toHaveAttribute("data-guide",persona);
+    await trigger.click();
+    await expect(page.getByRole("dialog",{name:"X1 assistant"})).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(trigger).toBeFocused();
+  }
+  await page.getByLabel('Play Neon Stack').click();
+  const room = page.getByRole('dialog',{name:'Neon Stack'});
+  await expect(room.locator('.assistant-launcher')).toHaveAttribute('data-mood','selected');
+  await room.getByText('Start game',{exact:true}).click();
+  await room.getByLabel('Stacking playfield').press('Space');
+  await expect(room.getByRole('status')).toContainText('Round complete');
+  await expect(room.locator('.assistant-launcher')).toHaveAttribute('data-mood','loss');
 });

@@ -79,7 +79,7 @@ export async function getUser(accessToken: string): Promise<{ id: string; email?
 }
 
 export async function supabaseLogout(accessToken: string): Promise<void> {
-  await request(`${config.supabaseUrl}/auth/v1/logout`, {
+  await request(`${config.supabaseUrl}/auth/v1/logout?scope=local`, {
     method: 'POST',
     headers: { apikey: config.supabaseAnonKey ?? '', Authorization: `Bearer ${accessToken}` },
   });
@@ -91,7 +91,7 @@ export async function supabaseRest<T>(path: string, options?: RequestInit, acces
   h.set('Content-Type', 'application/json');
   // PostgREST requires a bearer identity as well as the project API key. Public
   // reads use the anonymous role; authenticated mutations use the user's JWT.
-  const bearer = accessToken || config.supabaseAnonKey;
+  const bearer = accessToken || (config.supabaseAnonKey?.startsWith('sb_publishable_') ? undefined : config.supabaseAnonKey);
   if (bearer) h.set('Authorization', `Bearer ${bearer}`);
   const res = await request(`${config.supabaseUrl}/rest/v1/${path}`, { ...options, headers: h });
   if (!res.ok) {
@@ -116,7 +116,10 @@ export async function supabaseUpload(file: File, accessToken: string): Promise<s
   return privateMediaPrefix + key;
 }
 export async function loadPrivateImage(url: string, token?: string, signal?: AbortSignal) {
-  const res = await request(url, { signal, headers: {apikey:config.supabaseAnonKey ?? '', Authorization:'Bearer ' + (token || config.supabaseAnonKey)} });
+  const headers = new Headers({apikey:config.supabaseAnonKey ?? ''});
+  const bearer = token || (config.supabaseAnonKey?.startsWith('sb_publishable_') ? undefined : config.supabaseAnonKey);
+  if (bearer) headers.set('Authorization','Bearer ' + bearer);
+  const res = await request(url, {signal,headers});
   if (!res.ok) throw new Error('Image unavailable.');
   return res.blob();
 }
