@@ -1,3 +1,4 @@
+import { EditorialImage } from '@/components/EditorialImage';
 import type { KeyboardEvent } from 'react';
 import { motion } from 'framer-motion';
 import { ContentRecord } from '@/content/types';
@@ -36,7 +37,7 @@ export function ContentCard({ item, onOpen }: { item: ContentRecord; onOpen: () 
       className="glass content-card-clickable overflow-hidden rounded-2xl"
     >
       <div className="h-36 token-card">
-        {item.coverImageUrl && <img src={item.coverImageUrl} alt={item.title} className="h-full w-full object-cover" loading="lazy" />}
+        {item.coverImageUrl && <EditorialImage src={item.coverImageUrl} alt={item.title} className="h-full w-full object-cover" loading="lazy" />}
       </div>
       <div className="p-4">
         <p className="text-xs text-muted">{item.contentType}</p>

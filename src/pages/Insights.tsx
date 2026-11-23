@@ -1,3 +1,4 @@
+import { EditorialImage } from '@/components/EditorialImage';
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -5,7 +6,7 @@ import {
   Brain,
   Cpu,
   Globe,
-  Landmark,
+
   Lightbulb,
   Monitor,
   Search,
@@ -16,11 +17,17 @@ import { listPublishedContent, listPublishedTopics } from "@/lib/cms";
 import type { ContentRecord } from "@/content/types";
 import { Bookmark } from "@/components/Bookmark";
 import "./insights.css";
+import { readingStats } from "@/lib/readingTime";
 
+function Philosopher({size}: {size: number}) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+    <path d="M6 8c0-4 3-6 7-5 3 0 5 3 4 6l2 3-2 1c0 3-1 5-4 5h-1l1 2 4 1H5l4-3v-3c-2-1-3-4-3-7Z"/><path d="m7 9 3-2 1-2 4 1m-3 6 2 2 3-1m-5 2 2 2m-1-7h2"/>
+  </svg>;
+}
 const topics = [
   ["Technology", Monitor, /technology|professional|security|cyber|computing/i],
   ["Ideas", Lightbulb, /ideas?|reflection|creative|thinking/i],
-  ["Philosophy", Landmark, /philosoph|existential/i],
+  ["Philosophy", Philosopher, /philosoph|existential/i],
   ["Human Behaviour", Brain, /behavio[u]?r|psycholog|human factor/i],
   ["Emerging Trends", TrendingUp, /emerging|trends?|quantum/i],
   ["AI", Cpu, /\bai\b|artificial intelligence|machine learning/i],
@@ -148,7 +155,7 @@ export default function Insights() {
               <article key={row.id} className="editorial-card">
                 <Bookmark id={row.id} title={row.title} />
                 <Link to={href}>
-                  <img
+                  <EditorialImage
                     src={cover(row, index)}
                     alt=""
                     width="380"
@@ -168,11 +175,7 @@ export default function Insights() {
                   <i />
                   {row.topic?.category ||
                     row.contentType.replace(/_/g, " ")} ·{" "}
-                  {Math.max(
-                    1,
-                    Math.ceil(row.body.trim().split(/\s+/).length / 220),
-                  )}{" "}
-                  min read
+                  {readingStats(row.body, row.readingMinutes).minutes} min read
                 </small>
               </article>
             );

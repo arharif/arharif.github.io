@@ -40,6 +40,7 @@ import {
 } from "./arcade/progress";
 import "./arcade/arcade.css";
 
+const TableGame = lazy(() => import("./arcade/TableGame"));
 const Action = lazy(() => import("./arcade/ActionGame")),
   Memory = lazy(() => import("./arcade/MemoryGame"));
 const Maze = lazy(() => import("./arcade/MazeGame")),
@@ -81,18 +82,22 @@ function PlayRoom({
   const [round, setRound] = useState(0),
     [result, setResult] = useState<number | null>(null);
   const ended = useRef(false);
+  const [mood,setMood] = useState("selected");
+  useEffect(() => { window.dispatchEvent(new Event("x1-play-room")); }, [mood]);
   const gameHeading = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     const node = dialog.current;
     node?.showModal();
     gameHeading.current?.focus();
-    return () => node?.close();
+    window.dispatchEvent(new Event("x1-play-room"));
+    return () => { node?.close(); window.dispatchEvent(new Event("x1-play-room")); };
   }, []);
   const complete = useCallback(
-    (score: number) => {
+    (score: number, outcome?: "win" | "loss") => {
       if (ended.current) return;
       ended.current = true;
       setResult(score);
+      setMood(outcome ?? (["haunted-memory","neon-maze-escape","quiz-chaos"].includes(game.key) ? "win" : "loss"));
       finish(game.key, score);
     },
     [game.key, finish],
@@ -101,6 +106,7 @@ function PlayRoom({
   return (
     <dialog
       className="play-room"
+      data-mood={mood}
       ref={dialog}
       aria-labelledby="play-title"
       onCancel={(e) => {
@@ -128,6 +134,7 @@ function PlayRoom({
           <button
             onClick={() => {
               ended.current = false;
+              setMood("playing");
               setResult(null);
               setRound((r) => r + 1);
             }}
@@ -143,7 +150,9 @@ function PlayRoom({
           round > 0 &&
           result === null && (
             <div key={round}>
-              {id === "haunted-memory" ? (
+              {id === "bubble-blitz" || id === "neon-stack" ? (
+                <TableGame mode={id} onFinish={complete}/>
+              ) : id === "haunted-memory" ? (
                 <Memory onFinish={complete} />
               ) : id === "neon-maze-escape" ? (
                 <Maze onFinish={complete} />
@@ -388,7 +397,9 @@ export function GamesHub() {
                         }
                       />
                     </button>
-                    {g.original ? (
+                    {g.key === "neon-stack" || g.key === "bubble-blitz" ? (
+                      <span aria-hidden="true" className={"table-art " + g.key}><i/><i/><i/><i/></span>
+                    ) : g.original ? (
                       <img
                         src={"/art/" + g.key + ".webp"}
                         alt=""

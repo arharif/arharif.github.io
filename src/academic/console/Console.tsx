@@ -676,13 +676,13 @@ export default function Console() {
       {!focus && (
         <header className="xc-top">
           <Link
-            to={base}
+            to="/"
             className="xc-brand"
-            aria-label="X1 Academic overview"
+            aria-label="X1 home"
           >
             <X1Mark mode={theme} />
-            <span>Academic</span>
           </Link>
+          <Link className="xc-section-name" to={base} aria-label="X1 Academic overview">Academic</Link>
           <nav aria-label="Academic resources">
             {secondary.map(([label, path]) => (
               <Link key={path} to={path}>

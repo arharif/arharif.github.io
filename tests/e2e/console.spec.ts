@@ -280,7 +280,7 @@ test("main-site navigation, resource links, themes, keyboard and responsive layo
       .getByRole("navigation", { name: "Academic resources" })
       .getByRole("link"),
   ).toHaveCount(5);
-  for (const theme of ["Editorial Ivory", "Cosmic Indigo"]) {
+  for (const theme of ["Editorial Ivory", "Midnight Slate"]) {
     await page.getByRole("button", { name: "Open theme selector" }).click();
     await page
       .getByRole("menuitemradio", { name: "Activate " + theme })
@@ -356,7 +356,7 @@ test("dashboard accessibility in dark and light themes", async ({ page }) => {
     for (const view of views) {
       await page.goto(base + "/" + space + "?view=" + view);
       await demo(page);
-      for (const theme of ["Cosmic Indigo", "Editorial Ivory"]) {
+      for (const theme of ["Midnight Slate", "Editorial Ivory"]) {
         await page.getByLabel("Open theme selector").click();
         await page
           .getByRole("menuitemradio", { name: "Activate " + theme })

@@ -1,6 +1,11 @@
--- Replace with your admin email if needed
--- Default requested admin: <ADMIN_EMAIL>
-
+-- Set <OWNER_UUID> to the existing owner's Auth user ID before applying.
+begin;
+do $$
+begin
+  if to_regclass('public.content') is null and to_regclass('public.content_entries') is not null then
+    alter table public.content_entries rename to content;
+  end if;
+end $$;
 create extension if not exists pgcrypto;
 create extension if not exists moddatetime schema extensions;
 
@@ -21,7 +26,7 @@ create table if not exists public.topics (
   updated_at timestamptz not null default now()
 );
 
-create table if not exists public.content_entries (
+create table if not exists public.content (
   id uuid primary key default gen_random_uuid(),
   topic_id uuid references public.topics(id) on delete cascade,
   slug text unique not null,
@@ -59,13 +64,13 @@ create table if not exists public.collections (
 );
 
 create table if not exists public.content_tags (
-  content_id uuid references public.content_entries(id) on delete cascade,
+  content_id uuid references public.content(id) on delete cascade,
   tag_id uuid references public.tags(id) on delete cascade,
   primary key (content_id, tag_id)
 );
 
 create table if not exists public.content_collections (
-  content_id uuid references public.content_entries(id) on delete cascade,
+  content_id uuid references public.content(id) on delete cascade,
   collection_id uuid references public.collections(id) on delete cascade,
   primary key (content_id, collection_id)
 );
@@ -89,7 +94,7 @@ alter table public.topics alter column status set default 'published';
 alter table public.topics drop constraint if exists topics_status_check;
 alter table public.topics add constraint topics_status_check check (status in ('draft','published'));
 
-alter table public.content_entries alter column status set default 'published';
+alter table public.content alter column status set default 'draft';
 
 -- Existing draft records are intentionally preserved. Publishing must be an
 -- explicit administrator action, never a side effect of applying a migration.
@@ -98,113 +103,103 @@ drop trigger if exists handle_topics_updated on public.topics;
 create trigger handle_topics_updated before update on public.topics
 for each row execute procedure extensions.moddatetime(updated_at);
 
-drop trigger if exists handle_content_updated on public.content_entries;
-create trigger handle_content_updated before update on public.content_entries
+drop trigger if exists handle_content_updated on public.content;
+create trigger handle_content_updated before update on public.content
 for each row execute procedure extensions.moddatetime(updated_at);
 
-alter table public.topics enable row level security;
-alter table public.content_entries enable row level security;
-alter table public.collections enable row level security;
-alter table public.academic_resources enable row level security;
+alter table public.content
+  add column if not exists reading_minutes integer check (reading_minutes between 1 and 1440),
+  add column if not exists tags text[] default '{}',
+  add column if not exists collection_ids text[] default '{}',
+  add column if not exists meta_title text,
+  add column if not exists meta_description text,
+  add column if not exists og_image_url text,
+  add column if not exists featured boolean default false,
+  add column if not exists favorite boolean default false;
 
-drop policy if exists "public_read_topics" on public.topics;
-create policy "public_read_topics" on public.topics for select using (status = 'published');
+create or replace function public.is_x1_owner() returns boolean
+language sql stable security invoker set search_path = ''
+as $$ select coalesce(auth.uid() = '<OWNER_UUID>'::uuid,false) $$;
+create or replace function public.can_publish_x1() returns boolean
+language sql stable security invoker set search_path = ''
+as $$ select public.is_x1_owner() and coalesce(auth.jwt()->>'aal' = 'aal2', false) $$;
 
-drop policy if exists "public_read_published_content" on public.content_entries;
-create policy "public_read_published_content" on public.content_entries for select using (status = 'published');
-
-drop policy if exists "public_read_collections" on public.collections;
-create policy "public_read_collections" on public.collections for select using (true);
-
-drop policy if exists "public_read_academic_resources" on public.academic_resources;
-create policy "public_read_academic_resources" on public.academic_resources for select using (status = 'published');
-
-drop policy if exists "admin_manage_academic_resources" on public.academic_resources;
-create policy "admin_manage_academic_resources" on public.academic_resources for all
-using (auth.jwt() ->> 'email' = '<ADMIN_EMAIL>')
-with check (auth.jwt() ->> 'email' = '<ADMIN_EMAIL>');
-
+-- Restrictive policies also constrain previously installed permissive policies.
+do $$
+declare
+  target text;
+  visibility text;
+begin
+  foreach target in array array['topics','content','content_entries','academic_resources','collections','tags','content_tags','content_collections'] loop
+    if to_regclass('public.' || target) is null then continue; end if;
+    visibility := case
+      when target in ('content','content_entries') then
+        format('status = ''published'' and (topic_id is null or exists(select 1 from public.topics t where t.id = %I.topic_id and t.status = ''published''))', target)
+      when target in ('topics','academic_resources') then 'status = ''published'''
+      when target in ('content_tags','content_collections') then 'exists(select 1 from public.content c where c.id = content_id)'
+      when target = 'tags' then 'exists(select 1 from public.content_tags ct where ct.tag_id = tags.id)'
+      else 'true' end;
+    execute format('alter table public.%I enable row level security', target);
+    execute format('drop policy if exists x1_visibility on public.%I', target);
+    execute format('create policy x1_visibility on public.%I as restrictive for select to anon, authenticated using ((%s) or public.can_publish_x1())', target, visibility);
+    execute format('drop policy if exists x1_reader on public.%I', target);
+    execute format('create policy x1_reader on public.%I for select to anon, authenticated using (true)', target);
+    execute format('drop policy if exists x1_owner on public.%I', target);
+    execute format('create policy x1_owner on public.%I for all to authenticated using(public.can_publish_x1()) with check(public.can_publish_x1())',target);
+    execute format('drop policy if exists x1_insert on public.%I', target);
+    execute format('create policy x1_insert on public.%I as restrictive for insert with check(public.can_publish_x1())',target);
+    execute format('drop policy if exists x1_update on public.%I', target);
+    execute format('create policy x1_update on public.%I as restrictive for update using(public.can_publish_x1()) with check(public.can_publish_x1())',target);
+    execute format('drop policy if exists x1_delete on public.%I', target);
+    execute format('create policy x1_delete on public.%I as restrictive for delete using(public.can_publish_x1())',target);
+    execute format('revoke truncate, references, trigger on public.%I from anon, authenticated, public',target);
+  end loop;
+end $$;
+alter table public.content drop constraint if exists x1_valid_article;
+alter table public.content add constraint x1_valid_article check (
+  char_length(trim(title)) > 0 and (status <> 'published' or content_type <> 'article' or char_length(trim(body)) > 0)
+) not valid;
 drop trigger if exists handle_academic_resources_updated on public.academic_resources;
 create trigger handle_academic_resources_updated before update on public.academic_resources
 for each row execute procedure extensions.moddatetime(updated_at);
 
-drop policy if exists "admin_manage_topics" on public.topics;
-create policy "admin_manage_topics" on public.topics
-for all
-using (auth.jwt() ->> 'email' = '<ADMIN_EMAIL>')
-with check (auth.jwt() ->> 'email' = '<ADMIN_EMAIL>');
+-- Preserve old public asset URLs. All new editorial uploads use the private bucket.
+insert into storage.buckets(id,name,public) values('content-media','content-media',true) on conflict(id) do nothing;
+insert into storage.buckets(id,name,public,file_size_limit,allowed_mime_types)
+values ('x1-editorial','x1-editorial',false,8388608,array['image/jpeg','image/png','image/gif','image/webp'])
+on conflict(id) do update set public=false,file_size_limit=excluded.file_size_limit,allowed_mime_types=excluded.allowed_mime_types;
 
-drop policy if exists "admin_manage_content" on public.content_entries;
-create policy "admin_manage_content" on public.content_entries
-for all
-using (auth.jwt() ->> 'email' = '<ADMIN_EMAIL>')
-with check (auth.jwt() ->> 'email' = '<ADMIN_EMAIL>');
-
-drop policy if exists "admin_manage_collections" on public.collections;
-create policy "admin_manage_collections" on public.collections
-for all
-using (auth.jwt() ->> 'email' = '<ADMIN_EMAIL>')
-with check (auth.jwt() ->> 'email' = '<ADMIN_EMAIL>');
-
-insert into storage.buckets (id, name, public)
-values ('content-media', 'content-media', true)
-on conflict (id) do nothing;
-
--- Optional cleanup from earlier versions
- drop policy if exists "authenticated can view content-media objects" on storage.objects;
- drop policy if exists "admin email can upload to content-media" on storage.objects;
- drop policy if exists "admin email can update content-media" on storage.objects;
- drop policy if exists "admin email can delete content-media" on storage.objects;
- drop policy if exists "public can view content-media objects" on storage.objects;
- drop policy if exists "public_media_read" on storage.objects;
- drop policy if exists "admin_media_write" on storage.objects;
-
--- Public read of object metadata for this bucket
-create policy "public can view content-media objects"
-on storage.objects
-for select
-to public
-using (
-  bucket_id = 'content-media'
-);
-
--- Only admin email can upload
-create policy "admin email can upload to content-media"
-on storage.objects
-for insert
-to authenticated
-with check (
-  bucket_id = 'content-media'
-  and (auth.jwt() ->> 'email') = '<ADMIN_EMAIL>'
-);
-
--- Only admin email can update
-create policy "admin email can update content-media"
-on storage.objects
-for update
-to authenticated
-using (
-  bucket_id = 'content-media'
-  and (auth.jwt() ->> 'email') = '<ADMIN_EMAIL>'
-)
-with check (
-  bucket_id = 'content-media'
-  and (auth.jwt() ->> 'email') = '<ADMIN_EMAIL>'
-);
-
--- Only admin email can delete
-create policy "admin email can delete content-media"
-on storage.objects
-for delete
-to authenticated
-using (
-  bucket_id = 'content-media'
-  and (auth.jwt() ->> 'email') = '<ADMIN_EMAIL>'
-);
-
+create or replace function public.x1_can_read_image(object_name text) returns boolean
+language sql stable security invoker set search_path = ''
+as $$ select public.can_publish_x1() or exists (
+  select 1 from public.content c where c.status = 'published' and
+  (right(c.cover_image_url, length('/storage/v1/object/x1-editorial/' || object_name)) = '/storage/v1/object/x1-editorial/' || object_name
+   or strpos(c.body, '/storage/v1/object/x1-editorial/' || object_name || ')') > 0)
+) $$;
+drop policy if exists x1_image_read on storage.objects;
+create policy x1_image_read on storage.objects for select to anon, authenticated
+using (bucket_id = 'x1-editorial' and public.x1_can_read_image(name));
+drop policy if exists x1_image_guard on storage.objects;
+create policy x1_image_guard on storage.objects as restrictive for select to anon, authenticated
+using (bucket_id <> 'x1-editorial' or public.x1_can_read_image(name));
+drop policy if exists x1_storage_insert on storage.objects;
+create policy x1_storage_insert on storage.objects as restrictive for insert to anon,authenticated
+with check(bucket_id <> 'x1-editorial' and (bucket_id <> 'content-media' or public.can_publish_x1()));
+drop policy if exists x1_storage_update on storage.objects;
+create policy x1_storage_update on storage.objects as restrictive for update to anon,authenticated
+using(bucket_id <> 'x1-editorial' and (bucket_id <> 'content-media' or public.can_publish_x1()))
+with check(bucket_id <> 'x1-editorial' and (bucket_id <> 'content-media' or public.can_publish_x1()));
+drop policy if exists x1_storage_delete on storage.objects;
+create policy x1_storage_delete on storage.objects as restrictive for delete to anon,authenticated
+using(bucket_id not in ('content-media','x1-editorial') or public.can_publish_x1());
+drop policy if exists x1_legacy_media_owner on storage.objects;
+create policy x1_legacy_media_owner on storage.objects for all to authenticated
+using(bucket_id = 'content-media' and public.can_publish_x1())
+with check(bucket_id = 'content-media' and public.can_publish_x1());
 -- Apply when upgrading an existing academic_resources table.
 alter table public.academic_resources drop constraint if exists academic_resources_type_check;
 alter table public.academic_resources add column if not exists status text not null default 'published';
 alter table public.academic_resources add constraint academic_resources_type_check check (type in ('course','pdf','guide','framework','research','other'));
 alter table public.academic_resources drop constraint if exists academic_resources_url_check;
 alter table public.academic_resources add constraint academic_resources_url_check check (url ~* '^https://');
+commit;

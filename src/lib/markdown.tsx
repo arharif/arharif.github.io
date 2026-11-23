@@ -1,3 +1,4 @@
+import { EditorialImage } from '@/components/EditorialImage';
 import { Fragment, ReactNode } from 'react';
 
 const safeLinkUrl = (value?: string) => {
@@ -28,7 +29,7 @@ function renderInline(text: string, keyPrefix: string): ReactNode[] {
       const m = raw.match(/^!\[(.*?)\]\((.*?)\)$/);
       const src = safeImageUrl(m?.[2]);
       if (m && src) {
-        out.push(<img key={`${keyPrefix}-img-${idx++}`} src={src} alt={m[1]} className="my-3 rounded-xl" loading="lazy" />);
+        out.push(<EditorialImage key={`${keyPrefix}-img-${idx++}`} src={src} alt={m[1]} className="my-3 rounded-xl" loading="lazy" />);
       } else {
         out.push(<Fragment key={`${keyPrefix}-raw-${idx++}`}>{raw}</Fragment>);
       }

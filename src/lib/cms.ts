@@ -1,3 +1,4 @@
+import { imageType, maxImageBytes } from '../../supabase/functions/editorial-upload/imageType';
 import { seedCollections, seedContent, seedTopics } from '@/content/data';
 import { CollectionRecord, ContentInput, ContentRecord, ContentStatus, TopicInput, TopicRecord } from '@/content/types';
 import { isSupabaseConfigured } from './env';
@@ -37,6 +38,7 @@ const normalizeContent = (r: Record<string, unknown>): ContentRecord => ({
   id: String(r.id), topicId: String(r.topic_id), slug: String(r.slug), title: String(r.title), excerpt: String(r.excerpt ?? ''), body: String(r.body ?? ''),
   contentType: String(r.content_type), coverImageUrl: r.cover_image_url ? String(r.cover_image_url) : undefined, videoUrl: r.video_url ? String(r.video_url) : undefined,
   status: String(r.status) as ContentStatus, publishedAt: r.published_at ? String(r.published_at) : undefined,
+  readingMinutes: Number(r.reading_minutes) || undefined,
   tags: Array.isArray(r.tags) ? r.tags.map((x) => String(x)) : [],
   collectionIds: Array.isArray(r.collection_ids) ? r.collection_ids.map((x) => String(x)) : [],
   metaTitle: r.meta_title ? String(r.meta_title) : undefined,
@@ -62,6 +64,11 @@ const contentRow = (i: ContentInput) => ({
   // caller's timestamp, while the first publication receives one here.
   published_at: i.status === 'published' ? (i.publishedAt ?? new Date().toISOString()) : null,
   author_name: i.authorName,
+  tags: i.tags ?? [],
+  reading_minutes: i.readingMinutes ?? null,
+  collection_ids: i.collectionIds ?? [],
+  meta_title: i.metaTitle ?? null, meta_description: i.metaDescription ?? null,
+  og_image_url: i.ogImageUrl ?? null, featured: !!i.featured, favorite: !!i.favorite,
 });
 
 const getLocalTopics = () => {
@@ -134,7 +141,7 @@ export async function listPublishedContent() {
   // the primary published-content request fail when they are not exposed in a
   // project's PostgREST schema cache.
   const select = [
-    'id,topic_id,slug,title,excerpt,body,content_type,cover_image_url,video_url,status,published_at,created_at,updated_at,author_name',
+    '*',
     'topic:topics(id,slug,title,description,universe,category,subcategory,display_style,cover_image_url,icon,order_index,status,created_at,updated_at)',
   ].join(',');
   const rows = await supabaseRest<Record<string, unknown>[]>(`content?select=${select}&status=eq.published&order=published_at.desc.nullslast,created_at.desc`);
@@ -156,12 +163,16 @@ export async function createContent(input: ContentInput, accessToken: string) {
   await supabaseRest('content', { method: 'POST', body: JSON.stringify(contentRow(input)) }, accessToken);
 }
 
-export async function updateContent(id: string, input: ContentInput, accessToken: string) {
+export async function updateContent(id: string, input: ContentInput, accessToken: string, revision?: string) {
   if (!isSupabaseConfigured) {
     setLocalContent(getLocalContent().map((c) => (c.id === id ? { ...c, ...input, publishedAt: input.status === 'published' ? input.publishedAt ?? c.publishedAt ?? new Date().toISOString() : undefined, updatedAt: new Date().toISOString() } : c)));
     return;
   }
-  await supabaseRest(`content?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(contentRow(input)) }, accessToken);
+  const filter = revision ? '&updated_at=eq.' + encodeURIComponent(revision) : '';
+  const rows = await supabaseRest<unknown[]>(`content?id=eq.${encodeURIComponent(id)}${filter}`, {
+    method:'PATCH', headers:{Prefer:'return=representation'}, body:JSON.stringify(contentRow(input)),
+  }, accessToken);
+  if (!rows.length) throw new Error('edit-conflict');
 }
 
 export async function deleteContent(id: string, accessToken: string) {
@@ -173,11 +184,9 @@ export async function deleteContent(id: string, accessToken: string) {
 }
 
 export async function uploadMedia(file: File, accessToken: string) {
-  const allowed = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
-  if (!allowed.has(file.type) || file.size > 8 * 1024 * 1024) throw new Error('Invalid upload.');
-  const extensionByType: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif' };
-  const ext = extensionByType[file.type];
-  const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-  if (!isSupabaseConfigured) return URL.createObjectURL(file);
-  return supabaseUpload(file, accessToken, path);
+  if (!file.size || file.size > maxImageBytes || imageType(new Uint8Array(await file.arrayBuffer())) !== file.type) throw new Error('Invalid image.');
+  const decoded = await createImageBitmap(file);
+  decoded.close();
+  if (!isSupabaseConfigured) throw new Error('Configure media storage.');
+  return supabaseUpload(file, accessToken);
 }

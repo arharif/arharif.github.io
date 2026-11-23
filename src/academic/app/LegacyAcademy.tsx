@@ -165,11 +165,12 @@ function Layout() {
         <div className="xa-top-inner">
           <Link
             className="xa-brand"
-            to={base}
-            aria-label="X1 Academic overview"
+            to="/"
+            aria-label="X1 home"
           >
             <X1Mark size="sm" mode={theme} />{" "}
-            <span>
+          </Link>
+          <Link className="xa-brand" aria-label="X1 Academic overview" to={base}><span>
               ACADEMIC<small>THE CONNECTED ACADEMY</small>
             </span>
           </Link>

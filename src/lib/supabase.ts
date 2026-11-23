@@ -49,26 +49,28 @@ export async function signInWithPassword(email: string, password: string): Promi
   return res.json();
 }
 
-export async function signInWithOtp(email: string): Promise<void> {
-  const res = await request(`${config.supabaseUrl}/auth/v1/otp`, {
-    method: 'POST',
-    headers: baseHeaders,
-    body: JSON.stringify({ email, options: { shouldCreateUser: false }, create_user: false }),
+interface Factor { id: string; factor_type: string; status: string }
+async function authPost<T>(path: string, body: unknown, token?: string): Promise<T> {
+  const headers = new Headers(baseHeaders);
+  if (token) headers.set('Authorization', 'Bearer ' + token);
+  const response = await request(config.supabaseUrl + '/auth/v1/' + path, {
+    method: 'POST', headers, body: JSON.stringify(body),
   });
-  if (!res.ok) throw new Error(genericAuthError);
+  if (!response.ok) throw new Error(genericAuthError);
+  return response.json();
 }
 
-export async function verifyOtp(email: string, token: string): Promise<AuthSession> {
-  const res = await request(`${config.supabaseUrl}/auth/v1/verify`, {
-    method: 'POST',
-    headers: baseHeaders,
-    body: JSON.stringify({ email, token, type: 'email' }),
-  });
-  if (!res.ok) throw new Error(genericAuthError);
-  return res.json();
+export const enrollTotp = (token: string) => authPost<{id: string; totp: {secret: string}}>(
+  'factors', { factor_type: 'totp', issuer: 'X1 Publishing' }, token,
+);
+export async function verifyTotp(token: string, factorId: string, code: string) {
+  const base = 'factors/' + encodeURIComponent(factorId);
+  const challenge = await authPost<{id: string}>(base + '/challenge', {}, token);
+  return authPost<AuthSession>(base + '/verify', { challenge_id: challenge.id, code }, token);
 }
-
-export async function getUser(accessToken: string): Promise<{ id: string; email?: string }> {
+export const refreshSession = (refresh_token: string) =>
+  authPost<AuthSession>('token?grant_type=refresh_token', {refresh_token});
+export async function getUser(accessToken: string): Promise<{ id: string; email?: string; factors?: Factor[] }> {
   const res = await request(`${config.supabaseUrl}/auth/v1/user`, {
     headers: { apikey: config.supabaseAnonKey ?? '', Authorization: `Bearer ${accessToken}` },
   });
@@ -99,21 +101,22 @@ export async function supabaseRest<T>(path: string, options?: RequestInit, acces
     if (import.meta.env.DEV) console.error('[supabase-rest] Request failed', { resource: path.split('?')[0], status: res.status, code: payload?.code });
     throw error;
   }
-  if (res.status === 204) return null as T;
-  return res.json() as Promise<T>;
+  const body = await res.text();
+  return body ? JSON.parse(body) as T : null as T;
 }
 
-export async function supabaseUpload(file: File, accessToken: string, path: string): Promise<string> {
-  const res = await request(`${config.supabaseUrl}/storage/v1/object/${config.mediaBucket}/${path}`, {
-    method: 'POST',
-    headers: {
-      apikey: config.supabaseAnonKey ?? '',
-      Authorization: `Bearer ${accessToken}`,
-      'x-upsert': 'true',
-      'Content-Type': file.type,
-    },
-    body: file,
+export const privateMediaPrefix = config.supabaseUrl + '/storage/v1/object/x1-editorial/';
+export async function supabaseUpload(file: File, accessToken: string): Promise<string> {
+  const res = await request(config.supabaseUrl + '/functions/v1/editorial-upload', {
+    method: 'POST', headers: {apikey: config.supabaseAnonKey ?? '', Authorization: 'Bearer ' + accessToken, 'Content-Type':file.type}, body:file,
   });
-  if (!res.ok) throw new Error('Unable to complete request.');
-  return `${config.supabaseUrl}/storage/v1/object/public/${config.mediaBucket}/${path}`;
+  if (!res.ok) throw new Error('Upload failed.');
+  const {key} = await res.json();
+  if (!/^[a-f0-9-]{36}\.(jpg|png|webp|gif)$/.test(key)) throw new Error('Invalid media response.');
+  return privateMediaPrefix + key;
+}
+export async function loadPrivateImage(url: string, token?: string, signal?: AbortSignal) {
+  const res = await request(url, { signal, headers: {apikey:config.supabaseAnonKey ?? '', Authorization:'Bearer ' + (token || config.supabaseAnonKey)} });
+  if (!res.ok) throw new Error('Image unavailable.');
+  return res.blob();
 }

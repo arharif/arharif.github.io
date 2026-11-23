@@ -26,7 +26,7 @@ export function UniverseTransition() {
   const location = useLocation();
   const destination = world(location.pathname);
   const previous = useRef(destination);
-  const origin = useRef<{ world: string; x: number; y: number } | null>(null);
+  const origin = useRef<{ world: string; x: number; y: number; card?: DOMRect; image?: string } | null>(null);
   useEffect(() => {
     function rememberLink(event: MouseEvent) {
       const target =
@@ -45,6 +45,8 @@ export function UniverseTransition() {
       const bounds = target.getBoundingClientRect();
       origin.current = {
         world: world(target.pathname),
+        card: target.matches(".destination") ? bounds : undefined,
+        image: target.querySelector("img")?.currentSrc,
         x: bounds.left + bounds.width / 2,
         y: bounds.top + bounds.height / 2,
       };
@@ -53,6 +55,8 @@ export function UniverseTransition() {
     return () => document.removeEventListener("click", rememberLink, true);
   }, []);
   const [travel, setTravel] = useState<{
+    card?: DOMRect;
+    image?: string;
     from: string;
     to: string;
     x: number;
@@ -81,6 +85,7 @@ export function UniverseTransition() {
     const point = origin.current?.world === destination ? origin.current : null;
     origin.current = null;
     setTravel({
+      card: point?.card, image: point?.image,
       from,
       to: destination,
       x: point?.x ?? window.innerWidth / 2,
@@ -108,6 +113,8 @@ export function UniverseTransition() {
           data-to={travel.to}
           aria-hidden="true"
         >
+          {travel.card && travel.image && <img alt="" className="portal-art" src={travel.image}
+            style={{left:travel.card.left, top:travel.card.top,width:travel.card.width,height:travel.card.height}}/>}
           <i />
           <b />
         </div>

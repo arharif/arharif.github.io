@@ -75,6 +75,7 @@ export interface ContentRecord {
   publishedAt?: string;
   createdAt: string;
   updatedAt: string;
+  readingMinutes?: number;
   authorName: string;
   topic?: TopicRecord;
 }
@@ -97,5 +98,6 @@ export interface ContentInput {
   featured?: boolean;
   favorite?: boolean;
   publishedAt?: string;
+  readingMinutes?: number;
   authorName: string;
 }

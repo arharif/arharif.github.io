@@ -10,7 +10,7 @@ async function palette(page: Page, name: string) {
     .getByRole("menuitemradio", { name: "Activate " + name, exact: true })
     .click();
 }
-for (const [id, [name, bg, surface, ink, accent]] of Object.entries(palettes)) {
+for (const [id, [name, bg, surface, ink, accent, , muted]] of Object.entries(palettes)) {
   test(name + " persists and reaches shared surfaces", async ({ page }) => {
     await page.goto("/");
     await page.emulateMedia({ reducedMotion: "reduce" });
@@ -30,13 +30,13 @@ for (const [id, [name, bg, surface, ink, accent]] of Object.entries(palettes)) {
       await expect(page.locator("h1").first()).toBeVisible();
       expect(
         await page.evaluate(() =>
-          ["--x1-bg", "--x1-surface", "--x1-text", "--x1-accent"].map((k) =>
+          ["--x1-bg", "--x1-surface", "--x1-text", "--x1-accent", "--x1-text-muted"].map((k) =>
             getComputedStyle(document.documentElement)
               .getPropertyValue(k)
               .trim(),
           ),
         ),
-      ).toEqual([bg, surface, ink, accent]);
+      ).toEqual([bg, surface, ink, accent, muted]);
       if (["/about-x1", "/professional", "/personal"].includes(path)) {
         const audit = await new AxeBuilder({ page })
           .withRules(["color-contrast"])
@@ -75,7 +75,7 @@ test("legacy and invalid values migrate before the app mounts", async ({
     expect(await page.evaluate(() => localStorage.getItem("theme"))).toBe(id);
   }
 });
-for (const name of ["Metropolitan Plum", "Editorial Ivory", "Graphite Slate"]) {
+for (const name of ["Aubergine", "Editorial Ivory", "Imperial Gold"]) {
   test(name + " cinematic round trip and browser history", async ({ page }) => {
     await page.goto("/");
     await palette(page, name);
@@ -135,7 +135,7 @@ test("gateway destinations, keyboard palette and reduced motion", async ({
   await page.keyboard.press("Enter");
   await expect(page.getByLabel("Open theme selector")).toHaveAttribute(
     "title",
-    "Graphite Slate",
+    "Imperial Gold",
   );
   for (const [card, path] of [
     [".dest-insights", "/insights-innovation"],
@@ -211,7 +211,7 @@ test("guest submission goes to email and protected administration redirects", as
   await page.goto("/admin");
   await expect(page).toHaveURL(/\/login$/);
   await expect(
-    page.getByRole("heading", { name: "Admin sign in" }),
+    page.getByRole("heading", { name: "Owner sign in" }),
   ).toBeVisible();
 });
 for (const width of [360, 390, 768, 1024, 1440, 1920]) {
@@ -256,7 +256,7 @@ for (const path of ["/", "/games", "/insights-innovation", "/submitting"]) {
     ).toEqual([]);
   });
 }
-test("all six original games have playable entry points and restart", async ({
+test("all original games have playable entry points and restart", async ({
   page,
 }) => {
   for (const g of originals) {

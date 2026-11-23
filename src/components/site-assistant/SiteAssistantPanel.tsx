@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+
 import { Link, useLocation } from 'react-router-dom';
+import { GuidePortrait } from './GuidePortrait';
 import { getAssistantWelcome } from './assistantContext';
 
 interface QuickAction { label: string; route?: string; prompt?: string }
@@ -50,7 +51,7 @@ export function SiteAssistantPanel({ open, onClose }: { open: boolean; onClose: 
     if (!open) return;
     inputRef.current?.focus();
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+      if (event.key === 'Escape') { event.preventDefault(); onClose(); }
       if (event.key !== 'Tab' || !panelRef.current) return;
       const focusable = [...panelRef.current.querySelectorAll<HTMLElement>('button:not([disabled]), a[href], input:not([disabled])')];
       if (!focusable.length) return;
@@ -96,19 +97,15 @@ export function SiteAssistantPanel({ open, onClose }: { open: boolean; onClose: 
   };
 
   return (
-    <AnimatePresence>
+    <>
       {open && (
-        <motion.section
+        <section
           ref={panelRef}
           id="x1-assistant-panel"
           className="assistant-panel"
           aria-label="X1 assistant"
           role="dialog"
           aria-modal="true"
-          initial={{ opacity: 0, y: 12, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 10, scale: 0.98 }}
-          transition={{ duration: 0.16 }}
         >
           <div className="assistant-head">
             <p className="text-sm font-semibold">X1 Assistant</p>
@@ -116,7 +113,7 @@ export function SiteAssistantPanel({ open, onClose }: { open: boolean; onClose: 
           </div>
 
           <div className="assistant-welcome-card" aria-live="polite">
-            <div className="assistant-welcome-visual" aria-hidden="true">{welcome.visual}</div>
+            <div className="assistant-welcome-visual" aria-hidden="true"><GuidePortrait section={welcome.section}/></div>
             <div>
               <p className="assistant-welcome-title">{welcome.title}</p>
               <p className="assistant-welcome-body">{welcome.body}</p>
@@ -166,9 +163,9 @@ export function SiteAssistantPanel({ open, onClose }: { open: boolean; onClose: 
             />
             <button type="submit" className="assistant-send" disabled={loading || !input.trim()}>{loading ? '…' : 'Send'}</button>
           </form>
-          <p className="assistant-note">How can I help you today? I can help you navigate the website.</p>
-        </motion.section>
+          <p className="assistant-note">Guidance from the public X1 catalogue.</p>
+        </section>
       )}
-    </AnimatePresence>
+    </>
   );
 }
