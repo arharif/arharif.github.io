@@ -36,6 +36,12 @@
   --input-bg: var(--surface);
   --serif: Georgia, "Times New Roman", serif;
 }
+:root[data-palette-flip],
+:root[data-palette-flip] *,
+:root[data-palette-flip] *::before,
+:root[data-palette-flip] *::after {
+  transition-property: border-color, box-shadow, transform, opacity !important;
+}
 :where(a, button, input, select, textarea, summary):focus-visible {
   outline: 3px solid var(--focus-ring);
   outline-offset: 3px;

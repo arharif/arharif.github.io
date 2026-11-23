@@ -19,7 +19,7 @@ The review uses the three supplied compositions and the later eight-palette refe
 
 Editorial Ivory is the default. The remaining palettes are Obsidian Sage, Cosmic Indigo, Arctic Blue, Desert Amber, Forest Horizon, Metropolitan Plum and Graphite Slate. The four printed swatches supply each theme's canvas, surface, text and accent. The dark themes use their lightest swatch for text. Desert Amber uses its brown text swatch for small controls on amber surfaces.
 
-Vite generates the initial palette rule and preference bootstrap from the same catalogue used by the picker. The existing `theme` key migrates the seven original preferences and six retired names from the initial redesign. A route-scoped override gives Arcade its neon colors. Shared themes resume on exit.
+Vite generates the initial palette rule and preference bootstrap from the same catalogue used by the picker. The existing `theme` key migrates the seven original preferences and six retired names from the initial redesign. A route-scoped override gives Arcade its neon colors. Shared themes resume on exit. Changes between light and dark palettes apply text and background together to keep contrast readable during the transition. Borders and shadows can still ease.
 
 The transition observer uses the previous and next universe, with the selected link as the visual origin. Its overlay ignores pointer input. Browser history, direct entry, hash targets and the reduced-motion preference remain available.
 

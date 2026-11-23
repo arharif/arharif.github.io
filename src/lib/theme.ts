@@ -13,8 +13,20 @@ function subscribe(listener: () => void) {
   window.addEventListener("x1-palette", listener);
   return () => window.removeEventListener("x1-palette", listener);
 }
+let paletteFrame = 0;
 function setTheme(theme: ThemeMode) {
-  document.documentElement.dataset.palette = theme;
+  const root = document.documentElement;
+  if (palettes[current()][5] !== palettes[theme][5]) {
+    // Commit readable foregrounds and backgrounds together when reversing polarity.
+    cancelAnimationFrame(paletteFrame);
+    root.dataset.paletteFlip = "true";
+    paletteFrame = requestAnimationFrame(() => {
+      paletteFrame = requestAnimationFrame(() => {
+        delete root.dataset.paletteFlip;
+      });
+    });
+  }
+  root.dataset.palette = theme;
   safeStorage.set("theme", theme);
   window.dispatchEvent(new Event("x1-palette"));
 }
