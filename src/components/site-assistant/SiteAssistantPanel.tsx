@@ -141,7 +141,7 @@ export function SiteAssistantPanel({ open, onClose }: { open: boolean; onClose: 
               className="assistant-input"
               value={input}
               onChange={(e) => setInput(e.target.value.slice(0, 280))}
-              placeholder="Ask about X1 topics, frameworks, certifications, games..."
+              placeholder={{ orb: 'Ask about X1', astronaut: 'Find an article or topic', phantom: 'Ask about games or controls' }[guide]}
               aria-label="Ask X1 about this website"
               autoComplete="off"
             />

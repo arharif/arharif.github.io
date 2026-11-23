@@ -13,6 +13,12 @@ export default function AdminPage() {
   const [content, setContent] = useState<ContentRecord[]>([]);
   const [selectedTopic, setSelectedTopic] = useState<TopicRecord | undefined>();
   const [selectedContent, setSelectedContent] = useState<ContentRecord | undefined>();
+  const [topicsOpen, setTopicsOpen] = useState(false);
+  function openTopic(topic?: TopicRecord) {
+    setSelectedTopic(topic);
+    setTopicsOpen(true);
+    requestAnimationFrame(() => document.getElementById("studio-topic-form")?.scrollIntoView({block:"start"}));
+  }
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
@@ -52,6 +58,7 @@ export default function AdminPage() {
     try {
       selectedTopic ? await updateTopic(selectedTopic.id, payload, token) : await createTopic(payload, token);
       setSelectedTopic(undefined);
+      setTopicsOpen(false);
       setNotice('Topic saved.');
       try { await load(); } catch { /* keep success notice when write succeeds */ }
     } catch (e) {
@@ -86,17 +93,17 @@ export default function AdminPage() {
   };
 
   return (
-    <PreviewToken.Provider value={token}><section className="space-y-4">
+    <PreviewToken.Provider value={token}><section className="publishing-studio space-y-4">
       {notice && <div role="status" className="glass rounded-xl border border-emerald-300/30 p-3 text-xs text-emerald-200">{notice}</div>}
       {error && <div role="alert" className="glass rounded-xl border border-rose-300/30 p-3 text-xs text-rose-200">{error}</div>}
       <div className="glass rounded-2xl p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-semibold">Owner Publishing Studio</h1>
-            <p className="text-sm text-muted">Simple publishing controls and recent updates.</p>
+
           </div>
           <div className="flex gap-2">
-            <button className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm hover:bg-white/15" onClick={() => setSelectedTopic(undefined)}>Create Topic</button>
+            <button className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm hover:bg-white/15" onClick={() => openTopic()}>Create Topic</button>
             <button className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm hover:bg-white/15" onClick={() => setSelectedContent(undefined)}>Create Content</button>
             <button className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm font-medium hover:bg-white/15" onClick={async()=>logout()}>Logout</button>
           </div>
@@ -116,23 +123,26 @@ export default function AdminPage() {
         </div>
         <div className="glass rounded-xl p-3">
           <p className="mb-2 text-xs text-muted">Recent topics</p>
-          <div className="space-y-1 text-sm">{recentTopics.length ? recentTopics.map((item) => <button key={item.id} className="block w-full rounded bg-white/5 px-2 py-1 text-left hover:bg-white/10" onClick={() => setSelectedTopic(item)}>{item.title}</button>) : <p className="text-xs text-muted">No topics yet.</p>}</div>
+          <div className="space-y-1 text-sm">{recentTopics.length ? recentTopics.map((item) => <button key={item.id} className="block w-full rounded bg-white/5 px-2 py-1 text-left hover:bg-white/10" onClick={() => openTopic(item)}>{item.title}</button>) : <p className="text-xs text-muted">No topics yet.</p>}</div>
         </div>
       </div>
       <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
-        <aside className="glass rounded-2xl p-4">
+        <aside className="glass self-start rounded-2xl p-4">
           <p className="mb-2 text-xs text-muted">Topics</p>
-          <button className="mb-2 w-full rounded-xl bg-white/10 p-2 text-left" onClick={() => setSelectedTopic(undefined)}>+ New Topic</button>
+          <button className="mb-2 w-full rounded-xl bg-white/10 p-2 text-left" onClick={() => openTopic()}>+ New Topic</button>
           <div className="space-y-1">
-            {topics.map((t)=><div key={t.id} className="rounded-lg bg-white/5 p-2"><button className="text-left text-sm" onClick={()=>setSelectedTopic(t)}>{t.title}</button><button className="ml-2 text-xs text-rose-300" onClick={async()=>{ if (!window.confirm(`Delete “${t.title}” and its content? This cannot be undone.`)) return; setNotice(''); setError(''); try { await deleteTopic(t.id, token); await load(); setNotice('Topic removed.'); } catch (e) { setError(friendly(e)); } }}>Delete</button></div>)}
+            {topics.map((t)=><div key={t.id} className="rounded-lg bg-white/5 p-2"><button className="text-left text-sm" onClick={()=>openTopic(t)}>{t.title}</button><button className="ml-2 text-xs text-rose-300" onClick={async()=>{ if (!window.confirm(`Delete “${t.title}” and its content? This cannot be undone.`)) return; setNotice(''); setError(''); try { await deleteTopic(t.id, token); await load(); setNotice('Topic removed.'); } catch (e) { setError(friendly(e)); } }}>Delete</button></div>)}
           </div>
           <p className="mb-2 mt-4 text-xs text-muted">Posts</p>
           <button className="mb-2 w-full rounded-xl bg-white/10 p-2 text-left" onClick={() => setSelectedContent(undefined)}>+ New Post</button>
           <div className="space-y-1">{content.map((c)=><div key={c.id} className="rounded-lg bg-white/5 p-2"><button className="text-left text-sm" onClick={()=>setSelectedContent(c)}>{c.title} <span className="text-xs text-muted">({c.status})</span></button><button className="ml-2 text-xs text-rose-300" onClick={async()=>{ if (!window.confirm(`Delete “${c.title}”? This cannot be undone.`)) return; setNotice(''); setError(''); try { await deleteContent(c.id, token); await load(); setNotice('Post removed.'); } catch (e) { setError(friendly(e)); } }}>Delete</button></div>)}</div>
         </aside>
         <div className="space-y-6">
-          <TopicEditor value={selectedTopic} saving={saving} onSave={saveTopic} />
-          <AdminEditor key={selectedContent?.id ?? "new"} ownerId={session.user.id} title="Create Post" topics={topics} value={selectedContent} saving={saving} onUpload={(f)=>uploadMedia(f,token)} onSave={saveContent} />
+          <details id="studio-topic-form" open={topicsOpen} onToggle={e => setTopicsOpen(e.currentTarget.open)}>
+            <summary>{selectedTopic ? 'Edit topic' : 'Topic settings'}</summary>
+            <TopicEditor value={selectedTopic} saving={saving} onSave={saveTopic} />
+          </details>
+          <AdminEditor key={selectedContent?.id ?? "new"} ownerId={session.user.id} title="Create Article" topics={topics} value={selectedContent} saving={saving} onUpload={(f)=>uploadMedia(f,token)} onSave={saveContent} />
         </div>
       </div>
     </section></PreviewToken.Provider>

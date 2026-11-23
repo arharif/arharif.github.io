@@ -1,20 +1,21 @@
-const MotionConfig = lazy(() => import('framer-motion').then(m => ({default: m.MotionConfig})));
 import { Github, Linkedin, Mail, Search, ShoppingBag } from 'lucide-react';
 import { Component, lazy, ReactNode, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate, Route, Routes, useLocation, useNavigate, useNavigationType, useParams } from 'react-router-dom';
+import { Navbar } from '@/components/Navbar';
+import { ProtectedRoute } from '@/routes/ProtectedRoute';
+import { AuthProvider } from '@/hooks/useAuth';
+import { hasSupabaseCoreConfig } from '@/lib/config';
+import { Gateway } from '@/pages/Gateway';
+import { UniverseTransition } from '@/components/UniverseTransition';
+
+const MotionConfig = lazy(() => import('framer-motion').then(m => ({default: m.MotionConfig})));
 const AdminPage = lazy(() => import("@/pages/PublishingStudio"));
 const LoginPage = lazy(() => import('@/pages/LoginPage'));
 const ProfessionalHome = lazy(() => import('@/pages/ArticleCollections').then(m => ({default:m.ProfessionalHome})));
 const TechnologyBook = lazy(() => import('@/pages/ArticleCollections').then(m => ({default:m.TechnologyBook})));
 const CuriositiesHub = lazy(() => import('@/pages/ArticleCollections').then(m => ({default:m.CuriositiesHub})));
 const CuriosityPost = lazy(() => import('@/pages/ArticleCollections').then(m => ({default:m.CuriosityPost})));
-import { Navbar } from '@/components/Navbar';
-import { ProtectedRoute } from '@/routes/ProtectedRoute';
-import { AuthProvider } from '@/hooks/useAuth';
 const SearchPage = lazy(() => import('@/pages/SearchPage'));
-import { hasSupabaseCoreConfig } from '@/lib/config';
-import { Gateway } from '@/pages/Gateway';
-import { UniverseTransition } from '@/components/UniverseTransition';
 const Insights = lazy(() => import('@/pages/Insights'));
 const AcademicApp = lazy(() => import('@/academic/app/AcademicApp'));
 const ComplianceFrameworksPage = lazy(() => import('@/pages/ComplianceFrameworksPage').then((m) => ({ default: m.ComplianceFrameworksPage })));

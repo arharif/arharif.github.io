@@ -127,22 +127,18 @@ export function AdminEditor({
   const incomplete = saving || uploading || !form.title.trim() || !form.topicId || !form.slug.trim();
   return (
     <fieldset disabled={saving || uploading} className="glass studio-editor rounded-2xl p-4">
-      <h3 className="mb-4 text-xl font-semibold">{value ? `Edit ${title.replace('Create ', '')}` : title}</h3>
+      <header className="studio-heading"><h2>{value ? 'Edit article' : title}</h2>
+        <span>{form.status === 'published' ? 'Published' : 'Private draft'}</span>
+      </header>
       {localError && <p className="mb-3 text-xs text-rose-300">{localError}</p>}
-      <div className="grid gap-3 md:grid-cols-2">
-        <input className="rounded-xl bg-white/10 p-2" placeholder="Title" aria-label="Article title" required value={form.title} onChange={(e) => { const nextTitle = e.target.value; update('title', nextTitle); if (!value) update('slug', nextTitle.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-')); }} />
-        <input className="rounded-xl bg-white/10 p-2" placeholder="Slug" value={form.slug} onChange={(e) => update('slug', e.target.value.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-'))} />
-        <select className="rounded-xl bg-white/10 p-2" aria-label="Topic" value={form.topicId} onChange={(e) => update('topicId', e.target.value)}>
+      <div className="studio-fields">
+        <label className="studio-title">Article title<input className="rounded-xl bg-white/10 p-2" placeholder="Title" aria-label="Article title" required value={form.title} onChange={(e) => { const nextTitle = e.target.value; update('title', nextTitle); if (!value) update('slug', nextTitle.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-')); }} /></label>
+        <label>Topic<select className="rounded-xl bg-white/10 p-2" aria-label="Topic" value={form.topicId} onChange={(e) => update('topicId', e.target.value)}>
           {topics.map((topic) => <option key={topic.id} value={topic.id}>{topic.title}</option>)}
-        </select>
-        <input className="rounded-xl bg-white/10 p-2" placeholder="Content type" value={form.contentType} onChange={(e) => update('contentType', e.target.value)} />
-        <div className="rounded-xl border border-white/10 bg-white/5 p-2 text-sm">
-          Status: <strong>{form.status === 'published' ? 'Published' : 'Draft — private'}</strong>
-        </div>
-        <input className="rounded-xl bg-white/10 p-2" placeholder="Author" value={form.authorName} onChange={(e) => update('authorName', e.target.value)} />
+        </select></label>
+        <label>Tags<input className="mt-3 w-full rounded-xl bg-white/10 p-2" placeholder="Quick tags (optional, text only)" value={(form.tags || []).join(',')} onChange={e => update('tags', e.target.value.split(','))} /></label>
+        <label className="studio-excerpt">Excerpt<textarea className="mt-3 w-full rounded-xl bg-white/10 p-2" rows={2} placeholder="Excerpt" value={form.excerpt} onChange={(e) => update('excerpt', e.target.value)} /></label>
       </div>
-      <input className="mt-3 w-full rounded-xl bg-white/10 p-2" placeholder="Quick tags (optional, text only)" value={(form.tags || []).join(',')} onChange={e => update('tags', e.target.value.split(','))} />
-      <textarea className="mt-3 w-full rounded-xl bg-white/10 p-2" rows={2} placeholder="Excerpt" value={form.excerpt} onChange={(e) => update('excerpt', e.target.value)} />
 
       <div className="mt-3 grid gap-2 md:grid-cols-[200px_1fr_1fr]">
         <select className="rounded-xl bg-white/10 p-2" aria-label="Editor mode" value={bodyFormat} onChange={(e)=>setBodyFormat(e.target.value as typeof bodyFormat)}>
@@ -194,6 +190,12 @@ export function AdminEditor({
         {form.coverImageUrl && <><EditorialImage src={form.coverImageUrl} alt="Cover preview" className="h-16 w-24 rounded object-cover"/><button type="button" onClick={() => update('coverImageUrl','')}>Remove cover</button></>}
       </div>
 
+      <details className="studio-metadata"><summary>Publishing details</summary>
+        <div className="studio-fields">
+          <label>Article URL slug<input className="rounded-xl bg-white/10 p-2" placeholder="Slug" value={form.slug} onChange={(e) => update('slug', e.target.value.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-'))} /></label>
+          <label>Author<input className="rounded-xl bg-white/10 p-2" placeholder="Author" value={form.authorName} onChange={(e) => update('authorName', e.target.value)} /></label>
+          <label>Content type<input className="rounded-xl bg-white/10 p-2" placeholder="Content type" value={form.contentType} onChange={(e) => update('contentType', e.target.value)} /></label>
+        </div>
       <div className="mt-3 grid gap-3 md:grid-cols-2">
         <input className="rounded-xl bg-white/10 p-2" placeholder="Collections IDs comma-separated" value={(form.collectionIds || []).join(',')} onChange={(e) => update('collectionIds', e.target.value.split(',').map((x) => x.trim()).filter(Boolean))} />
         <input className="rounded-xl bg-white/10 p-2" placeholder="SEO meta title" value={form.metaTitle ?? ''} onChange={(e) => update('metaTitle', e.target.value)} />
@@ -204,6 +206,7 @@ export function AdminEditor({
         <label><input type="checkbox" checked={Boolean(form.featured)} onChange={(e)=>update('featured', e.target.checked)} /> Featured</label>
         <label><input type="checkbox" checked={Boolean(form.favorite)} onChange={(e)=>update('favorite', e.target.checked)} /> Favorite</label>
       </div>
+      </details>
       <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="Publishing actions">
         <button type="button" disabled={incomplete} onClick={() => void save('draft')}>
           {saving ? 'Saving…' : form.status === 'published' ? 'Unpublish to draft' : 'Save draft'}

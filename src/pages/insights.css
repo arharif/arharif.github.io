@@ -197,3 +197,6 @@
 .insights-search, .cosmic-filters button:is(:hover,[aria-pressed="true"]) { background: var(--surface); color: var(--text); }
 .insights-search input::placeholder { color: var(--muted); }
 .editorial-grid { grid-auto-rows: 1fr; }
+
+/* Reserve the first screen of results while the public catalogue loads. */
+.insights-status[data-loading="true"] { min-height: 100vh; min-height: 100svh; }

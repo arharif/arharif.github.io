@@ -182,7 +182,7 @@ export default function Insights() {
           })}
         </div>
       )}
-      <div className="insights-status" role="status">
+      <div className="insights-status" data-loading={status === "loading"} role="status">
         {status === "loading" ? (
           "Loading published articles…"
         ) : status === "error" ? (

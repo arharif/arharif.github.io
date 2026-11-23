@@ -1110,7 +1110,7 @@
 }
 .xa .xa-heatmap small {
   font-size: 8px;
-  color: var(--xa-muted);
+  color: inherit;
 }
 .xa .xa-heatmap button:hover {
   background: color-mix(in srgb, var(--cell-color) 33%, var(--xa-bg));

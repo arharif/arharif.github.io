@@ -119,6 +119,7 @@ try {
   const suffix = randomUUID().slice(0, 8);
   const topic = "Studio test " + suffix,
     title = "Editorial integration " + suffix;
+  await page.getByRole("button", {name:"Create Topic",exact:true}).click();
   await page.getByPlaceholder("Topic title", { exact: true }).fill(topic);
   await page.getByPlaceholder("Category", { exact: true }).fill("Technology");
   await page.getByRole("button", { name: "Save Topic", exact: true }).click();
@@ -161,7 +162,7 @@ try {
     .getByLabel("Cover image", { exact: true })
     .setInputFiles("public/art/insights-small.webp");
   await expect(image).toHaveJSProperty("naturalWidth", 448);
-  await page.getByLabel("Article title").scrollIntoViewIfNeeded();
+  await page.locator(".studio-editor").evaluate(el => window.scrollTo(0, el.getBoundingClientRect().top + scrollY - 80));
   await page.screenshot({path:"docs/elite-review/studio.jpg",quality:82});
   await page.reload();
   await expect(page.getByLabel("Article title")).toHaveValue(title);
@@ -220,11 +221,27 @@ try {
   evidence.push(
     "Publish, anonymous article and image reads, edit, unpublish and withdrawal of image access",
   );
-  await page.getByRole("button", { name: "Logout", exact: true }).click();
+  async function logout() {
+    const revoked = page.waitForResponse(r => r.url().includes("/auth/v1/logout") && r.request().method() === "POST");
+    await page.getByRole("button", { name: "Logout", exact: true }).click();
+    assert.ok((await revoked).ok());
+  }
+  await logout();
   await expect(
     page.getByRole("heading", { name: "Owner sign in" }),
   ).toBeVisible();
   evidence.push("Logout closes the studio");
+  await login(owner);
+  await expect(page.getByLabel("One-time code")).toBeVisible();
+  await expect(page.locator(".owner-login code")).toHaveCount(0);
+  // A used authenticator code cannot be replayed. Wait for the next TOTP step.
+  await new Promise(resolve => setTimeout(resolve, 31_000 - Date.now() % 30_000));
+  await page.getByLabel("One-time code").fill(totp(secret));
+  await page.getByRole("button", {name:"Verify",exact:true}).click();
+  await expect(page.getByRole("heading",{name:"Owner Publishing Studio"})).toBeVisible();
+  await logout();
+  await page.unrouteAll({behavior:"wait"});
+  evidence.push("Returning owner completes an existing TOTP challenge without re-enrollment");
   await writeFile(
     "docs/elite-review/owner-local.json",
     JSON.stringify(
