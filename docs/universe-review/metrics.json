@@ -1,0 +1,134 @@
+{
+  "chromium": "156.0.8078.79",
+  "viewport": "1440x900",
+  "method": "Three local cold-context navigations per page, each followed by opening the assistant. No throttling. Interaction is the longest observed Event Timing duration, zero if below the browser reporting threshold.",
+  "metrics": [
+    {
+      "name": "home",
+      "lcp": 572,
+      "cls": 0.0031443384910970727,
+      "interaction": 40,
+      "transferredBytes": 689753
+    },
+    {
+      "name": "insights",
+      "lcp": 780,
+      "cls": 0.00007771508487654321,
+      "interaction": 64,
+      "transferredBytes": 705991
+    },
+    {
+      "name": "academic",
+      "lcp": 740,
+      "cls": 0,
+      "interaction": 64,
+      "transferredBytes": 856536
+    },
+    {
+      "name": "about",
+      "lcp": 1104,
+      "cls": 0,
+      "interaction": 224,
+      "transferredBytes": 484698
+    },
+    {
+      "name": "contribute",
+      "lcp": 656,
+      "cls": 0,
+      "interaction": 120,
+      "transferredBytes": 470213
+    },
+    {
+      "name": "arcade",
+      "lcp": 828,
+      "cls": 0,
+      "interaction": 32,
+      "transferredBytes": 778561
+    },
+    {
+      "name": "home",
+      "lcp": 580,
+      "cls": 0.0031443384910970727,
+      "interaction": 24,
+      "transferredBytes": 689753
+    },
+    {
+      "name": "insights",
+      "lcp": 1256,
+      "cls": 0.00007771508487654321,
+      "interaction": 48,
+      "transferredBytes": 751495
+    },
+    {
+      "name": "academic",
+      "lcp": 632,
+      "cls": 0,
+      "interaction": 72,
+      "transferredBytes": 856536
+    },
+    {
+      "name": "about",
+      "lcp": 1016,
+      "cls": 0,
+      "interaction": 160,
+      "transferredBytes": 484698
+    },
+    {
+      "name": "contribute",
+      "lcp": 748,
+      "cls": 0,
+      "interaction": 0,
+      "transferredBytes": 470213
+    },
+    {
+      "name": "arcade",
+      "lcp": 1320,
+      "cls": 0,
+      "interaction": 48,
+      "transferredBytes": 794485
+    },
+    {
+      "name": "home",
+      "lcp": 960,
+      "cls": 0.0031443384910970727,
+      "interaction": 40,
+      "transferredBytes": 689753
+    },
+    {
+      "name": "insights",
+      "lcp": 1480,
+      "cls": 0.00007771508487654321,
+      "interaction": 88,
+      "transferredBytes": 751495
+    },
+    {
+      "name": "academic",
+      "lcp": 688,
+      "cls": 0,
+      "interaction": 80,
+      "transferredBytes": 856536
+    },
+    {
+      "name": "about",
+      "lcp": 904,
+      "cls": 0,
+      "interaction": 96,
+      "transferredBytes": 484698
+    },
+    {
+      "name": "contribute",
+      "lcp": 720,
+      "cls": 0,
+      "interaction": 208,
+      "transferredBytes": 470213
+    },
+    {
+      "name": "arcade",
+      "lcp": 1624,
+      "cls": 0,
+      "interaction": 32,
+      "transferredBytes": 778561
+    }
+  ],
+  "errors": []
+}
