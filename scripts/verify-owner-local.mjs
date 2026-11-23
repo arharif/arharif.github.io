@@ -2,10 +2,13 @@
 // Local integration data stays in that stack until it is removed.
 import assert from "node:assert/strict";
 import { randomUUID, createHmac } from "node:crypto";
-import { readFile, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
 import { chromium, expect } from "@playwright/test";
-import { createServer } from "vite";
+import { build, preview } from "vite";
 
 const api = "http://127.0.0.1:54321";
 const anon = process.env.X1_TEST_ANON;
@@ -67,17 +70,18 @@ db(sql.replaceAll("<OWNER_UUID>", owner.id));
 db("notify pgrst, 'reload schema';");
 process.env.VITE_SUPABASE_URL = "https://x1-local.example";
 process.env.VITE_SUPABASE_ANON_KEY = anon;
-const server = await createServer({
-  server: { host: "127.0.0.1", port: 4177, strictPort: true },
-  logLevel: "error",
-});
-await server.listen();
+const root = await mkdtemp(join(tmpdir(), "x1-owner-build-"));
+const buildOptions = {outDir: join(root, "dist")};
+await build({build: buildOptions, logLevel: "error"});
+execFileSync(process.execPath, [fileURLToPath(new URL("./pages-csp.mjs", import.meta.url))], {cwd:root});
+const server = await preview({build: buildOptions, preview: {host:"127.0.0.1", port:4177, strictPort:true},logLevel:"error"});
 const browser = await chromium.launch({
   executablePath:
     process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || "/usr/bin/chromium",
   args: ["--no-sandbox"],
 });
 const evidence = [];
+const timingsMs = {};
 try {
   const page = await browser.newPage({
     viewport: { width: 1440, height: 900 },
@@ -109,6 +113,7 @@ try {
   await expect(page.getByLabel("One-time code")).toBeVisible();
   const secret = await page.locator("code").innerText();
   await page.getByLabel("One-time code").fill(totp(secret));
+  const verifyStarted = performance.now();
   await page.getByRole("button", { name: "Verify", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Owner Publishing Studio" }),
@@ -116,6 +121,7 @@ try {
   evidence.push(
     "Owner password, native factor enrollment, TOTP challenge, verification and AAL2 studio access",
   );
+  timingsMs.verifyToStudio = Math.round(performance.now() - verifyStarted);
   const suffix = randomUUID().slice(0, 8);
   const topic = "Studio test " + suffix,
     title = "Editorial integration " + suffix;
@@ -166,10 +172,12 @@ try {
   await page.screenshot({path:"docs/elite-review/studio.jpg",quality:82});
   await page.reload();
   await expect(page.getByLabel("Article title")).toHaveValue(title);
+  const saveStarted = performance.now();
   await page.getByRole("button", { name: "Save draft", exact: true }).click();
   await expect(
     page.getByText("Draft saved privately and verified."),
   ).toBeVisible();
+  timingsMs.saveToDraftConfirmation = Math.round(performance.now() - saveStarted);
   const select = async (token = anon) => {
     const r = await fetch(
       api + "/rest/v1/content?title=eq." + encodeURIComponent(title),
@@ -196,14 +204,24 @@ try {
   evidence.push(
     "Topic creation, visual and Markdown editing, live preview, tags, manual reading time, cover upload/replacement/removal, reload recovery and private draft read boundaries",
   );
+  const publishStarted = performance.now();
   await page.getByRole("button", { name: "Publish", exact: true }).click();
   await expect(
     page.getByText("Published and verified on the public content service."),
   ).toBeVisible();
+  timingsMs.publishToPublicConfirmation = Math.round(performance.now() - publishStarted);
   assert.equal((await select())[0].reading_minutes, 4);
   assert.deepEqual((await select())[0].tags, ["AI", "Technology"]);
   assert.equal(await imageStatus(), 200);
   await page.getByLabel("Article Markdown").fill("Published revision.");
+  const mutation = /https:\/\/x1-local\.example\/rest\/v1\/content\?.*/;
+  await page.route(mutation, route => route.request().method() === "PATCH" ? route.abort() : route.fallback());
+  await page.getByRole("button", {name:"Update published",exact:true}).click();
+  await expect(page.getByText("Save failed. Your edits are retained in this tab.")).toBeVisible();
+  await expect(page.getByLabel("Article Markdown")).toHaveValue("Published revision.");
+  assert.notEqual((await select())[0].body,"Published revision.");
+  await page.unroute(mutation);
+  evidence.push("An interrupted edit preserves unsaved text and the next attempt succeeds");
   await page
     .getByRole("button", { name: "Update published", exact: true })
     .click();
@@ -245,7 +263,7 @@ try {
   await writeFile(
     "docs/elite-review/owner-local.json",
     JSON.stringify(
-      { service: "Disposable local Supabase", evidence },
+      { service: "Disposable local Supabase", client:"Production Vite build with document CSP", timingsMs, evidence },
       null,
       2,
     ) + "\n",
@@ -253,5 +271,6 @@ try {
   console.log(evidence.join("\n"));
 } finally {
   await browser.close();
-  await server.close();
+  await new Promise(resolve => server.httpServer.close(resolve));
+  await rm(root,{recursive:true,force:true});
 }
