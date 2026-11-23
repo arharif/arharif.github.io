@@ -8,11 +8,11 @@
 :root[data-palette] {
   --x1-surface-raised: color-mix(
     in srgb,
-    var(--x1-surface) 92%,
-    var(--x1-text)
+    var(--x1-surface) 70%,
+    var(--x1-bg)
   );
-  --x1-text-muted: color-mix(in srgb, var(--x1-text) 76%, var(--x1-bg));
-  --x1-accent-ink: color-mix(in srgb, var(--x1-accent) 44%, var(--x1-text));
+  --x1-text-muted: color-mix(in srgb, var(--x1-text) 92%, var(--x1-bg));
+  --x1-accent-ink: color-mix(in srgb, var(--x1-accent) 20%, var(--x1-text));
   --x1-border: color-mix(in srgb, var(--x1-text) 22%, var(--x1-surface));
   --x1-focus-ring: var(--x1-accent-ink);
   --x1-shadow: 0 8px 24px color-mix(in srgb, var(--x1-text) 9%, transparent);
@@ -29,7 +29,7 @@
   --focus-ring: var(--x1-focus-ring);
   --shadow-elev: var(--x1-shadow);
   --surface-elevated: var(--surface-strong);
-  --accent-soft: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  --accent-soft: color-mix(in srgb, var(--accent) 8%, var(--bg));
   --hover: var(--accent-soft);
   --dropdown-bg: var(--surface);
   --modal-bg: var(--surface);
@@ -631,7 +631,7 @@ body {
 }
 @keyframes route-enter {
   from {
-    opacity: 0.6;
+    opacity: 0.95;
     transform: translateY(3px);
   }
   to {
@@ -665,4 +665,10 @@ body {
   background:
     repeating-linear-gradient(90deg, transparent 0 55px, #4ffce735 56px),
     repeating-linear-gradient(0deg, transparent 0 55px, #4ffce735 56px);
+}
+
+/* Amber surfaces need the full brown ink for small controls and metadata. */
+:root[data-palette="desert-amber"]:not([data-arcade="true"]) {
+  --x1-text-muted: var(--x1-text);
+  --x1-accent-ink: var(--x1-text);
 }

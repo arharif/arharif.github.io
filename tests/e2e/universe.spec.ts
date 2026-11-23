@@ -13,6 +13,7 @@ async function palette(page: Page, name: string) {
 for (const [id, [name, bg, surface, ink, accent]] of Object.entries(palettes)) {
   test(name + " persists and reaches shared surfaces", async ({ page }) => {
     await page.goto("/");
+    await page.emulateMedia({ reducedMotion: "reduce" });
     await palette(page, name);
     await page.reload();
     test.setTimeout(90000);
@@ -74,7 +75,7 @@ test("legacy and invalid values migrate before the app mounts", async ({
     expect(await page.evaluate(() => localStorage.getItem("theme"))).toBe(id);
   }
 });
-for (const name of ["Crimson Red", "Editorial Ivory", "Imperial Gold"]) {
+for (const name of ["Metropolitan Plum", "Editorial Ivory", "Graphite Slate"]) {
   test(name + " cinematic round trip and browser history", async ({ page }) => {
     await page.goto("/");
     await palette(page, name);
@@ -134,7 +135,7 @@ test("gateway destinations, keyboard palette and reduced motion", async ({
   await page.keyboard.press("Enter");
   await expect(page.getByLabel("Open theme selector")).toHaveAttribute(
     "title",
-    "Imperial Gold",
+    "Graphite Slate",
   );
   for (const [card, path] of [
     [".dest-insights", "/insights-innovation"],

@@ -24,7 +24,7 @@ test("approved palettes provide readable text and cover every historic preferenc
       const values = [luminance(layer), luminance(text)].sort((a, b) => b - a);
       assert.ok((values[0] + 0.05) / (values[1] + 0.05) >= 4.5);
     }
-  assert.equal(Object.keys(legacyThemes).length, 7);
+  assert.equal(Object.keys(legacyThemes).length, 13);
   for (const id of Object.values(legacyThemes)) assert.ok(id in palettes);
 });
 test("all maze levels connect the player, crystal and exit", () => {
