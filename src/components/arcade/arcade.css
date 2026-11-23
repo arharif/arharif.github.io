@@ -1,0 +1,641 @@
+.arcade-layout {
+  display: grid;
+  grid-template-columns: clamp(145px, 13vw, 204px) minmax(0, 1fr);
+  min-height: 100svh;
+  background:
+    radial-gradient(ellipse at 60% 40%, #281057, transparent 60%), #0c0922;
+  color: #f9f5ff;
+  font-family: Inter, "Segoe UI", Arial, sans-serif;
+}
+.arcade-sidebar {
+  background: linear-gradient(#100c2d, #151135 70%, #26144f);
+  border-right: 1px solid #51437c;
+  padding: 10px 12px;
+}
+.arcade-logo {
+  display: block;
+  width: fit-content;
+  margin: 0 auto 16px;
+  font:
+    900 italic 46px/1.2 Arial,
+    sans-serif;
+  letter-spacing: -5px;
+  color: #e0d7ff;
+  text-shadow:
+    -2px 1px 10px #2ea2ff,
+    2px -1px 10px #df41ff;
+}
+.arcade-sidebar nav {
+  display: grid;
+  gap: 5px;
+}
+.arcade-sidebar nav + nav {
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid #49356d;
+}
+.arcade-sidebar :is(button, nav a) {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 11px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: #e3dbf7;
+  font-size: 0.85rem;
+  text-align: left;
+}
+.arcade-sidebar nav svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+.arcade-sidebar button[aria-pressed="true"],
+.arcade-sidebar :is(button, nav a):hover {
+  background: linear-gradient(115deg, #164384, #723082);
+  border-color: #bc74ff;
+  box-shadow: inset 0 0 12px #4edde922;
+}
+.arcade-main {
+  min-width: 0;
+}
+.arcade-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 50px;
+  padding: 8px 20px;
+  background: #151033;
+  border-bottom: 1px solid #483665;
+}
+.arcade-top span,
+.arcade-top label,
+.games-heading h2,
+.arcade-widget h2,
+.arcade-hero button,
+.arcade-card > div > button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.arcade-top span {
+  font-weight: 700;
+  white-space: nowrap;
+}
+.arcade-top span svg {
+  color: #ed9bff;
+}
+.arcade-top label {
+  border: 1px solid #645193;
+  border-radius: 30px;
+  padding: 6px 14px;
+  max-width: 480px;
+  flex: 1;
+  background: #262147;
+  font-size: 0.8rem;
+}
+.arcade-top input {
+  width: 100%;
+  min-width: 0;
+  background: transparent;
+  color: white;
+}
+.arcade-top input::placeholder {
+  color: #cfc5dd;
+}
+.arcade-hero {
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      #100d2944 40%,
+      #100a2980 70%,
+      transparent
+    ),
+    url("/art/arcade.webp") 50% 53% / cover;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  min-height: clamp(195px, 19vw, 280px);
+  padding: 20px 12px;
+  color: white;
+  text-align: center;
+  border-bottom: 1px solid #633d96;
+}
+.arcade-hero h1 {
+  font:
+    900 italic clamp(2.8rem, 5.5vw, 6rem) / 1 Arial,
+    sans-serif;
+  letter-spacing: -0.055em;
+  background: linear-gradient(105deg, #53faff, #fff 32%, #fc89ff 90%);
+  color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 2px 7px #9b40e2);
+}
+.arcade-hero p {
+  font-size: clamp(0.9rem, 1.6vw, 1.35rem);
+  font-weight: 650;
+  font-style: italic;
+  margin: 6px 0 14px;
+  text-shadow: 0 2px 5px #000;
+}
+.arcade-hero > div,
+.game-controls,
+.play-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.arcade-hero button {
+  border: 1px solid #ffcfff;
+  border-radius: 24px;
+  background: linear-gradient(160deg, #a417ae, #7d167b);
+  box-shadow: 0 0 14px #da34d68a;
+  padding: 8px 19px;
+  font-weight: 700;
+}
+.arcade-hero button + button {
+  border-color: #75eeff;
+  background: #122249;
+  box-shadow: 0 0 12px #31bdd675;
+}
+.arcade-content {
+  padding: 15px clamp(12px, 1.4vw, 24px) 22px;
+}
+.games-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 12px;
+}
+.games-heading h2,
+.arcade-widget h2 {
+  font-size: 1.1rem;
+  font-weight: 750;
+}
+.games-heading svg {
+  color: #f29bff;
+}
+.games-heading > button,
+.games-heading select {
+  border: 1px solid #6c5491;
+  border-radius: 20px;
+  padding: 5px 13px;
+  font-size: 0.76rem;
+  background: #251a41;
+}
+.arcade-cards {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: clamp(7px, 0.85vw, 17px);
+}
+.arcade-card {
+  --neon: #e879ff;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--neon);
+  border-radius: 14px;
+  background: linear-gradient(
+    160deg,
+    #14112e 28%,
+    color-mix(in srgb, var(--neon) 16%, #100920)
+  );
+  box-shadow: 0 0 9px color-mix(in srgb, var(--neon) 26%, transparent);
+  transition: transform 0.22s;
+}
+.arcade-card:hover {
+  transform: translateY(-3px);
+}
+.neon-1 {
+  --neon: #58e8ff;
+}
+.neon-2 {
+  --neon: #b071ff;
+}
+.neon-3 {
+  --neon: #ffb664;
+}
+.neon-4 {
+  --neon: #43f3d4;
+}
+.neon-5 {
+  --neon: #ff72da;
+}
+.arcade-card > img,
+.legacy-icon {
+  width: 100%;
+  aspect-ratio: 1.8;
+  object-fit: cover;
+}
+.legacy-icon {
+  display: grid;
+  place-items: center;
+  font-size: 2.4rem;
+  background: radial-gradient(ellipse at center, #5d3984, #16142e);
+}
+.arcade-card > div:not(.legacy-icon) {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex: 1;
+}
+.arcade-card h3 {
+  font-weight: 730;
+  font-size: clamp(0.83rem, 1.17vw, 1.15rem);
+  line-height: 1.13;
+}
+.arcade-card p,
+.arcade-widget p {
+  color: #ded6ef;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  margin: 5px 0 10px;
+}
+.arcade-card small {
+  font-size: 0.65rem;
+  padding: 2px 7px;
+  border: 1px solid #ffffff45;
+  border-radius: 20px;
+  margin-top: auto;
+}
+.arcade-card > div > button {
+  justify-content: center;
+  align-self: stretch;
+  background: color-mix(in srgb, var(--neon) 26%, #190d30);
+  border: 1px solid var(--neon);
+  border-radius: 16px;
+  box-shadow: 0 0 9px color-mix(in srgb, var(--neon) 33%, transparent);
+  margin-top: 10px;
+  padding: 4px;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+.favorite-game {
+  position: absolute;
+  right: 5px;
+  top: 5px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  background: #100a29d9;
+  border-radius: 50%;
+  color: white;
+}
+.favorite-game[aria-pressed="true"] {
+  color: #ff95d2;
+}
+.arcade-widgets {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 19px;
+}
+.arcade-widget {
+  border: 1px solid #554277;
+  border-radius: 14px;
+  padding: 15px;
+  background: linear-gradient(135deg, #2c174f, #161734);
+  box-shadow: 0 5px 19px #05031944;
+}
+.arcade-widget h2 {
+  font-size: 0.97rem;
+  margin-bottom: 13px;
+}
+.arcade-widget h2 svg {
+  width: 17px;
+  color: #a4efff;
+}
+.arcade-widget h3 {
+  font-weight: 650;
+  font-size: 0.92rem;
+}
+.arcade-widget small {
+  font-size: 0.71rem;
+  color: #dcd5ed;
+}
+.arcade-widget progress {
+  display: block;
+  width: 100%;
+  height: 7px;
+  accent-color: #55e7ec;
+  margin: 8px 0;
+}
+.badge-row,
+.stats-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.badge-row > span {
+  flex: 1;
+  text-align: center;
+  min-width: 0;
+  color: #b5a7c8;
+}
+.badge-row svg {
+  margin: 0 auto 4px;
+  width: 30px;
+  height: 30px;
+  padding: 5px;
+  border: 1px solid currentColor;
+  border-radius: 9px;
+}
+.badge-row small {
+  display: block;
+  font-size: 0.64rem;
+}
+.badge-row [data-earned="true"] {
+  color: #ffd163;
+}
+.stats-row strong {
+  border: 4px solid #b976ff;
+  border-left-color: #55eeff;
+  border-radius: 50%;
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+.stats-row dl {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 10px;
+  width: 100%;
+  font-size: 0.73rem;
+}
+.stats-row dd {
+  font-weight: bold;
+}
+.play-room {
+  width: min(700px, 95vw);
+  max-height: 90svh;
+  overflow: auto;
+  margin: auto;
+  padding: clamp(15px, 3vw, 28px);
+  color: #f6f4ff;
+  background: #19122f;
+  border: 1px solid #b07ff7;
+  border-radius: 20px;
+  box-shadow: 0 12px 90px #0b001e;
+  overscroll-behavior: contain;
+}
+.play-room::backdrop {
+  background: #09051cda;
+}
+.play-room header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+.play-room h2 {
+  font-size: 1.7rem;
+  font-weight: 750;
+}
+.play-room header small {
+  color: #91eeff;
+}
+.play-room > p {
+  font-size: 0.94rem;
+  color: #e0d9ec;
+  margin: 10px 0 18px;
+}
+.game-controls {
+  justify-content: flex-start;
+  margin: 12px 0;
+}
+.game-controls label {
+  display: grid;
+  gap: 4px;
+}
+.game-controls button,
+.game-controls select,
+.chaos-quiz button,
+.play-status button {
+  border: 1px solid #997abe;
+  background: #34274e;
+  color: white;
+  border-radius: 9px;
+  padding: 8px 13px;
+  font-size: 0.88rem;
+  max-width: 100%;
+  touch-action: manipulation;
+}
+.game-controls button:hover,
+.chaos-quiz button:hover {
+  background: #50366c;
+}
+.play-status {
+  justify-content: space-between;
+  color: #a5f5ff;
+  font-size: 0.9rem;
+  margin: 8px 0;
+}
+.action-game canvas {
+  width: 100%;
+  height: auto;
+  border: 1px solid #8c66af;
+  border-radius: 9px;
+}
+.haunted-board {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.haunted-board button {
+  border: 1px solid #b886ea;
+  border-radius: 11px;
+  background: linear-gradient(145deg, #59287d, #1b2356);
+  color: #fcbeff;
+  font-size: 1.8rem;
+  min-height: 54px;
+}
+.haunted-board [data-revealed="true"] {
+  background: #285364;
+  color: #c6ffff;
+}
+.maze-board {
+  display: grid;
+  width: min(100%, 360px);
+  background: #171333;
+  padding: 3px;
+  border: 1px solid #9769da;
+}
+.maze-board span {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  color: #fede7c;
+  font-size: clamp(10px, 4vw, 19px);
+  line-height: 1;
+}
+.maze-board .wall {
+  background: #4c2b75;
+  box-shadow: inset 0 0 2px #9b78d8;
+}
+.chaos-quiz > button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  margin: 6px 0;
+}
+.chaos-quiz h3 {
+  font-weight: 650;
+  margin: 12px 0;
+}
+.chaos-quiz [role="status"] {
+  margin-top: 12px;
+}
+@media (max-width: 1120px) {
+  .arcade-cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .arcade-widgets {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
+  }
+}
+@media (max-width: 740px) {
+  .arcade-layout {
+    display: block;
+  }
+  .arcade-sidebar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    flex-wrap: wrap;
+  }
+  .arcade-logo {
+    font-size: 28px;
+    margin: 0;
+  }
+  .arcade-sidebar nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+  }
+  .arcade-sidebar nav + nav {
+    border: 0;
+    margin: 0;
+    padding: 0;
+  }
+  .arcade-sidebar :is(button, nav a) {
+    padding: 5px 7px;
+    font-size: 0.73rem;
+    gap: 4px;
+  }
+  .arcade-sidebar nav svg {
+    width: 14px;
+    height: 14px;
+  }
+  .arcade-top {
+    padding: 6px 12px;
+  }
+  .arcade-hero {
+    min-height: 180px;
+  }
+  .arcade-hero h1 {
+    font-size: 3rem;
+  }
+  .arcade-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .arcade-hero > div {
+    display: flex;
+    justify-content: center;
+  }
+  .arcade-hero button {
+    padding: 6px 11px;
+  }
+  .arcade-widgets {
+    grid-template-columns: 1fr;
+  }
+}
+@media (min-width: 741px) {
+  .arcade-hero > div {
+    display: flex;
+    gap: 12px;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .arcade-hero h1,
+  .arcade-cards,
+  .arcade-sidebar > nav {
+    animation: editorial-in 0.36s ease-out both;
+  }
+  .arcade-hero {
+    animation: arcade-arrival 0.75s ease-out both;
+  }
+  @keyframes arcade-arrival {
+    from {
+      background-position: 50% 46%;
+    }
+    to {
+      background-position: 50% 53%;
+    }
+  }
+}
+
+.arcade-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 15% 84%, #5a1d87, transparent 41%),
+    linear-gradient(110deg, #0a183c, #230d44 58%, #1e1647);
+  min-height: clamp(190px, 16.3vw, 255px);
+}
+.arcade-hero::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0 0 0 55%;
+  background:
+    linear-gradient(90deg, #230d44, transparent 80%),
+    url("/art/arcade.webp") right center/auto 120% no-repeat;
+}
+.arcade-mascot {
+  position: absolute;
+  left: 3.5%;
+  top: 5%;
+  height: 92%;
+  width: 27%;
+  object-fit: contain;
+  pointer-events: none;
+  z-index: -1;
+  animation: mascot-arrive 0.85s ease-out both;
+}
+@keyframes mascot-arrive {
+  from {
+    transform: translate(-12px, 10px) rotate(-6deg);
+    opacity: 0.2;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+@media (max-width: 740px) {
+  .arcade-mascot {
+    left: -10px;
+    width: 23%;
+    height: 70%;
+    top: 0;
+  }
+  .arcade-hero::before {
+    opacity: 0.55;
+  }
+}
+.arcade-hero::before {
+  inset: 0 0 0 63%;
+  background-size: auto, cover;
+}

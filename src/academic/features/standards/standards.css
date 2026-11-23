@@ -250,23 +250,23 @@
   background: #4c333e;
   color: #f8d4e2;
 }
-.xa[data-theme="light"] .xa-stage-0 {
+.xa[data-scheme="light"] .xa-stage-0 {
   background: #d6ede5;
   color: #164d3c;
 }
-.xa[data-theme="light"] .xa-stage-1 {
+.xa[data-scheme="light"] .xa-stage-1 {
   background: #dce9f7;
   color: #1b406b;
 }
-.xa[data-theme="light"] .xa-stage-2 {
+.xa[data-scheme="light"] .xa-stage-2 {
   background: #e8dff4;
   color: #50336f;
 }
-.xa[data-theme="light"] .xa-stage-3 {
+.xa[data-scheme="light"] .xa-stage-3 {
   background: #f3ead5;
   color: #65501d;
 }
-.xa[data-theme="light"] .xa-stage-4 {
+.xa[data-scheme="light"] .xa-stage-4 {
   background: #f3dfe8;
   color: #71374e;
 }

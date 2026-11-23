@@ -19,7 +19,7 @@
   font-variant-numeric: tabular-nums;
   color-scheme: dark;
 }
-.xc[data-theme="light"] {
+.xc[data-scheme="light"] {
   --surface1: #fff;
   --surface2: #edf2f7;
   --canvas: #f1f4f8;
@@ -2721,7 +2721,7 @@
 .xc-flow-head {
   background: #2876b2;
 }
-.xc[data-theme="light"] .xc-confusion button:is(:first-child, :last-child) b {
+.xc[data-scheme="light"] .xc-confusion button:is(:first-child, :last-child) b {
   color: #136d59;
 }
 .xc .level-critical {
@@ -2736,16 +2736,16 @@
 .xc .level-low {
   color: #69cfa0;
 }
-.xc[data-theme="light"] .level-critical {
+.xc[data-scheme="light"] .level-critical {
   color: #ab2748;
 }
-.xc[data-theme="light"] .level-high {
+.xc[data-scheme="light"] .level-high {
   color: #954512;
 }
-.xc[data-theme="light"] .level-medium {
+.xc[data-scheme="light"] .level-medium {
   color: #775c0e;
 }
-.xc[data-theme="light"] .level-low {
+.xc[data-scheme="light"] .level-low {
   color: #176d49;
 }
 .focus-mode .xc-viewbar .x1-mark {
@@ -2754,7 +2754,7 @@
   border-radius: 5px;
   font-size: 8px;
 }
-.xc[data-theme="light"] .xc-cardcopy > svg {
+.xc[data-scheme="light"] .xc-cardcopy > svg {
   color: var(--brand);
 }
 .xc-execgrid > .xc-panel > header {

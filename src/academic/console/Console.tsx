@@ -34,7 +34,8 @@ import {
 } from "lucide-react";
 import { X1Mark } from "@/components/branding/X1Mark";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
-import { initTheme, themeMap } from "@/lib/theme";
+import { palettes } from "@/lib/palettes";
+import { useTheme } from "@/lib/theme";
 import { frameworkIds, names, type Framework } from "./catalogue";
 import { downloadProject, ProjectProvider, useProject } from "./context";
 import { Dialog } from "./ui";
@@ -93,6 +94,8 @@ const secondary = [
   ["Security Mindmap", "/security-mindmap"],
   ["Compliance Frameworks", "/compliance-frameworks"],
   ["Academic Library", "/academic-library"],
+  ["X1 Insights", "/insights-innovation"],
+  ["X1 Games", "/games"],
 ];
 function Illustration({ index }: { index: number }) {
   const id = "mini" + index,
@@ -629,7 +632,7 @@ function Workspace({
 export default function Console() {
   const loc = useLocation(),
     [params] = useSearchParams(),
-    [theme, setTheme] = useState(initTheme),
+    [theme, setTheme] = useTheme(),
     [menu, setMenu] = useState(false),
     [focus, setFocus] = useState(false);
   const space = spaces.find(
@@ -637,15 +640,6 @@ export default function Console() {
     ),
     requested = params.get("standard") as Framework,
     framework = frameworkIds.includes(requested) ? requested : frameworkIds[0];
-  useEffect(() => {
-    document.documentElement.classList.remove(...Object.values(themeMap));
-    document.documentElement.classList.add(themeMap[theme]);
-    try {
-      localStorage.setItem("theme", theme);
-    } catch {
-      /* Session theme remains available. */
-    }
-  }, [theme]);
   useEffect(() => {
     setMenu(false);
     setFocus(false);
@@ -675,7 +669,7 @@ export default function Console() {
       ?.setAttribute("content", url);
   }, [loc.pathname, space]);
   return (
-    <div className="xc" data-theme={theme}>
+    <div className="xc" data-theme={theme} data-scheme={palettes[theme][5]}>
       <a className="xc-skip" href="#xc-main">
         Skip to workspace
       </a>

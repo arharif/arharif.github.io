@@ -1,65 +1,105 @@
-import { Check, ChevronDown, Palette } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
-import { ThemeMode } from '@/lib/theme';
+import { Check, Sun } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { palettes, type ThemeMode } from "@/lib/palettes";
 
-const themes: ThemeMode[] = ['dark', 'light', 'purple', 'rainbow', 'egyptian', 'horror', 'elite-green'];
-
-const themeMeta: Record<ThemeMode, { label: string; previewClass: string }> = {
-  dark: { label: 'Dark theme', previewClass: 'theme-preview theme-preview--dark' },
-  light: { label: 'Light theme', previewClass: 'theme-preview theme-preview--light' },
-  purple: { label: 'Purple theme', previewClass: 'theme-preview theme-preview--purple' },
-  rainbow: { label: 'Rainbow theme', previewClass: 'theme-preview theme-preview--rainbow' },
-  'egyptian': { label: 'Egyptian theme', previewClass: 'theme-preview theme-preview--egyptian' },
-  horror: { label: 'Horror theme', previewClass: 'theme-preview theme-preview--horror' },
-  'elite-green': { label: 'Elite Green', previewClass: 'theme-preview theme-preview--elite-green' },
-};
-
-export function ThemeSwitcher({ mode, onChange }: { mode: ThemeMode; onChange: (m: ThemeMode) => void }) {
+export function ThemeSwitcher({
+  mode,
+  onChange,
+}: {
+  mode: ThemeMode;
+  onChange: (mode: ThemeMode) => void;
+}) {
   const [open, setOpen] = useState(false);
-  const wrapRef = useRef<HTMLDivElement | null>(null);
-
+  const root = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
   useEffect(() => {
-    const onDocClick = (e: MouseEvent) => {
-      if (!wrapRef.current?.contains(e.target as Node)) setOpen(false);
-    };
-    const onEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
-    };
-    document.addEventListener('mousedown', onDocClick);
-    document.addEventListener('keydown', onEscape);
-    return () => {
-      document.removeEventListener('mousedown', onDocClick);
-      document.removeEventListener('keydown', onEscape);
-    };
-  }, []);
-
+    if (!open) return;
+    root.current
+      ?.querySelector<HTMLButtonElement>("[aria-checked=true]")
+      ?.focus();
+    function outside(event: PointerEvent) {
+      if (!root.current?.contains(event.target as Node)) setOpen(false);
+    }
+    document.addEventListener("pointerdown", outside);
+    return () => document.removeEventListener("pointerdown", outside);
+  }, [open]);
+  function close() {
+    setOpen(false);
+    trigger.current?.focus();
+  }
   return (
-    <div ref={wrapRef} className="relative" aria-label="Theme selector">
-      <button type="button" className="theme-switcher-button" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-haspopup="menu" aria-label="Open theme selector" title={`Current theme: ${themeMeta[mode].label}`}>
-        <Palette size={13} aria-hidden="true" />
-        <ChevronDown size={13} className={`theme-switcher-chevron ${open ? 'is-open' : ''}`} aria-hidden="true" />
+    <div
+      ref={root}
+      className="palette-picker"
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget)) setOpen(false);
+      }}
+    >
+      <button
+        ref={trigger}
+        className="palette-trigger"
+        aria-label="Open theme selector"
+        title={palettes[mode][0]}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen(!open)}
+      >
+        <Sun size={20} />
       </button>
-      {open ? (
-        <div className="theme-switcher-menu" role="menu" aria-label="Theme options">
-          {themes.map((theme) => {
-            const selected = theme === mode;
+      {open && (
+        <div
+          className="palette-menu"
+          role="menu"
+          aria-label="Theme options"
+          onKeyDown={(e) => {
+            if (e.key === "Escape") {
+              e.stopPropagation();
+              close();
+              return;
+            }
+            const buttons = Array.from(
+              e.currentTarget.querySelectorAll("button"),
+            );
+            const index = buttons.indexOf(
+              document.activeElement as HTMLButtonElement,
+            );
+            const next = {
+              ArrowDown: (index + 1) % 8,
+              ArrowUp: (index + 7) % 8,
+              Home: 0,
+              End: 7,
+            }[e.key];
+            if (next !== undefined) {
+              e.preventDefault();
+              buttons[next].focus();
+            }
+          }}
+        >
+          {(Object.keys(palettes) as ThemeMode[]).map((id) => {
+            const [label, bg, surface, ink, accent] = palettes[id];
             return (
               <button
-                key={theme}
-                onClick={() => { onChange(theme); setOpen(false); }}
-                className={`theme-palette-button ${selected ? 'is-selected' : ''}`}
+                key={id}
                 role="menuitemradio"
-                aria-checked={selected}
-                aria-label={`Activate ${themeMeta[theme].label}`}
-                title={themeMeta[theme].label}
+                aria-label={`Activate ${label}`}
+                aria-checked={id === mode}
+                onClick={() => {
+                  onChange(id);
+                  close();
+                }}
               >
-                <span className={`${themeMeta[theme].previewClass} theme-preview--circle`} aria-hidden="true" />
-                {selected ? <Check size={12} className="theme-swatch-check" aria-hidden="true" /> : null}
+                <i
+                  style={{
+                    background: `conic-gradient(${bg} 25%, ${surface} 0 50%, ${ink} 0 75%, ${accent} 0)`,
+                  }}
+                />
+                {label}
+                {id === mode && <Check size={14} />}
               </button>
             );
           })}
         </div>
-      ) : null}
+      )}
     </div>
   );
 }

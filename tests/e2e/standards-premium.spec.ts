@@ -31,9 +31,9 @@ test("three workspace choices expand by standard and retain the official themes"
   await expect(page.locator(".x1-mark")).toBeVisible();
   await page.getByRole("button", { name: "Open theme selector" }).click();
   await page
-    .getByRole("menuitemradio", { name: "Activate Purple theme" })
+    .getByRole("menuitemradio", { name: "Activate Metropolitan Plum" })
     .click();
-  await expect(page.locator(".xc")).toHaveAttribute("data-theme", "purple");
+  await expect(page.locator(".xc")).toHaveAttribute("data-theme", "metropolitan-plum");
 });
 test("standards architecture differs by source and CSF category drill-down reaches official outcomes", async ({
   page,
@@ -170,8 +170,8 @@ for (const theme of ["dark", "light"])
   }) => {
     await page.goto(`${base}/standards?previous=1`);
     await expect(page.locator(".xe-standard-tree").first()).toBeVisible();
-    if (theme === "light")
-      await page.getByRole("button", { name: "Switch to light theme" }).click();
+    await page.getByRole("button", { name: "Open theme selector" }).click();
+      await page.getByRole("menuitemradio", { name: theme === "light" ? "Activate Editorial Ivory" : "Activate Cosmic Indigo" }).click();
     const result = await new AxeBuilder({ page })
       .include(".xa")
       .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])

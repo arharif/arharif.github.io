@@ -387,12 +387,18 @@ for (const route of [
         nodes: item.nodes.map((node) => node.target),
       })),
     ).toEqual([]);
-    await page.getByRole("button", { name: "Switch to light theme" }).click();
-    const lightResults = await new AxeBuilder({ page })
+    await page.getByRole("button", { name: "Open theme selector" }).click();
+    await page.getByRole("menuitemradio", { name: "Activate Cosmic Indigo" }).click();
+    const darkResults = await new AxeBuilder({ page })
       .include(".xa")
       .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
       .analyze();
-    expect(lightResults.violations.map((item) => item.id)).toEqual([]);
+    expect(
+      darkResults.violations.map((item) => ({
+        id: item.id,
+        nodes: item.nodes.map((node) => node.failureSummary),
+      })),
+    ).toEqual([]);
     await page.setViewportSize({ width: 320, height: 720 });
     expect(
       await page.evaluate(

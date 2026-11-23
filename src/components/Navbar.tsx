@@ -1,61 +1,64 @@
-import { ChevronDown, Gamepad2, LockKeyhole, Menu, X } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
-import { Link, NavLink, useLocation } from 'react-router-dom';
-import { ThemeMode } from '@/lib/theme';
-import { ThemeSwitcher } from './ThemeSwitcher';
-import { X1Mark } from './branding/X1Mark';
+import { Menu, Search, UserRound, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Link, NavLink, useLocation } from "react-router-dom";
+import { useTheme } from "@/lib/theme";
+import { ThemeSwitcher } from "./ThemeSwitcher";
+import { X1Mark } from "./branding/X1Mark";
 
-type NavItem = { to: string; label: string; active: (path: string) => boolean };
-const insights: NavItem[] = [
-  { to: '/professional', label: 'Technology & Innovation', active: (p) => p.startsWith('/professional') },
-  { to: '/personal', label: 'Curiosities & Philosophy', active: (p) => p.startsWith('/personal') },
+const links = [
+  ["/about-x1", "About Me"],
+  ["/x1-academic", "X1 Academic"],
+  ["/insights-innovation", "X1 Insights"],
+  ["/games", "X1 Games"],
+  ["/submitting", "Contribute"],
 ];
-
-function Dropdown({ label, items, open, setOpen, mobile = false }: { label: string; items: NavItem[]; open: boolean; setOpen: (value: boolean) => void; mobile?: boolean }) {
+export function Navbar() {
+  const [mode, setMode] = useTheme();
+  const [open, setOpen] = useState(false);
   const location = useLocation();
-  const active = items.some((item) => item.active(location.pathname));
-  const id = `${mobile ? 'mobile-' : ''}${label.toLowerCase().replace(/\W+/g, '-')}-menu`;
-  return <div className="academic-nav">
-    <button type="button" className={`nav-link ${active ? 'is-active' : ''}`} aria-expanded={open} aria-haspopup="menu" aria-controls={id} onClick={() => setOpen(!open)}>
-      {label}<ChevronDown size={15} className={open ? 'rotate-180' : ''} aria-hidden="true" />
-    </button>
-    {open && <div className="academic-nav-menu" id={id} role="menu">{items.map((item) => <NavLink role="menuitem" key={item.to} to={item.to} className={`nav-link ${item.active(location.pathname) ? 'is-active' : ''}`} aria-current={item.active(location.pathname) ? 'page' : undefined}>{item.label}</NavLink>)}</div>}
-  </div>;
-}
-
-export function Navbar({ mode, onTheme }: { mode: ThemeMode; onTheme: (m: ThemeMode) => void }) {
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [menu, setMenu] = useState<'insights' | null>(null);
-  const location = useLocation();
-  const headerRef = useRef<HTMLElement>(null);
-  useEffect(() => { setMobileOpen(false); setMenu(null); }, [location.pathname]);
-  useEffect(() => {
-    const closeOutside = (event: PointerEvent) => { if (!headerRef.current?.contains(event.target as Node)) setMenu(null); };
-    const closeEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') { setMenu(null); setMobileOpen(false); } };
-    document.addEventListener('pointerdown', closeOutside); document.addEventListener('keydown', closeEscape);
-    return () => { document.removeEventListener('pointerdown', closeOutside); document.removeEventListener('keydown', closeEscape); };
-  }, []);
-  const aboutActive = location.pathname === '/about-x1';
-  const contributeActive = location.pathname === '/submitting';
-  const utility = <><NavLink to="/games" className={`nav-utility ${location.pathname === '/games' ? 'is-active' : ''}`} aria-label="Entertainment" title="Entertainment"><Gamepad2 size={17} strokeWidth={1.9} aria-hidden="true" /></NavLink><NavLink to="/admin" className={`nav-utility ${location.pathname === '/admin' || location.pathname === '/login' ? 'is-active' : ''}`} aria-label="Admin" title="Admin"><LockKeyhole size={17} strokeWidth={1.9} aria-hidden="true" /></NavLink><ThemeSwitcher mode={mode} onChange={onTheme} /></>;
-  return <header ref={headerRef} className="nav-shell nav-enter sticky top-0 z-50">
-    <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 p-3 md:px-4">
-      <Link to="/" className="flex items-center rounded-lg" aria-label="X1 home" title="Home"><X1Mark size="sm" mode={mode} /></Link>
-      <nav className="hidden items-center gap-1.5 lg:flex" aria-label="Primary navigation">
-        <NavLink to="/about-x1" className={`nav-link ${aboutActive ? 'is-active' : ''}`}>About Me</NavLink>
-        <NavLink to="/x1-academic" className="nav-link">X1 Academic</NavLink>
-        <Dropdown label="Insights & Innovation" items={insights} open={menu === 'insights'} setOpen={(v) => setMenu(v ? 'insights' : null)} />
-        <NavLink to="/submitting" className={`nav-link ${contributeActive ? 'is-active' : ''}`}>Connect / Contribute</NavLink>
-      </nav>
-      <div className="hidden items-center gap-2 lg:flex">{utility}</div>
-      <button className="nav-mobile-trigger lg:hidden" onClick={() => setMobileOpen(!mobileOpen)} aria-expanded={mobileOpen} aria-controls="mobile-navigation" aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'}>{mobileOpen ? <X /> : <Menu />}</button>
-    </div>
-    {mobileOpen && <nav id="mobile-navigation" className="mobile-nav glass is-open mx-4 rounded-2xl p-4 lg:hidden" aria-label="Mobile navigation">
-      <NavLink tabIndex={mobileOpen ? 0 : -1} to="/about-x1" className={`nav-link ${aboutActive ? 'is-active' : ''}`}>About Me</NavLink>
-      <NavLink to="/x1-academic" className="nav-link">X1 Academic</NavLink>
-      <Dropdown mobile label="Insights & Innovation" items={insights} open={menu === 'insights'} setOpen={(v) => setMenu(v ? 'insights' : null)} />
-      <NavLink tabIndex={mobileOpen ? 0 : -1} to="/submitting" className={`nav-link ${contributeActive ? 'is-active' : ''}`}>Connect / Contribute</NavLink>
-      <div className="mt-2 flex items-center gap-2">{utility}</div>
-    </nav>}
-  </header>;
+  const trigger = useRef<HTMLButtonElement>(null);
+  useEffect(() => setOpen(false), [location.pathname]);
+  return (
+    <header
+      className="uni-nav"
+      onKeyDown={(e) => {
+        if (open && e.key === "Escape") {
+          setOpen(false);
+          trigger.current?.focus();
+        }
+      }}
+    >
+      <div className="uni-nav-inner">
+        <Link to="/" aria-label="X1 home">
+          <X1Mark size="sm" />
+        </Link>
+        <nav id="gateway-nav" aria-label="Primary navigation" data-open={open}>
+          {links.map(([to, label]) => (
+            <NavLink key={to} to={to}>
+              {label}
+            </NavLink>
+          ))}
+        </nav>
+        <div className="uni-utilities">
+          <Link to="/search" aria-label="Search website">
+            <Search size={19} />
+          </Link>
+          <ThemeSwitcher mode={mode} onChange={setMode} />
+          <Link to="/admin" aria-label="Account">
+            <UserRound size={19} />
+          </Link>
+          <button
+            ref={trigger}
+            className="mobile-toggle"
+            aria-label={open ? "Close navigation menu" : "Open navigation menu"}
+            aria-expanded={open}
+            aria-controls="gateway-nav"
+            onClick={() => setOpen(!open)}
+          >
+            {open ? <X /> : <Menu />}
+          </button>
+        </div>
+      </div>
+    </header>
+  );
 }

@@ -539,10 +539,8 @@ for (const route of [
     if (route === "/standards/800-53")
       await expect(page.getByRole("heading", { name: /AC-2/ })).toBeVisible();
     for (const theme of ["dark", "light"]) {
-      if (theme === "light")
-        await page
-          .getByRole("button", { name: "Switch to light theme" })
-          .click();
+      await page.getByRole("button", { name: "Open theme selector" }).click();
+      await page.getByRole("menuitemradio", { name: theme === "light" ? "Activate Editorial Ivory" : "Activate Cosmic Indigo" }).click();
       const result = await new AxeBuilder({ page })
         .include(".xa")
         .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])

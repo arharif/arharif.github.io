@@ -11,8 +11,6 @@ import {
   MessageSquare,
   CheckCircle,
   ArrowUpRight,
-  Sun,
-  Moon,
   Menu,
   ListChecks,
   PanelRight,
@@ -30,7 +28,8 @@ import "../studio/studio.css";
 import "../features/standards/standards.css";
 import { X1Mark } from "@/components/branding/X1Mark";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
-import { initTheme, themeMap, type ThemeMode } from "@/lib/theme";
+import { palettes } from "@/lib/palettes";
+import { useTheme } from "@/lib/theme";
 import { AuthProvider } from "@/hooks/useAuth";
 import GlobalSearch from "../studio/GlobalSearch";
 import ProjectControls from "../studio/ProjectControls";
@@ -105,16 +104,7 @@ function Layout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { caseId, storageError } = useAcademic();
   const mainRef = useRef<HTMLElement>(null);
-  const [theme, setTheme] = useState<ThemeMode>(() => initTheme());
-  useEffect(() => {
-    document.documentElement.classList.remove(...Object.values(themeMap));
-    document.documentElement.classList.add(themeMap[theme]);
-    try {
-      localStorage.setItem("theme", theme);
-    } catch {
-      /* Session theme remains usable. */
-    }
-  }, [theme]);
+  const [theme, setTheme] = useTheme();
   const relative = location.pathname.slice(base.length).replace(/\/$/, "");
   const isLab = relative.startsWith("/labs/");
   const hasCase =
@@ -165,7 +155,7 @@ function Layout() {
   return (
     <div
       className="xa xs-academy"
-      data-theme={theme}
+      data-theme={theme} data-scheme={palettes[theme][5]}
       data-sidebar={collapsed ? "collapsed" : "expanded"}
     >
       <a className="skip-link" href="#academic-main">
@@ -213,28 +203,10 @@ function Layout() {
             >
               <PanelRight size={17} /> Explain
             </button>
-            <a className="xa-button secondary" href="/">
+            <Link className="xa-button secondary" to="/">
               Professional gateway <ArrowUpRight size={14} aria-hidden="true" />
-            </a>
+            </Link>
             <ThemeSwitcher mode={theme} onChange={setTheme} />
-            <button
-              aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
-              onClick={() => {
-                const next = theme === "dark" ? "light" : "dark";
-                setTheme(next);
-                try {
-                  localStorage.setItem("theme", next);
-                } catch {
-                  /* Theme remains usable for the session. */
-                }
-              }}
-            >
-              {theme === "dark" ? (
-                <Sun size={17} aria-hidden="true" />
-              ) : (
-                <Moon size={17} aria-hidden="true" />
-              )}
-            </button>
           </div>
         </div>
       </header>
@@ -279,7 +251,7 @@ function Layout() {
             <Link to={`${base}/learning`} aria-label="Find your learning path">
               Find your learning path →
             </Link>
-            <a href="/">Main website ↗</a>
+            <Link to="/games">X1 Games →</Link><Link to="/insights-innovation">X1 Insights →</Link><Link to="/">Main website ↗</Link>
           </div>
         </aside>
         <main id="academic-main" tabIndex={-1} ref={mainRef}>

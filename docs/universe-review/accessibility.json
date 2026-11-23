@@ -1,0 +1,377 @@
+{
+  "engine": "axe-core via @axe-core/playwright",
+  "browser": "Chromium",
+  "tags": [
+    "wcag2a",
+    "wcag2aa",
+    "wcag21aa",
+    "wcag22aa"
+  ],
+  "viewport": [
+    1280,
+    720
+  ],
+  "reducedMotion": true,
+  "results": [
+    {
+      "theme": "editorial-ivory",
+      "path": "/about-x1",
+      "issues": []
+    },
+    {
+      "theme": "editorial-ivory",
+      "path": "/professional",
+      "issues": []
+    },
+    {
+      "theme": "editorial-ivory",
+      "path": "/personal",
+      "issues": []
+    },
+    {
+      "theme": "editorial-ivory",
+      "path": "/submitting",
+      "issues": []
+    },
+    {
+      "theme": "editorial-ivory",
+      "path": "/login",
+      "issues": []
+    },
+    {
+      "theme": "editorial-ivory",
+      "path": "/x1-academic",
+      "issues": []
+    },
+    {
+      "theme": "editorial-ivory",
+      "path": "/insights-innovation",
+      "issues": []
+    },
+    {
+      "theme": "editorial-ivory",
+      "path": "/",
+      "issues": []
+    },
+    {
+      "theme": "editorial-ivory",
+      "path": "/personal/post/freedom-and-identity",
+      "issues": []
+    },
+    {
+      "theme": "obsidian-sage",
+      "path": "/about-x1",
+      "issues": []
+    },
+    {
+      "theme": "obsidian-sage",
+      "path": "/professional",
+      "issues": []
+    },
+    {
+      "theme": "obsidian-sage",
+      "path": "/personal",
+      "issues": []
+    },
+    {
+      "theme": "obsidian-sage",
+      "path": "/submitting",
+      "issues": []
+    },
+    {
+      "theme": "obsidian-sage",
+      "path": "/login",
+      "issues": []
+    },
+    {
+      "theme": "obsidian-sage",
+      "path": "/x1-academic",
+      "issues": []
+    },
+    {
+      "theme": "obsidian-sage",
+      "path": "/insights-innovation",
+      "issues": []
+    },
+    {
+      "theme": "obsidian-sage",
+      "path": "/",
+      "issues": []
+    },
+    {
+      "theme": "obsidian-sage",
+      "path": "/personal/post/freedom-and-identity",
+      "issues": []
+    },
+    {
+      "theme": "cosmic-indigo",
+      "path": "/about-x1",
+      "issues": []
+    },
+    {
+      "theme": "cosmic-indigo",
+      "path": "/professional",
+      "issues": []
+    },
+    {
+      "theme": "cosmic-indigo",
+      "path": "/personal",
+      "issues": []
+    },
+    {
+      "theme": "cosmic-indigo",
+      "path": "/submitting",
+      "issues": []
+    },
+    {
+      "theme": "cosmic-indigo",
+      "path": "/login",
+      "issues": []
+    },
+    {
+      "theme": "cosmic-indigo",
+      "path": "/x1-academic",
+      "issues": []
+    },
+    {
+      "theme": "cosmic-indigo",
+      "path": "/insights-innovation",
+      "issues": []
+    },
+    {
+      "theme": "cosmic-indigo",
+      "path": "/",
+      "issues": []
+    },
+    {
+      "theme": "cosmic-indigo",
+      "path": "/personal/post/freedom-and-identity",
+      "issues": []
+    },
+    {
+      "theme": "arctic-blue",
+      "path": "/about-x1",
+      "issues": []
+    },
+    {
+      "theme": "arctic-blue",
+      "path": "/professional",
+      "issues": []
+    },
+    {
+      "theme": "arctic-blue",
+      "path": "/personal",
+      "issues": []
+    },
+    {
+      "theme": "arctic-blue",
+      "path": "/submitting",
+      "issues": []
+    },
+    {
+      "theme": "arctic-blue",
+      "path": "/login",
+      "issues": []
+    },
+    {
+      "theme": "arctic-blue",
+      "path": "/x1-academic",
+      "issues": []
+    },
+    {
+      "theme": "arctic-blue",
+      "path": "/insights-innovation",
+      "issues": []
+    },
+    {
+      "theme": "arctic-blue",
+      "path": "/",
+      "issues": []
+    },
+    {
+      "theme": "arctic-blue",
+      "path": "/personal/post/freedom-and-identity",
+      "issues": []
+    },
+    {
+      "theme": "desert-amber",
+      "path": "/about-x1",
+      "issues": []
+    },
+    {
+      "theme": "desert-amber",
+      "path": "/professional",
+      "issues": []
+    },
+    {
+      "theme": "desert-amber",
+      "path": "/personal",
+      "issues": []
+    },
+    {
+      "theme": "desert-amber",
+      "path": "/submitting",
+      "issues": []
+    },
+    {
+      "theme": "desert-amber",
+      "path": "/login",
+      "issues": []
+    },
+    {
+      "theme": "desert-amber",
+      "path": "/x1-academic",
+      "issues": []
+    },
+    {
+      "theme": "desert-amber",
+      "path": "/insights-innovation",
+      "issues": []
+    },
+    {
+      "theme": "desert-amber",
+      "path": "/",
+      "issues": []
+    },
+    {
+      "theme": "desert-amber",
+      "path": "/personal/post/freedom-and-identity",
+      "issues": []
+    },
+    {
+      "theme": "forest-horizon",
+      "path": "/about-x1",
+      "issues": []
+    },
+    {
+      "theme": "forest-horizon",
+      "path": "/professional",
+      "issues": []
+    },
+    {
+      "theme": "forest-horizon",
+      "path": "/personal",
+      "issues": []
+    },
+    {
+      "theme": "forest-horizon",
+      "path": "/submitting",
+      "issues": []
+    },
+    {
+      "theme": "forest-horizon",
+      "path": "/login",
+      "issues": []
+    },
+    {
+      "theme": "forest-horizon",
+      "path": "/x1-academic",
+      "issues": []
+    },
+    {
+      "theme": "forest-horizon",
+      "path": "/insights-innovation",
+      "issues": []
+    },
+    {
+      "theme": "forest-horizon",
+      "path": "/",
+      "issues": []
+    },
+    {
+      "theme": "forest-horizon",
+      "path": "/personal/post/freedom-and-identity",
+      "issues": []
+    },
+    {
+      "theme": "metropolitan-plum",
+      "path": "/about-x1",
+      "issues": []
+    },
+    {
+      "theme": "metropolitan-plum",
+      "path": "/professional",
+      "issues": []
+    },
+    {
+      "theme": "metropolitan-plum",
+      "path": "/personal",
+      "issues": []
+    },
+    {
+      "theme": "metropolitan-plum",
+      "path": "/submitting",
+      "issues": []
+    },
+    {
+      "theme": "metropolitan-plum",
+      "path": "/login",
+      "issues": []
+    },
+    {
+      "theme": "metropolitan-plum",
+      "path": "/x1-academic",
+      "issues": []
+    },
+    {
+      "theme": "metropolitan-plum",
+      "path": "/insights-innovation",
+      "issues": []
+    },
+    {
+      "theme": "metropolitan-plum",
+      "path": "/",
+      "issues": []
+    },
+    {
+      "theme": "metropolitan-plum",
+      "path": "/personal/post/freedom-and-identity",
+      "issues": []
+    },
+    {
+      "theme": "graphite-slate",
+      "path": "/about-x1",
+      "issues": []
+    },
+    {
+      "theme": "graphite-slate",
+      "path": "/professional",
+      "issues": []
+    },
+    {
+      "theme": "graphite-slate",
+      "path": "/personal",
+      "issues": []
+    },
+    {
+      "theme": "graphite-slate",
+      "path": "/submitting",
+      "issues": []
+    },
+    {
+      "theme": "graphite-slate",
+      "path": "/login",
+      "issues": []
+    },
+    {
+      "theme": "graphite-slate",
+      "path": "/x1-academic",
+      "issues": []
+    },
+    {
+      "theme": "graphite-slate",
+      "path": "/insights-innovation",
+      "issues": []
+    },
+    {
+      "theme": "graphite-slate",
+      "path": "/",
+      "issues": []
+    },
+    {
+      "theme": "graphite-slate",
+      "path": "/personal/post/freedom-and-identity",
+      "issues": []
+    }
+  ]
+}

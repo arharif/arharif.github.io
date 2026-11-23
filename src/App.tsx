@@ -1,24 +1,23 @@
-import { AnimatePresence, motion } from 'framer-motion';
-import { BookOpen, Compass, Github, GraduationCap, Lightbulb, Linkedin, Mail, Search, Shield, ShoppingBag, Sparkles } from 'lucide-react';
+import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
+import { Github, Linkedin, Mail, Search, ShoppingBag } from 'lucide-react';
 import { Component, lazy, ReactNode, Suspense, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Link, Navigate, Route, Routes, useLocation, useNavigate, useNavigationType, useParams } from 'react-router-dom';
 import { AdminEditor } from '@/components/admin/AdminEditor';
 import { TopicEditor } from '@/components/admin/TopicEditor';
 import { X1Mark } from '@/components/branding/X1Mark';
 import { ArticleView } from '@/components/ArticleView';
 import { ContentCard } from '@/components/Cards';
 import { Navbar } from '@/components/Navbar';
-import { ThemeMotionBackground } from '@/components/ThemeMotionBackground';
-import { SearchBar } from '@/components/SearchBar';
 import { TopicFilterBar } from '@/components/TopicFilterBar';
 import { ProtectedRoute } from '@/routes/ProtectedRoute';
 import { AuthProvider, useAuth } from '@/hooks/useAuth';
 import { createContent, createTopic, deleteContent, deleteTopic, listAdminContent, listAdminTopics, listPublishedContent, listPublishedTopics, updateContent, updateTopic, uploadMedia } from '@/lib/cms';
-import { searchContent } from '@/lib/content';
+const SearchPage = lazy(() => import('@/pages/SearchPage'));
 import { genericAccessDenied, genericAuthError, hasSupabaseCoreConfig } from '@/lib/config';
-import { initTheme, ThemeMode, themeMap } from '@/lib/theme';
+import { Gateway } from '@/pages/Gateway';
+import { UniverseTransition } from '@/components/UniverseTransition';
+const Insights = lazy(() => import('@/pages/Insights'));
 import { normalizeUniverse, universeMeta } from '@/lib/universe';
-import { safeStorage } from '@/lib/storage';
 import { ContentRecord, TopicRecord } from './content/types';
 const AcademicApp = lazy(() => import('@/academic/app/AcademicApp'));
 const ComplianceFrameworksPage = lazy(() => import('@/pages/ComplianceFrameworksPage').then((m) => ({ default: m.ComplianceFrameworksPage })));
@@ -53,48 +52,6 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
     if (this.state.hasError) return <div className="mx-auto max-w-3xl p-10"><div className="glass rounded-2xl p-6"><h1 className="text-2xl font-semibold">Unable to load page</h1><p className="mt-3 text-muted">A temporary issue interrupted rendering. Please refresh and try again.</p></div></div>;
     return this.props.children;
   }
-}
-
-function Landing() {
-  const nav = useNavigate();
-
-  return (
-    <section className="relative"> 
-      <div className="landing-ambient pointer-events-none absolute inset-0 -z-10 overflow-hidden" aria-hidden="true">
-        <span className="landing-orb landing-orb--a" />
-        <span className="landing-orb landing-orb--b" />
-        <span className="landing-orb landing-orb--c" />
-      </div>
-      <header className="landing-positioning py-10 md:py-16">
-        <p className="academic-eyebrow">Cybersecurity · Technology · Ideas</p>
-        <h1 className="mt-3 max-w-4xl text-4xl font-semibold leading-tight md:text-6xl">Clear thinking for a changing digital world.</h1>
-        <p className="mt-5 max-w-2xl text-base leading-7 text-muted md:text-lg">A place to explore cybersecurity, technology and business risk alongside research, curiosity and new ideas.</p>
-        <div className="mt-7 max-w-xl"><SearchBar /></div>
-      </header>
-      <motion.section aria-label="Explore X1" className="landing-portals grid gap-5 py-4 md:grid-cols-2" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, ease: 'easeOut' }}>
-        <button className="landing-portal glass" onClick={() => nav('/x1-academic')}><span className="landing-portal-icon"><GraduationCap aria-hidden="true" /></span><span className="academic-eyebrow">Knowledge portal</span><strong>X1 Academic</strong><span>Practical cybersecurity knowledge for learning, research and stronger decisions.</span><span className="landing-portal-link">Explore Academic <span aria-hidden="true">→</span></span></button>
-        <button className="landing-portal glass" onClick={() => nav('/insights-innovation')}><span className="landing-portal-icon"><Lightbulb aria-hidden="true" /></span><span className="academic-eyebrow">Knowledge &amp; Exploration</span><strong>Insights &amp; Innovation</strong><span>Ideas on technology, innovation, philosophy and human behaviour. A space for curiosity, critical thinking and continuous learning.</span><span className="landing-portal-link">Explore Ideas <span aria-hidden="true">→</span></span></button>
-      </motion.section>
-    </section>
-  );
-}
-
-function PortalHub() {
-  const items = [
-    ['/professional', 'Technology & Innovation', 'Explore emerging technology and strategic digital perspectives.'],
-    ['/personal', 'Curiosities & Philosophy', 'Consider ideas, culture and perspectives beyond the familiar.'],
-  ];
-  return <section><header className="academic-hero glass rounded-3xl p-6 md:p-9"><p className="academic-eyebrow">Knowledge &amp; Exploration</p><h1 className="mt-2 text-3xl font-semibold md:text-5xl">Insights &amp; Innovation</h1><p className="mt-4 max-w-3xl text-muted">Exploring technology, ideas, philosophy, human behaviour and emerging trends, connecting curiosity, critical thinking and different perspectives to better understand how the world is changing.</p></header><div className="mt-6 grid gap-4 md:grid-cols-3">{items.map(([to, title, description]) => <Link key={to} to={to} className="academic-card glass rounded-2xl p-5"><span className="academic-eyebrow">Explore</span><h2 className="mt-3 text-xl font-semibold">{title}</h2><p className="mt-3 text-sm leading-6 text-muted">{description}</p><span className="academic-open mt-auto pt-5">Open <span aria-hidden="true">→</span></span></Link>)}</div></section>;
-}
-function SearchPage() {
-  const [topics, setTopics] = useState<TopicRecord[]>([]);
-  const [content, setContent] = useState<ContentRecord[]>([]);
-  const [query, setQuery] = useState('');
-  const nav = useNavigate();
-  useEffect(() => { loadPublishedGraph().then(({ topics: t, content: c }) => { setTopics(t); setContent(c); }); }, []);
-  const matchedTopics = topics.filter((t) => `${t.title} ${t.description} ${t.category}`.toLowerCase().includes(query.toLowerCase()));
-  const matchedContent = searchContent(content, query);
-  return <section><h1 className="mb-4 text-3xl font-semibold">Search</h1><div className="glass mb-5 rounded-2xl p-3"><label htmlFor="site-search" className="sr-only">Search topics, articles, tags and collections</label><input id="site-search" type="search" className="w-full bg-transparent outline-none" placeholder="Search topics, articles, tags, collections" maxLength={120} value={query} onChange={(e) => setQuery(e.target.value)} /></div><div className="grid gap-6 md:grid-cols-2"><div><h2 className="mb-2 text-xl font-semibold">Topics</h2>{matchedTopics.map((t)=><button key={t.id} onClick={()=>nav(normalizeUniverse(t.universe)==='professional'?`/professional/topic/${t.slug}`:'/personal')} className="glass mb-2 block w-full rounded-xl p-3 text-left">{t.title}</button>)}</div><div><h2 className="mb-2 text-xl font-semibold">Content</h2>{matchedContent.map((c)=>{ const topic = topics.find((t)=>t.id===c.topicId); return <button key={c.id} onClick={()=>nav(topic && normalizeUniverse(topic.universe)==='professional'?`/professional/topic/${topic.slug}`:`/personal/post/${c.slug}`)} className="glass mb-2 block w-full rounded-xl p-3 text-left">{c.title}</button>; })}</div></div></section>;
 }
 
 function ProfessionalHome() {
@@ -373,8 +330,8 @@ function LoginPage() {
           <motion.div key={inOtpStep ? 'otp' : 'credentials'} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.2 }}>
             {!inOtpStep ? (
               <>
-                <input className="mt-4 w-full rounded-xl bg-white/10 p-2" value={email} onChange={(e) => setEmail(e.target.value.slice(0, 120))} placeholder="Email" disabled={locked} autoComplete="email" />
-                <input className="mt-3 w-full rounded-xl bg-white/10 p-2" type="password" value={password} onChange={(e)=>setPassword(e.target.value.slice(0, 128))} placeholder="Password" autoComplete="current-password" disabled={locked} />
+                <input className="mt-4 w-full rounded-xl bg-white/10 p-2" value={email} onChange={(e) => setEmail(e.target.value.slice(0, 120))} aria-label="Email" placeholder="Email" disabled={locked} autoComplete="email" />
+                <input className="mt-3 w-full rounded-xl bg-white/10 p-2" type="password" value={password} onChange={(e)=>setPassword(e.target.value.slice(0, 128))} aria-label="Password" placeholder="Password" autoComplete="current-password" disabled={locked} />
                 <button
                   className="mt-3 w-full rounded-xl bg-white/15 px-4 py-2"
                   disabled={loading || locked || !hasSupabaseCoreConfig || !validEmail || password.length < 8}
@@ -632,20 +589,12 @@ Blog/Article Content:
 function NotFound() { return <section className="mx-auto max-w-xl py-24 text-center"><h1 className="text-4xl font-semibold">404</h1><Link to="/" className="mt-4 inline-block rounded-xl bg-white/10 px-4 py-2">Home</Link></section>; }
 
 function Shell() {
-  useEffect(() => {
-    const font = document.createElement('link');
-    font.rel = 'stylesheet';
-    font.href = 'https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap';
-    document.head.appendChild(font);
-    return () => font.remove();
-  }, []);
-  const [mode, setMode] = useState<ThemeMode>(() => initTheme());
   const location = useLocation();
+  const navigation = useNavigationType();
   const mainRef = useRef<HTMLElement>(null);
-  useEffect(() => { document.documentElement.classList.remove('theme-dark', 'theme-light', 'theme-purple', 'theme-rainbow', 'theme-egyptian', 'theme-horror', 'theme-elite-green'); document.documentElement.classList.add(themeMap[mode]); safeStorage.set('theme', mode); }, [mode]);
   useEffect(() => {
     const pages: Record<string, { title: string; description: string }> = {
-      '/': { title: 'Cybersecurity Advisory', description: 'Explore cybersecurity, technology and business risk alongside research, curiosity and new ideas.' },
+      '/': { title: 'X1 Digital Universe', description: 'Explore cybersecurity, technology and business risk alongside research, curiosity and new ideas.' },
       '/x1-academic': { title: 'X1 Academic', description: 'Structured cybersecurity knowledge, frameworks and professional learning resources.' },
       '/insights-innovation': { title: 'Insights & Innovation', description: 'Ideas on technology, innovation, philosophy, human behaviour and continuous learning.' },
       '/about-x1': { title: 'Cybersecurity Capabilities', description: 'An integrated view of cybersecurity strategy, risk, governance, assurance and business resilience.' },
@@ -656,7 +605,7 @@ function Shell() {
       '/security-mindmap': { title: 'Security Map', description: 'Explore cybersecurity roles, capabilities and learning pathways.' },
       '/Security_Mindmap': { title: 'Security Map', description: 'Explore cybersecurity roles, capabilities and learning pathways.' },
       '/search': { title: 'Search', description: 'Search X1 topics, articles, resources and collections.' },
-      '/games': { title: 'Entertainment', description: 'A collection of lightweight interactive games and challenges.' },
+      '/games': { title: 'X1 Arcade', description: 'A collection of lightweight interactive games and challenges.' },
       '/submitting': { title: 'Connect / Contribute', description: 'Connect with X1 or submit an article for editorial review.' },
       '/admin': { title: 'Admin', description: 'X1 content administration.' },
       '/login': { title: 'Login', description: 'Sign in to X1 administration.' },
@@ -678,37 +627,44 @@ function Shell() {
   }, [location.pathname]);
 
   useEffect(() => {
-    if (!location.hash) window.scrollTo({ top: 0, behavior: 'auto' });
-    mainRef.current?.focus({ preventScroll: Boolean(location.hash) });
+    if (!location.hash && navigation !== 'POP') window.scrollTo({ top: 0, behavior: 'auto' });
+    mainRef.current?.focus({ preventScroll: true });
   }, [location.pathname]);
 
   useEffect(() => {
-    const hash = location.hash.replace('#', '').trim();
+    const hash = location.hash.slice(1);
     if (!hash) return;
-    const run = () => {
-      const target = document.getElementById(hash);
+    let id = hash;
+    try { id = decodeURIComponent(hash); } catch { /* Keep literal fragments. */ }
+    let highlight: HTMLElement | null = null;
+    let timer = 0;
+    const reveal = () => {
+      const target = document.getElementById(id);
       if (!target) return;
-      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      observer.disconnect();
+      target.scrollIntoView({ behavior: 'instant', block: 'start' });
+      highlight = target;
       target.classList.add('search-target-highlight');
-      window.setTimeout(() => target.classList.remove('search-target-highlight'), 2200);
+      timer = window.setTimeout(() => target.classList.remove('search-target-highlight'), 1000);
     };
-    window.setTimeout(run, 120);
+    const observer = new MutationObserver(reveal);
+    if (mainRef.current) observer.observe(mainRef.current, { childList:true, subtree:true });
+    reveal();
+    return () => { observer.disconnect(); clearTimeout(timer); highlight?.classList.remove('search-target-highlight'); };
   }, [location.hash, location.pathname]);
 
 
   return (
-    <div className="gradient-bg min-h-screen transition-colors duration-500">
+    <div className="universe-shell" data-page={location.pathname.replace(/\/$/, "") || "/"}>
       <a href="#main-content" className="skip-link">Skip to main content</a>
-      <ThemeMotionBackground mode={mode} />
-      <Navbar mode={mode} onTheme={setMode} />
+      {location.pathname.replace(/\/$/, "") !== "/games" && <Navbar />}
       <main id="main-content" ref={mainRef} tabIndex={-1} className="mx-auto max-w-6xl p-4 md:p-8">
-        {!hasSupabaseCoreConfig && <div className="glass mb-4 rounded-xl p-3 text-xs text-amber-300">Configuration is incomplete. Some authenticated features may be unavailable.</div>}
-        <AnimatePresence mode="wait">
-          <motion.div key={location.pathname} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.25 }}>
+        {!hasSupabaseCoreConfig && ["/login", "/admin"].includes(location.pathname) && <div className="glass mb-4 rounded-xl p-3 text-xs text-amber-300">Configuration is incomplete. Some authenticated features may be unavailable.</div>}
+        <div key={location.pathname} data-route={location.pathname}>
             <Routes>
-              <Route path="/" element={<Landing />} />
-              <Route path="/insights-innovation" element={<PortalHub />} />
-              <Route path="/search" element={<SearchPage />} />
+              <Route path="/" element={<Gateway />} />
+              <Route path="/insights-innovation" element={<Suspense fallback={<RouteLoading label="insights" />}><Insights /></Suspense>} />
+              <Route path="/search" element={<Suspense fallback={<RouteLoading label="search" />}><SearchPage /></Suspense>} />
               <Route path="/professional" element={<ProfessionalHome />} />
               <Route path="/professional/topic/:slug" element={<TechnologyBook />} />
               <Route path="/personal" element={<CuriositiesHub />} />
@@ -724,13 +680,11 @@ function Shell() {
               <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </motion.div>
-        </AnimatePresence>
+        </div>
       </main>
-      <Suspense fallback={null}><SiteAssistantLauncher /></Suspense>
       <footer className="footer-enter mx-auto mt-8 flex max-w-6xl items-center border-t border-white/10 p-6 text-sm text-muted">
         <div className="footer-inline">
-          <span className="footer-brand">arharif © 2026</span>
+          <span className="footer-brand">arharif © 2027</span>
           <span className="footer-separator" aria-hidden="true">|</span>
           <div className="footer-icons" aria-label="Social links">
             <a href="https://www.linkedin.com/in/rharif-anass-/" target="_blank" rel="noopener noreferrer" aria-label="Open LinkedIn profile" title="LinkedIn" className="social-icon-link">
@@ -755,5 +709,5 @@ function Shell() {
 export default function App() {
   const location = useLocation();
   const academic = location.pathname === '/x1-academic' || location.pathname.startsWith('/x1-academic/');
-  return <ErrorBoundary>{academic ? <Suspense fallback={<RouteLoading label="X1 Academic" />}><Routes><Route path="/x1-academic/*" element={<AcademicApp />} /></Routes></Suspense> : <AuthProvider><Shell /></AuthProvider>}</ErrorBoundary>;
+  return <ErrorBoundary><MotionConfig reducedMotion="user"><UniverseTransition/>{academic ? <Suspense fallback={<RouteLoading label="X1 Academic" />}><Routes><Route path="/x1-academic/*" element={<AcademicApp />} /></Routes></Suspense> : <AuthProvider><Shell /></AuthProvider>}<Suspense fallback={null}><SiteAssistantLauncher /></Suspense></MotionConfig></ErrorBoundary>;
 }

@@ -15,7 +15,7 @@
   line-height: 1.65;
   color-scheme: dark;
 }
-.xa[data-theme="light"] {
+.xa[data-scheme="light"] {
   --xa-bg: #f5f7fa;
   --xa-panel: #fff;
   --xa-soft: #eaf0f5;
@@ -522,7 +522,7 @@
 .xa [role="alert"] {
   color: #ffca94;
 }
-.xa[data-theme="light"] [role="alert"] {
+.xa[data-scheme="light"] [role="alert"] {
   color: #8d300c;
 }
 @media (max-width: 1000px) {
@@ -703,7 +703,7 @@
   font-size: 14px;
   line-height: 1.6;
 }
-.xa[data-theme="light"] {
+.xa[data-scheme="light"] {
   --xa-bg: #f2f5f9;
   --xa-panel: #fff;
   --xa-soft: #e8eef5;
@@ -1294,22 +1294,22 @@
 .xa .color-5 {
   color: #a6b5cd;
 }
-.xa[data-theme="light"] .color-0 {
+.xa[data-scheme="light"] .color-0 {
   color: #6743ae;
 }
-.xa[data-theme="light"] .color-1 {
+.xa[data-scheme="light"] .color-1 {
   color: #1a65a8;
 }
-.xa[data-theme="light"] .color-2 {
+.xa[data-scheme="light"] .color-2 {
   color: #097158;
 }
-.xa[data-theme="light"] .color-3 {
+.xa[data-scheme="light"] .color-3 {
   color: #885413;
 }
-.xa[data-theme="light"] .color-4 {
+.xa[data-scheme="light"] .color-4 {
   color: #a52f52;
 }
-.xa[data-theme="light"] .color-5 {
+.xa[data-scheme="light"] .color-5 {
   color: #4a6078;
 }
 .xa .xa-chain {
@@ -1763,16 +1763,16 @@
   color: #8de8c9;
   background: #57d6ad14;
 }
-.xa[data-theme="light"] .critical {
+.xa[data-scheme="light"] .critical {
   color: #a52140;
 }
-.xa[data-theme="light"] .high {
+.xa[data-scheme="light"] .high {
   color: #8c4a08;
 }
-.xa[data-theme="light"] .medium {
+.xa[data-scheme="light"] .medium {
   color: #785c0b;
 }
-.xa[data-theme="light"] .low {
+.xa[data-scheme="light"] .low {
   color: #096448;
 }
 .xa .xa-confusion-cell {
