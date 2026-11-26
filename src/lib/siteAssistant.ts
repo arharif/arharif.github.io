@@ -1,3 +1,4 @@
+import { articlePath } from "@/lib/articlePath";
 import { originals } from '@/components/arcade/catalog';
 import { legacyCatalog } from '@/components/arcade/legacyCatalog';
 import { assistantKnowledge } from '@/data/assistantKnowledge';
@@ -70,10 +71,10 @@ export async function querySiteAssistant(rawQuery: string, pathname = '/', activ
     const [topics, content] = await Promise.all([listPublishedTopics(), listPublishedContent()]);
     const publicTopics = new Map(topics.map(topic => [topic.id,topic]));
     liveKnowledge = [
-      ...topics.map((item) => ({ title: item.title, route: item.universe === 'professional' ? `/professional/topic/${item.slug}` : '/personal', description: item.description, categories: [item.category], tags: [], keywords: [item.title, item.category, item.description] })),
+      ...topics.map((item) => ({ title: item.title, route: item.universe === 'professional' ? `/professional/topic/${encodeURIComponent(item.slug)}` : '/personal', description: item.description, categories: [item.category], tags: [], keywords: [item.title, item.category, item.description] })),
       ...content.filter(item => item.status === 'published').map((item) => {
         const topic = item.topic || publicTopics.get(item.topicId);
-        return { title: item.title, route: topic?.universe === 'professional' ? `/professional/topic/${encodeURIComponent(topic.slug)}#${encodeURIComponent(item.slug)}` : `/personal/post/${encodeURIComponent(item.slug)}`, description: item.excerpt || 'Published X1 content.', categories: [item.contentType], tags: item.tags ?? [], keywords: [item.title, item.excerpt, topic?.category || '', ...(item.tags ?? [])] }; }),
+        return { title: item.title, route: articlePath(item, topic), description: item.excerpt || 'Published X1 content.', categories: [item.contentType], tags: item.tags ?? [], keywords: [item.title, item.excerpt, topic?.category || '', ...(item.tags ?? [])] }; }),
     ];
   } catch {
     retrievalAvailable = false;

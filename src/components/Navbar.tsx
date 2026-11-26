@@ -1,7 +1,8 @@
-import { Menu, Search, UserRound, X } from "lucide-react";
+import { Menu, UserRound, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useTheme } from "@/lib/theme";
+import { SiteSearchButton } from "./SiteSearchButton";
 import { ThemeSwitcher } from "./ThemeSwitcher";
 import { X1Mark } from "./branding/X1Mark";
 
@@ -33,18 +34,17 @@ export function Navbar() {
           <X1Mark size="sm" />
         </Link>
         <nav id="gateway-nav" aria-label="Primary navigation" data-open={open}>
-          {links.map(([to, label]) => (
-            <NavLink key={to} to={to}>
-              {label}
-            </NavLink>
-          ))}
+          {links.map(([to, label]) => {
+            const withinInsights = to === "/insights-innovation" && /^\/(professional|personal)(\/|$)/.test(location.pathname);
+            return withinInsights
+              ? <Link key={to} to={to} className="active" aria-current="location">{label}</Link>
+              : <NavLink key={to} to={to}>{label}</NavLink>;
+          })}
         </nav>
         <div className="uni-utilities">
-          <Link to="/search" aria-label="Search website">
-            <Search size={19} />
-          </Link>
+          <SiteSearchButton />
           <ThemeSwitcher mode={mode} onChange={setMode} />
-          <Link to="/admin" aria-label="Account">
+          <Link to="/admin" aria-label="Owner login" title="Owner login">
             <UserRound size={19} />
           </Link>
           <button

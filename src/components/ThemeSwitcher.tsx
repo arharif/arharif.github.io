@@ -1,4 +1,4 @@
-import { Sun } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { palettes, type ThemeMode } from "@/lib/palettes";
 
@@ -44,7 +44,7 @@ export function ThemeSwitcher({
         aria-expanded={open}
         onClick={() => setOpen(!open)}
       >
-        <Sun size={20} />
+        {mode === "onyx-black" ? <Moon size={17} aria-hidden="true" /> : <Sun size={17} aria-hidden="true" />}
       </button>
       {open && (
         <div
@@ -64,7 +64,7 @@ export function ThemeSwitcher({
               document.activeElement as HTMLButtonElement,
             );
             const count = buttons.length;
-            const columns = 3;
+            const columns = 2;
             const next = {
               ArrowRight: (index + 1) % count,
               ArrowDown: (index + columns) % count,
@@ -79,11 +79,13 @@ export function ThemeSwitcher({
             }
           }}
         >
+          <p className="palette-foundation" role="presentation">Professional Light</p>
           {(Object.keys(palettes) as ThemeMode[]).map((id) => {
             const [label, , surface, , accent] = palettes[id];
             return (
               <button
                 key={id}
+                data-foundation={id === "onyx-black" ? "onyx" : "light"}
                 title={label}
                 role="menuitemradio"
                 aria-label={`Activate ${label}`}
@@ -93,12 +95,12 @@ export function ThemeSwitcher({
                   close();
                 }}
               >
-                <i
+                <i aria-hidden="true"
                   style={{
                     background: `linear-gradient(135deg, ${surface} 0 38%, ${accent} 40%)`,
                   }}
                 />
-                <span className="sr-only">{label}</span>
+                <span>{label}</span>
               </button>
             );
           })}

@@ -66,8 +66,8 @@ test("legacy and invalid values migrate before the app mounts", async ({
   await page.goto("/");
   for (const [old, id] of Object.entries({
     ...legacyThemes,
-    constructor: "editorial-ivory",
-    unknown: "editorial-ivory",
+    constructor: "onyx-black",
+    unknown: "onyx-black",
   })) {
     await page.evaluate((key) => localStorage.setItem("theme", key), old);
     await page.reload();
