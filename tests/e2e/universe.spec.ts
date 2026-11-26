@@ -5,7 +5,7 @@ import { originals } from "../../src/components/arcade/catalog";
 
 async function palette(page: Page, name: string) {
   await page.getByRole("button", { name: "Open theme selector" }).click();
-  await expect(page.getByRole("menuitemradio")).toHaveCount(8);
+  await expect(page.getByRole("menuitemradio")).toHaveCount(9);
   await page
     .getByRole("menuitemradio", { name: "Activate " + name, exact: true })
     .click();
@@ -139,7 +139,7 @@ test("gateway destinations, keyboard palette and reduced motion", async ({
   await page.keyboard.press("Enter");
   await expect(page.getByLabel("Open theme selector")).toHaveAttribute(
     "title",
-    "Imperial Gold",
+    "Onyx Black",
   );
   for (const [card, path] of [
     [".dest-insights", "/insights-innovation"],
@@ -363,7 +363,7 @@ test("invalid game deep link recovers to a playable catalogue", async ({
 });
 
 test("each world opens its compact guide and the game guide follows the active round", async ({page}) => {
-  for (const [path,persona] of [["/","orb"],["/insights-innovation","astronaut"],["/insights-innovation/","astronaut"],["/games","phantom"]]) {
+  for (const [path,persona] of [["/","face"],["/x1-academic","face"],["/insights-innovation","astronaut"],["/insights-innovation/","astronaut"],["/games","phantom"]]) {
     await page.goto(path);
     const trigger = page.getByRole("button",{name:"Open X1 assistant",exact:true});
     await expect(trigger).toHaveAttribute("data-guide",persona);

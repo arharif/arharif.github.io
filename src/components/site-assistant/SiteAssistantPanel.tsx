@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { Link, useLocation } from 'react-router-dom';
 import { originals } from '../arcade/catalog';
-import { GuidePortrait, guideFor } from './GuidePortrait';
+import { AssistantPortrait, assistantIdentity } from './AssistantPortrait';
 import { getAssistantWelcome } from './assistantContext';
 
 interface QuickAction { label: string; route?: string; prompt?: string }
@@ -11,6 +11,7 @@ interface Message {
   id: string;
   role: 'user' | 'assistant';
   text: string;
+  unavailable?: boolean;
   sources?: Array<{ title: string; route: string }>;
   quickActions?: QuickAction[];
 }
@@ -24,7 +25,10 @@ export function SiteAssistantPanel({ open, onClose }: { open: boolean; onClose: 
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const selectedGame = welcome.section === 'games' ? originals.find(game => game.key === new URLSearchParams(location.search).get('game')) : undefined;
-  const guide = guideFor(welcome.section);
+  const guide = assistantIdentity(welcome.section);
+  const lastMessage = messages[messages.length - 1];
+  const settledExpression = lastMessage?.unavailable ? "reassuring" : "pleased";
+  const expression = loading ? "thinking" : lastMessage ? settledExpression : "welcome";
   const panelRef = useRef<HTMLElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -59,6 +63,7 @@ export function SiteAssistantPanel({ open, onClose }: { open: boolean; onClose: 
         id: mkId(),
         role: 'assistant',
         text: reply.text,
+        unavailable: reply.unavailable,
         sources: reply.sources?.map((s) => ({ title: s.title, route: s.route })),
         quickActions: reply.quickActions,
       };
@@ -67,6 +72,7 @@ export function SiteAssistantPanel({ open, onClose }: { open: boolean; onClose: 
       const fallback: Message = {
         id: mkId(),
         role: 'assistant',
+        unavailable: true,
         text: 'I had trouble checking the website content just now. Please retry with shorter keywords.',
       };
       setMessages((m) => [...m, fallback].slice(-18));
@@ -82,6 +88,7 @@ export function SiteAssistantPanel({ open, onClose }: { open: boolean; onClose: 
           ref={panelRef}
           id="x1-assistant-panel"
           className="assistant-panel"
+          data-expression={expression}
           aria-label="X1 assistant"
           role="dialog"
           aria-modal="true"
@@ -92,7 +99,7 @@ export function SiteAssistantPanel({ open, onClose }: { open: boolean; onClose: 
           </div>
 
           <div className="assistant-welcome-card" aria-live="polite">
-            <div className="assistant-welcome-visual" aria-hidden="true"><GuidePortrait section={welcome.section}/></div>
+            <div className="assistant-welcome-visual" aria-hidden="true"><AssistantPortrait section={welcome.section}/></div>
             <div>
               <p className="assistant-welcome-title">{selectedGame?.title ?? welcome.title}</p>
               <p className="assistant-welcome-body">{selectedGame?.instructions ?? welcome.body}</p>
@@ -141,7 +148,7 @@ export function SiteAssistantPanel({ open, onClose }: { open: boolean; onClose: 
               className="assistant-input"
               value={input}
               onChange={(e) => setInput(e.target.value.slice(0, 280))}
-              placeholder={{ orb: 'Ask about X1', astronaut: 'Find an article or topic', phantom: 'Ask about games or controls' }[guide]}
+              placeholder={{ face: 'Ask about X1', orb: 'Ask about X1', astronaut: 'Find an article or topic', phantom: 'Ask about games or controls' }[guide]}
               aria-label="Ask X1 about this website"
               autoComplete="off"
             />

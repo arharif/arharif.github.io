@@ -9,7 +9,7 @@ import {
 import { createPortal } from "react-dom";
 import { useLocation } from "react-router-dom";
 import { resolveAssistantSection } from "./assistantContext";
-import { GuidePortrait, guideFor } from "./GuidePortrait";
+import { AssistantPortrait, assistantIdentity } from "./AssistantPortrait";
 
 const loadPanel = () => import("./SiteAssistantPanel");
 const preparePanel = () => { void loadPanel().catch(() => undefined); };
@@ -48,11 +48,11 @@ export function SiteAssistantLauncher() {
   }, [location.key]);
 
   const ui = (
-    <>
+    <div className="site-guide" data-identity={assistantIdentity(section)}>
       <button
         ref={trigger}
         className="assistant-launcher"
-        data-guide={guideFor(section)}
+        data-guide={assistantIdentity(section)}
         data-mood={mood}
         aria-expanded={open}
         aria-controls="x1-assistant-panel"
@@ -65,7 +65,7 @@ export function SiteAssistantLauncher() {
           setOpen(!open);
         }}
       >
-        <GuidePortrait section={section} />
+        <AssistantPortrait section={section} />
       </button>
       {loaded && (
         <Suspense
@@ -78,7 +78,7 @@ export function SiteAssistantLauncher() {
           <Panel key={section} open={open} onClose={close} />
         </Suspense>
       )}
-    </>
+    </div>
   );
   return host && section === "games" ? createPortal(ui, host) : ui;
 }

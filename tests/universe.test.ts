@@ -18,12 +18,17 @@ function luminance(hex: string) {
   return rgb[0] * 0.2126 + rgb[1] * 0.7152 + rgb[2] * 0.0722;
 }
 test("approved palettes provide readable text and cover every historic preference", () => {
-  assert.equal(Object.keys(palettes).length, 8);
-  for (const [, bg, surface, text] of Object.values(palettes))
-    for (const layer of [bg, surface]) {
-      const values = [luminance(layer), luminance(text)].sort((a, b) => b - a);
-      assert.ok((values[0] + 0.05) / (values[1] + 0.05) >= 4.5);
+  assert.equal(Object.keys(palettes).length, 9);
+  for (const [label, bg, surface, ink, accent, scheme, muted] of Object.values(palettes)) {
+    assert.equal(bg, label === "Onyx Black" ? "#080A0D" : "#FFFFFF");
+    assert.equal(scheme, label === "Onyx Black" ? "dark" : "light");
+    for (const text of [ink, accent, muted]) {
+      for (const layer of [bg, surface]) {
+        const values = [luminance(layer), luminance(text)].sort((a, b) => b - a);
+        assert.ok((values[0] + 0.05) / (values[1] + 0.05) >= 4.5);
+      }
     }
+  }
   assert.equal(Object.keys(legacyThemes).length, 13);
   for (const id of Object.values(legacyThemes)) assert.ok(id in palettes);
 });

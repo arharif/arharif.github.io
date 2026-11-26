@@ -55,9 +55,10 @@ body {
   min-height: 100svh;
   display: flex;
   flex-direction: column;
-  background:
-    radial-gradient(ellipse at 80% 15%, var(--accent-soft), transparent 58%),
-    var(--bg);
+  background: var(--bg);
+}
+.universe-shell[data-page="/games"] {
+  background: radial-gradient(ellipse at 80% 15%, var(--accent-soft), transparent 58%), var(--bg);
 }
 .universe-shell > main {
   width: 100%;
@@ -91,8 +92,8 @@ body {
 .universe-mark {
   display: inline-grid;
   place-items: center;
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: var(--surface);
   color: var(--text);
@@ -176,8 +177,8 @@ body {
   top: calc(100% + 8px);
   padding: 6px;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  width: 188px;
+  grid-template-columns: repeat(3, 1fr);
+  width: 150px;
   border-radius: 14px;
   background: var(--surface);
   box-shadow: var(--shadow);
@@ -215,14 +216,7 @@ body {
 }
 .universe-shell[data-page="/"] {
   overflow: clip;
-  background:
-    radial-gradient(ellipse at 53% 30%, var(--surface) 10%, transparent 61%),
-    linear-gradient(
-      124deg,
-      var(--accent-soft),
-      var(--bg) 52%,
-      var(--accent-soft)
-    );
+
 }
 .gateway::before {
   content: "";
@@ -747,6 +741,7 @@ a:is(:focus-visible,:hover) .universe-mark { transform: rotate(-7deg) scale(1.04
 
 .universe-mark { position:relative; }
 .mark-face { position:absolute; inset:0; width:100%; height:100%; opacity:0; transform:scale(.75); }
+.mark-word { text-transform: uppercase; }
 .mark-word,.mark-face { transition:opacity .16s, transform .22s; }
 a:is(:hover,:focus-visible,:active) .mark-word { opacity:0; }
 a:is(:hover,:focus-visible,:active) .mark-face { opacity:1; transform:scale(1); }
@@ -799,3 +794,49 @@ a:is(:hover,:focus-visible,:active) .mark-face { opacity:1; transform:scale(1); 
 @keyframes city-flight {0%,30%{transform:scale(.95);opacity:.25}55%{opacity:1}100%{transform:scale(1.25)}}
 .journey-modal[open] {position:fixed;inset:0;max-width:none;max-height:none;width:100%;height:100%;margin:0;border:0;padding:0;background:transparent;color:inherit;pointer-events:auto;overflow:hidden;animation:journey-arrival var(--duration) linear both;}
 .journey-modal::backdrop {background:transparent;}
+
+/* A transparent target leaves just the ink of the face visible. */
+.site-guide[data-identity="face"] :is(.assistant-launcher, .assistant-welcome-visual) {
+  color: var(--accent);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.site-guide[data-identity="face"] .assistant-launcher { width: 48px; height: 48px; }
+.site-guide[data-identity="face"] .assistant-launcher:focus-visible {
+  outline: 2px dashed var(--focus-ring);
+  outline-offset: 1px;
+  border-radius: 6px;
+}
+.living-face { display: block; width: 40px; height: 38px; overflow: visible; }
+.face-features, .face-lids, .face-smile, .face-brows {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.face-ponder, .face-reassure { opacity: 0; }
+.assistant-launcher:is(:hover, :focus-visible) .face-brows { transform: translateY(-2px) rotate(-5deg); }
+.site-guide:has(.assistant-panel) .face-smile { transform: scale(1.12, 1.2); }
+.site-guide:has([data-expression="thinking"]) .face-smile,
+.site-guide:has([data-expression="reassuring"]) .face-smile { opacity: 0; }
+.site-guide:has([data-expression="thinking"]) .face-ponder,
+.site-guide:has([data-expression="reassuring"]) .face-reassure { opacity: 1; }
+.site-guide:has([data-expression="thinking"]) .face-brows { transform: rotate(-8deg); }
+.site-guide:has([data-expression="pleased"]) .face-lids { transform: scaleY(.75); }
+@media (prefers-reduced-motion: no-preference) {
+  .living-face { animation: face-breathe 6.8s ease-in-out infinite; }
+  .face-features { animation: face-glance 13s ease-in-out infinite; }
+  .face-lids, a:is(:hover,:focus-visible) .mark-eyes {
+    transform-box: fill-box; transform-origin: center; animation: face-blink 8.3s linear infinite;
+  }
+  .face-smile, .face-brows, .face-ponder, .face-reassure { transition: transform .22s ease, opacity .18s; }
+  .site-guide:has([data-expression="thinking"]) .face-gaze { transform: translate(1.8px,-1.5px); }
+  .site-guide:has([data-expression="pleased"]) .face-gaze { transform: translateY(1px); }
+}
+@keyframes face-breathe { 48% { transform: translateY(-1.8px) scale(1.025); } }
+@keyframes face-glance { 0%,30%,55%,100% { transform: none; } 36%,47% { transform: translateX(1.3px) rotate(-2deg); } 71%,78% { transform: translateX(-1px); } }
+@keyframes face-blink { 0%,31%,34%,84%,87%,100% { transform: scaleY(1); } 32.5%,85.5% { transform: scaleY(.12); } }
+@media (prefers-reduced-motion: reduce) {
+  .palette-menu button i { animation: none; }
+  a:is(:focus-visible,:hover) .universe-mark { transform: none; }
+}
