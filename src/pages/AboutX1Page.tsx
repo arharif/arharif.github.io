@@ -69,6 +69,10 @@ export function AboutX1Page() {
         <p>I view cybersecurity not merely as a technical control layer, but as a core enabler of institutional trust, resilience, and sustainable growth.</p>
         <p>Beyond client engagements, I publish practical GRC frameworks, maturity assessment tools, and emerging technology governance resources on my independent platform.</p>
         <p>Platform · <a href="https://arharif.github.io/">arharif.github.io</a></p>
+        <div className="executive-contact" aria-label="Contact Anass Rharif">
+          <a href="mailto:rharifanass@gmail.com">Email Anass</a>
+          <a href="https://www.linkedin.com/in/rharif-anass-/" target="_blank" rel="noopener noreferrer">LinkedIn ↗</a>
+        </div>
       </div>
     </header>
 

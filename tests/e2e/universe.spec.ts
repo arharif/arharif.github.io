@@ -66,8 +66,8 @@ test("legacy and invalid values migrate before the app mounts", async ({
   await page.goto("/");
   for (const [old, id] of Object.entries({
     ...legacyThemes,
-    constructor: "editorial-ivory",
-    unknown: "editorial-ivory",
+    constructor: "onyx-black",
+    unknown: "onyx-black",
   })) {
     await page.evaluate((key) => localStorage.setItem("theme", key), old);
     await page.reload();
@@ -99,24 +99,21 @@ for (const name of ["Aubergine", "Editorial Ivory", "Imperial Gold"]) {
           .trim(),
       ),
     ).toBe("#0b0920");
+    // Capture brief effects at insertion so an assertion can survive a busy renderer.
+    await page.evaluate(() => {
+      new MutationObserver(() => {
+        const transition = document.querySelector<HTMLElement>(".uni-transit:not(.cinema)");
+        if (transition) document.body.dataset.testTransition = transition.dataset.from + ":" + transition.dataset.to;
+      }).observe(document.body, { childList: true, subtree: true });
+    });
     await page.getByRole("link", { name: "X1 Insights", exact: true }).click();
-    await expect(page.locator(".uni-transit")).toHaveAttribute(
-      "data-from",
-      "arcade",
-    );
-    await expect(page.locator(".uni-transit")).toHaveAttribute(
-      "data-to",
-      "insights",
-    );
+    await expect(page.locator("body")).toHaveAttribute("data-test-transition", "arcade:insights");
     await expect(page.getByLabel("Open theme selector")).toHaveAttribute(
       "title",
       name,
     );
     await page.getByRole("link", { name: "X1 Academic", exact: true }).click();
-    await expect(page.locator(".uni-transit")).toHaveAttribute(
-      "data-to",
-      "academic",
-    );
+    await expect(page.locator("body")).toHaveAttribute("data-test-transition", "insights:academic");
     await expect(page.locator(".xc")).toBeVisible();
     await page.getByRole("link", { name: "X1 Games", exact: true }).click();
     await expect(

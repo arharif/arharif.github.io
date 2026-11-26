@@ -1,6 +1,7 @@
+import { articlePath } from "@/lib/articlePath";
 import { EditorialImage } from '@/components/EditorialImage';
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   BookOpen,
   Brain,
@@ -60,7 +61,9 @@ function cover(item: ContentRecord, index: number) {
 }
 export default function Insights() {
   const [items, setItems] = useState<ContentRecord[]>([]);
-  const [query, setQuery] = useState("");
+  const [params, setParams] = useSearchParams();
+  const query = (params.get("q") ?? "").slice(0, 160);
+  const setQuery = (value: string) => setParams(value ? { q: value } : {}, { replace: true });
   const [category, setCategory] = useState("");
   const [status, setStatus] = useState<"loading" | "ready" | "error">(
     "loading",
@@ -104,15 +107,12 @@ export default function Insights() {
   return (
     <section className="insights">
       <header className="insights-hero">
-        <p className="cosmic-kicker">Knowledge &amp; Exploration</p>
         <h1>Insights &amp; Innovation</h1>
         <p className="insights-intro">
-          Exploring technology, ideas, philosophy, human behaviour and emerging
-          trends, connecting curiosity, critical thinking and different
-          perspectives to better understand how the world is changing.
+          Articles on technology, philosophy, human behaviour and emerging trends.
         </p>
-        <label className="insights-search">
-          <Search size={19} />
+        <div className="insights-search">
+          <Search size={19} aria-hidden="true" />
           <input
             type="search"
             aria-label="Search insights"
@@ -126,7 +126,7 @@ export default function Insights() {
               <X size={16} />
             </button>
           )}
-        </label>
+        </div>
         <div className="cosmic-filters" aria-label="Article categories">
           {topics.map(([name, Icon]) => (
             <button
@@ -144,23 +144,17 @@ export default function Insights() {
         <div className="editorial-grid">
           {filtered.map((row) => {
             const index = items.indexOf(row);
-            const href =
-              row.topic?.universe === "professional"
-                ? "/professional/topic/" +
-                  encodeURIComponent(row.topic.slug) +
-                  "#" +
-                  encodeURIComponent(row.slug)
-                : "/personal/post/" + encodeURIComponent(row.slug);
             return (
               <article key={row.id} className="editorial-card">
                 <Bookmark id={row.id} title={row.title} />
-                <Link to={href}>
+                <Link to={articlePath(row)}>
                   <EditorialImage
                     src={cover(row, index)}
                     alt=""
                     width="380"
                     height="210"
-                    loading={index > 3 ? "lazy" : "eager"}
+                    loading={index === 0 ? "eager" : "lazy"}
+                    decoding="async"
                     onError={(e) => {
                       e.currentTarget.onerror = null;
                       if (!e.currentTarget.src.includes("/art/editorial-"))

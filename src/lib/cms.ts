@@ -144,13 +144,18 @@ export async function listPublishedContent() {
   const published = (select: string) => supabaseRest<Record<string, unknown>[]>(
     `content?select=${select}&status=eq.published&order=published_at.desc.nullslast,created_at.desc`
   );
+  const visible = (rows: Record<string, unknown>[]) =>
+    rows.filter((row) =>
+      row.status === 'published' &&
+      (row.topic_id == null || (row.topic as { status?: string } | null)?.status === 'published'),
+    ).map(normalizeContent);
   try {
-    return (await published([fields, 'tags,reading_minutes', topic].join(','))).map(normalizeContent);
+    return visible(await published([fields, 'tags,reading_minutes,meta_title,meta_description,og_image_url', topic].join(',')));
   } catch (error) {
     // Older installations can still serve the original public article projection
-    // while the optional tags and reading-time migration is being applied.
+    // while the optional editorial metadata migration is being applied.
     if (!(error instanceof SupabaseRequestError && error.code === '42703')) throw error;
-    return (await published([fields, topic].join(','))).map(normalizeContent);
+    return visible(await published([fields, topic].join(',')));
   }
 }
 

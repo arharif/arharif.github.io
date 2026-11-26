@@ -1,6 +1,6 @@
 import { Search } from "lucide-react";
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArticleView } from '@/components/ArticleView';
 import { ContentCard } from '@/components/Cards';
@@ -8,6 +8,35 @@ import { TopicFilterBar } from '@/components/TopicFilterBar';
 import { listPublishedTopics, listPublishedContent } from '@/lib/cms';
 import { normalizeUniverse, universeMeta } from '@/lib/universe';
 import { ContentRecord, TopicRecord } from '@/content/types';
+function useReadingMetadata(item: ContentRecord | TopicRecord | null) {
+  useEffect(() => {
+    if (!item) return;
+    const isArticle = 'body' in item;
+    const title = (isArticle ? item.metaTitle || item.title : item.title) + ' · X1 Insights';
+    const description = (isArticle ? item.metaDescription || item.excerpt : item.description)?.slice(0, 200);
+    document.title = title;
+    for (const selector of ['og:title', 'twitter:title']) {
+      document.querySelector(`meta[property="${selector}"]`)?.setAttribute('content', title);
+    }
+    if (description) {
+      for (const selector of ['meta[name="description"]', 'meta[property="og:description"]', 'meta[property="twitter:description"]']) {
+        document.querySelector(selector)?.setAttribute('content', description);
+      }
+    }
+    const image = (isArticle ? item.ogImageUrl || item.coverImageUrl : item.coverImageUrl);
+    try {
+      const cover = new URL(image ?? '');
+      if (cover.protocol === 'https:' && !cover.username && !cover.password &&
+          !cover.pathname.includes('/storage/v1/object/x1-editorial/')) {
+        for (const selector of ['og:image', 'twitter:image']) {
+          document.querySelector(`meta[property="${selector}"]`)?.setAttribute('content', cover.href);
+        }
+        document.querySelector('meta[property="og:image:alt"]')?.setAttribute('content', item.title);
+      }
+    } catch { /* The section artwork remains the social preview. */ }
+  }, [item]);
+}
+
 const inferUniverseFromContentType = (contentType?: string | null) => normalizeUniverse(contentType);
 
 async function loadPublishedGraph(): Promise<{ topics: TopicRecord[]; content: ContentRecord[] }> {
@@ -109,30 +138,42 @@ export function TechnologyBook() {
   const [topic, setTopic] = useState<TopicRecord | null>(null);
   const [chapters, setChapters] = useState<ContentRecord[]>([]);
   const [progress, setProgress] = useState(0);
+  const [attempt, retry] = useState(0);
+  const [loadState, setLoadState] = useState<'loading' | 'ready' | 'not-found' | 'error'>('loading');
+  const { hash } = useLocation();
   useEffect(() => {
+    let active = true;
+    setLoadState('loading');
     loadPublishedGraph().then(({ topics, content }) => {
-      const t = topics.find((x) => x.slug === slug && normalizeUniverse(x.universe) === 'professional') || null;
-      setTopic(t);
-      setChapters(t ? content.filter((c) => c.topicId === t.id) : []);
-    });
-  }, [slug]);
+      if (!active) return;
+      const topic = topics.find((item) => item.slug === slug && normalizeUniverse(item.universe) === 'professional');
+      setTopic(topic ?? null);
+      setChapters(topic ? content.filter((item) => item.topicId === topic.id) : []);
+      setLoadState(topic ? 'ready' : 'not-found');
+    }).catch(() => { if (active) setLoadState('error'); });
+    return () => { active = false; };
+  }, [slug, attempt]);
+  const selected = chapters.find((chapter) => '#' + encodeURIComponent(chapter.slug) === hash);
+  useReadingMetadata(selected ?? topic);
   useEffect(() => {
     const onScroll = () => {
       const scrolled = window.scrollY;
       const h = document.documentElement.scrollHeight - window.innerHeight;
       setProgress(h > 0 ? Math.min(100, (scrolled / h) * 100) : 0);
     };
-    window.addEventListener('scroll', onScroll);
+    window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  if (!topic) return <div className="glass rounded-2xl p-6">Loading topic book...</div>;
+  if (loadState === 'loading') return <div className="glass rounded-2xl p-6" role="status">Loading topic…</div>;
+  if (loadState === 'error') return <div className="glass rounded-2xl p-6" role="alert">We couldn’t load this topic. <button className="underline" onClick={() => retry(attempt + 1)}>Retry</button></div>;
+  if (!topic) return <div className="glass rounded-2xl p-6">This published topic could not be found. <Link className="underline" to="/insights-innovation">Browse Insights</Link></div>;
 
   return (
     <section className="grid gap-6 lg:grid-cols-[260px_1fr]">
       <div className="fixed left-0 top-0 z-40 h-1 progress-accent" style={{ width: `${progress}%` }} />
-      <aside className="glass sticky top-24 h-fit rounded-2xl p-4"><p className="text-xs uppercase tracking-[0.2em] text-muted">Table of contents</p><h2 className="mt-2 text-xl font-semibold">{topic.title}</h2><ul className="mt-3 space-y-2 text-sm">{chapters.map((c) => <li key={c.id}><a href={`#${c.slug}`} className="text-muted hover:text-white">{c.title}</a></li>)}</ul></aside>
-      <div><div className="glass mb-6 rounded-3xl p-8"><p className="text-xs uppercase tracking-[0.2em] text-muted">Interactive guide · {topic.displayStyle}</p><h1 className="mt-2 text-4xl font-semibold">{topic.title}</h1><p className="mt-3 text-muted">{topic.description}</p></div><div className="space-y-8">{chapters.map((c) => <section key={c.id} id={c.slug} className="glass rounded-2xl p-5"><h3 className="mb-3 text-2xl font-semibold">{c.title}</h3><ArticleView item={c} /></section>)}</div></div>
+      <aside className="glass h-fit rounded-2xl p-4 lg:sticky lg:top-24"><Link className="text-sm underline" to="/insights-innovation">Back to Insights</Link><p className="text-xs uppercase tracking-[0.2em] text-muted">Table of contents</p><h2 className="mt-2 text-xl font-semibold">{topic.title}</h2><ul className="mt-3 space-y-2 text-sm">{chapters.map((c) => <li key={c.id}><a href={`#${c.slug}`} className="text-muted hover:text-white">{c.title}</a></li>)}</ul></aside>
+      <div><div className="glass mb-6 rounded-3xl p-8"><p className="text-xs uppercase tracking-[0.2em] text-muted">Interactive guide · {topic.displayStyle}</p><h1 className="mt-2 text-4xl font-semibold">{topic.title}</h1><p className="mt-3 text-muted">{topic.description}</p></div><div className="space-y-8">{chapters.map((c) => <section key={c.id} id={c.slug} className="glass rounded-2xl p-5"><ArticleView item={c} chapter /></section>)}</div></div>
     </section>
   );
 }
@@ -224,6 +265,8 @@ export function CuriosityPost() {
   const { slug } = useParams();
   const [item, setItem] = useState<ContentRecord | null>(null);
   const [loadState, setLoadState] = useState<'loading' | 'ready' | 'not-found' | 'error'>('loading');
+  const [attempt, retry] = useState(0);
+  useReadingMetadata(item);
   useEffect(() => {
     let current = true;
     setLoadState('loading');
@@ -234,11 +277,14 @@ export function CuriosityPost() {
       setLoadState(match ? 'ready' : 'not-found');
     }).catch(() => { if (current) setLoadState('error'); });
     return () => { current = false; };
-  }, [slug]);
+  }, [slug, attempt]);
   if (loadState === 'loading') return <div className="glass rounded-2xl p-6" role="status">Loading article…</div>;
-  if (loadState === 'error') return <div className="glass rounded-2xl p-6" role="alert">We couldn’t load this content. Please try again.</div>;
-  if (loadState === 'not-found' || !item) return <div className="glass rounded-2xl p-6">This published article could not be found.</div>;
-  return <ArticleView item={item} />;
+  if (loadState === 'error') return <div className="glass rounded-2xl p-6" role="alert">We couldn’t load this article. <button className="underline" onClick={() => retry(attempt + 1)}>Retry</button></div>;
+  if (loadState === 'not-found' || !item) return <div className="glass rounded-2xl p-6">This published article could not be found. <Link className="underline" to="/insights-innovation">Browse Insights</Link></div>;
+  return <div className="mx-auto max-w-4xl">
+    <Link to="/insights-innovation" className="mb-4 inline-block text-sm underline">Back to Insights</Link>
+    <ArticleView item={item} />
+  </div>;
 }
 
 

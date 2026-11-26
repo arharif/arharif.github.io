@@ -1,3 +1,5 @@
+import { ReplayIntroduction } from "@/components/UniverseTransition";
+import { SiteSearchButton } from "@/components/SiteSearchButton";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import {
@@ -314,6 +316,7 @@ function Home() {
         <span>
           <Monitor /> Projects stay on this device
         </span>
+        <ReplayIntroduction />
         <Link to={base + "/assess?previous=1"}>
           Previous Academy projects <ArrowUpRight />
         </Link>
@@ -692,6 +695,7 @@ export default function Console() {
             ))}
           </nav>
           <div>
+            <SiteSearchButton />
             <ThemeSwitcher mode={theme} onChange={setTheme} />
             <button
               className="xc-mobile-menu xc-icon"

@@ -1,0 +1,293 @@
+{
+  "chromium": "156.0.8078.79",
+  "samples": [
+    {
+      "route": "home",
+      "width": 1440,
+      "lcp": 376,
+      "cls": 0,
+      "interaction": 16,
+      "bytes": 432906
+    },
+    {
+      "route": "home",
+      "width": 1440,
+      "lcp": 296,
+      "cls": 0,
+      "interaction": 48,
+      "bytes": 432906
+    },
+    {
+      "route": "home",
+      "width": 1440,
+      "lcp": 360,
+      "cls": 0,
+      "interaction": 16,
+      "bytes": 432906
+    },
+    {
+      "route": "home",
+      "width": 390,
+      "lcp": 308,
+      "cls": 0,
+      "interaction": 16,
+      "bytes": 432906
+    },
+    {
+      "route": "home",
+      "width": 390,
+      "lcp": 396,
+      "cls": 0,
+      "interaction": 176,
+      "bytes": 432906
+    },
+    {
+      "route": "home",
+      "width": 390,
+      "lcp": 788,
+      "cls": 0,
+      "interaction": 184,
+      "bytes": 432906
+    },
+    {
+      "route": "insights",
+      "width": 1440,
+      "lcp": 980,
+      "cls": 0,
+      "interaction": 48,
+      "bytes": 621633
+    },
+    {
+      "route": "insights",
+      "width": 1440,
+      "lcp": 916,
+      "cls": 0,
+      "interaction": 40,
+      "bytes": 621633
+    },
+    {
+      "route": "insights",
+      "width": 1440,
+      "lcp": 972,
+      "cls": 0,
+      "interaction": 40,
+      "bytes": 621633
+    },
+    {
+      "route": "insights",
+      "width": 390,
+      "lcp": 796,
+      "cls": 0,
+      "interaction": 24,
+      "bytes": 621633
+    },
+    {
+      "route": "insights",
+      "width": 390,
+      "lcp": 616,
+      "cls": 0,
+      "interaction": 16,
+      "bytes": 621633
+    },
+    {
+      "route": "insights",
+      "width": 390,
+      "lcp": 384,
+      "cls": 0,
+      "interaction": 32,
+      "bytes": 621633
+    },
+    {
+      "route": "academic",
+      "width": 1440,
+      "lcp": 556,
+      "cls": 0,
+      "interaction": 16,
+      "bytes": 733089
+    },
+    {
+      "route": "academic",
+      "width": 1440,
+      "lcp": 416,
+      "cls": 0,
+      "interaction": 24,
+      "bytes": 733089
+    },
+    {
+      "route": "academic",
+      "width": 1440,
+      "lcp": 416,
+      "cls": 0,
+      "interaction": 104,
+      "bytes": 733089
+    },
+    {
+      "route": "academic",
+      "width": 390,
+      "lcp": 412,
+      "cls": 0,
+      "interaction": 16,
+      "bytes": 733089
+    },
+    {
+      "route": "academic",
+      "width": 390,
+      "lcp": 532,
+      "cls": 0,
+      "interaction": 48,
+      "bytes": 733089
+    },
+    {
+      "route": "academic",
+      "width": 390,
+      "lcp": 336,
+      "cls": 0,
+      "interaction": 16,
+      "bytes": 733089
+    },
+    {
+      "route": "arcade",
+      "width": 1440,
+      "lcp": 816,
+      "cls": 0,
+      "interaction": 40,
+      "bytes": 684663
+    },
+    {
+      "route": "arcade",
+      "width": 1440,
+      "lcp": 664,
+      "cls": 0,
+      "interaction": 48,
+      "bytes": 684663
+    },
+    {
+      "route": "arcade",
+      "width": 1440,
+      "lcp": 548,
+      "cls": 0,
+      "interaction": 32,
+      "bytes": 668739
+    },
+    {
+      "route": "arcade",
+      "width": 390,
+      "lcp": 560,
+      "cls": 0,
+      "interaction": 48,
+      "bytes": 684663
+    },
+    {
+      "route": "arcade",
+      "width": 390,
+      "lcp": 808,
+      "cls": 0,
+      "interaction": 40,
+      "bytes": 684663
+    },
+    {
+      "route": "arcade",
+      "width": 390,
+      "lcp": 660,
+      "cls": 0,
+      "interaction": 24,
+      "bytes": 684663
+    },
+    {
+      "route": "about",
+      "width": 1440,
+      "lcp": 508,
+      "cls": 0,
+      "interaction": 56,
+      "bytes": 362368
+    },
+    {
+      "route": "about",
+      "width": 1440,
+      "lcp": 484,
+      "cls": 0,
+      "interaction": 56,
+      "bytes": 362368
+    },
+    {
+      "route": "about",
+      "width": 1440,
+      "lcp": 512,
+      "cls": 0,
+      "interaction": 48,
+      "bytes": 362368
+    },
+    {
+      "route": "about",
+      "width": 390,
+      "lcp": 600,
+      "cls": 0,
+      "interaction": 32,
+      "bytes": 362368
+    },
+    {
+      "route": "about",
+      "width": 390,
+      "lcp": 616,
+      "cls": 0,
+      "interaction": 56,
+      "bytes": 362368
+    },
+    {
+      "route": "about",
+      "width": 390,
+      "lcp": 476,
+      "cls": 0,
+      "interaction": 24,
+      "bytes": 362368
+    },
+    {
+      "route": "login",
+      "width": 1440,
+      "lcp": 412,
+      "cls": 0,
+      "interaction": 32,
+      "bytes": 400196
+    },
+    {
+      "route": "login",
+      "width": 1440,
+      "lcp": 420,
+      "cls": 0,
+      "interaction": 24,
+      "bytes": 400196
+    },
+    {
+      "route": "login",
+      "width": 1440,
+      "lcp": 412,
+      "cls": 0,
+      "interaction": 32,
+      "bytes": 400196
+    },
+    {
+      "route": "login",
+      "width": 390,
+      "lcp": 312,
+      "cls": 0,
+      "interaction": 24,
+      "bytes": 400196
+    },
+    {
+      "route": "login",
+      "width": 390,
+      "lcp": 408,
+      "cls": 0,
+      "interaction": 32,
+      "bytes": 400196
+    },
+    {
+      "route": "login",
+      "width": 390,
+      "lcp": 352,
+      "cls": 0,
+      "interaction": 24,
+      "bytes": 400196
+    }
+  ]
+}

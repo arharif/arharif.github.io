@@ -1,0 +1,28 @@
+{
+  "chromium": "156.0.8078.79",
+  "viewport": "1440x900",
+  "sampleWindowMs": 1800,
+  "samples": [
+    {
+      "world": "academic",
+      "frames": 104,
+      "medianFrameMs": 16.699999999999818,
+      "p95FrameMs": 16.799999999999955,
+      "visibleForMs": 3238
+    },
+    {
+      "world": "insights",
+      "frames": 107,
+      "medianFrameMs": 16.699999999999818,
+      "p95FrameMs": 16.799999999999955,
+      "visibleForMs": 4739
+    },
+    {
+      "world": "games",
+      "frames": 76,
+      "medianFrameMs": 16.699999999999818,
+      "p95FrameMs": 66.60000000000014,
+      "visibleForMs": 3769
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-import { readFile, mkdir, writeFile } from "node:fs/promises";
+import { readFile, mkdir, writeFile, unlink } from "node:fs/promises";
 import { modules, tracks } from "../src/academic/data/curriculum.ts";
 import { labLinks } from "../src/academic/data/cases.ts";
 import { complianceFrameworks } from "../src/data/complianceFrameworks.ts";
@@ -96,6 +96,8 @@ const escape = (value) =>
       ],
   );
 const template = await readFile("dist/index.html", "utf8");
+const manifestPath = "dist/.vite/manifest.json";
+const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
 for (const page of pages) {
   const url = `https://arharif.github.io${base}${page.path}`;
   let html = template
@@ -160,16 +162,43 @@ for (const page of pages) {
   await mkdir(directory, { recursive: true });
   await writeFile(`${directory}/index.html`, html);
 }
-// Give direct Insights visits an entry document so Pages can serve the route
-// in one request and discover its largest image while JavaScript loads.
-const insightsUrl = "https://arharif.github.io/insights-innovation";
-const insightsEntry = template
-  .replace(/<title>.*?<\/title>/, "<title>Insights &amp; Innovation · arharif</title>")
-  .replace(/(<link rel="canonical" href=")[^"]*/, "$1" + insightsUrl)
-  .replace(/(<meta property="og:url" content=")[^"]*/, "$1" + insightsUrl)
-  .replace("</head>", '<link rel="preload" as="image" href="/art/cosmos.webp" fetchpriority="high"></head>');
-await mkdir("dist/insights-innovation", { recursive: true });
-await writeFile("dist/insights-innovation/index.html", insightsEntry);
+// Give shared destinations their own Pages documents and social metadata.
+const publicPages = [
+  ["/insights-innovation", "X1 Insights & Innovation", "Articles on technology, philosophy, human behaviour and emerging trends.", "insights"],
+  ["/about-x1", "Cybersecurity Advisory · Anass Rharif", "Anass Rharif’s approach to cybersecurity governance, enterprise risk and advisory.", "academic"],
+  ["/games", "X1 Arcade", "Play browser games, classic puzzles and quizzes in the Neon Arcade.", "games"],
+  ["/submitting", "Contribute to X1", "Email your completed article to X1 for editorial review.", "insights"],
+];
+function publicEntry([path, title, description, art]) {
+  const url = "https://arharif.github.io" + path;
+  return template
+    .replace(/<title>.*?<\/title>/, `<title>${escape(title)}</title>`)
+    .replace(/(<meta property="(?:og:title|twitter:title)" content=")[^"]*/g, `$1${escape(title)}`)
+    .replace(/(<meta (?:name="description"|property="(?:og:description|twitter:description)") content=")[^"]*/g, `$1${escape(description)}`)
+    .replace(/(<link rel="canonical" href=")[^"]*/, `$1${url}`)
+    .replace(/(<meta property="og:url" content=")[^"]*/, `$1${url}`)
+    .replace(/(<meta property="(?:og:image|twitter:image)" content=")[^"]*/g, `$1https://arharif.github.io/art/${art}.webp`)
+    .replace(/(<meta property="og:image:alt" content=")[^"]*/, `$1${escape(title + " artwork")}`);
+}
+const headlineFont = '<link rel="preload" as="font" href="/fonts/dm-serif-text-latin.woff" type="font/woff" crossorigin>';
+const insightsRoute = manifest["src/pages/Insights.tsx"];
+const insightsEntryAssets = [
+  '<link rel="preload" as="image" href="/art/cosmos-small.webp">',
+  headlineFont,
+  ...insightsRoute.css.map((file) => `<link rel="stylesheet" href="/${file}">`),
+  `<link rel="modulepreload" href="/${insightsRoute.file}" crossorigin>`,
+].join("");
+for (const page of publicPages) {
+  const directory = "dist" + page[0];
+  await mkdir(directory, { recursive: true });
+  let html = publicEntry(page);
+  if (page[0] === "/insights-innovation") html = html.replace("</head>", insightsEntryAssets + "</head>");
+  await writeFile(directory + "/index.html", html);
+}
+
+// This image is immediately visible and otherwise discoverable only after React starts.
+const heroPreload = '<link rel="preload" as="image" imagesrcset="/art/academic-small.webp 448w, /art/academic.webp 768w" imagesizes="(max-width: 650px) calc(100vw - 40px), (max-width: 1260px) 32vw, 400px" fetchpriority="high">';
+await writeFile("dist/index.html", template.replace("</head>", heroPreload + headlineFont + "</head>"));
 const existing = await readFile("public/sitemap.xml", "utf8");
 const additional = pages
   .filter((page) => page.path !== "/progress")
@@ -190,3 +219,5 @@ await writeFile(
 console.log(
   `Prerendered ${pages.length} academic routes and extended the sitemap.`,
 );
+
+await unlink(manifestPath);
