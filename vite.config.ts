@@ -28,5 +28,6 @@ export default defineConfig({
     },
   ],
   base: "/",
+  build: { manifest: true },
   resolve: { alias: { "@": new URL("./src", import.meta.url).pathname } },
 });

@@ -153,7 +153,8 @@ export default function Insights() {
                     alt=""
                     width="380"
                     height="210"
-                    loading={index > 3 ? "lazy" : "eager"}
+                    loading={index === 0 ? "eager" : "lazy"}
+                    decoding="async"
                     onError={(e) => {
                       e.currentTarget.onerror = null;
                       if (!e.currentTarget.src.includes("/art/editorial-"))

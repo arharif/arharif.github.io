@@ -46,7 +46,7 @@ for (const width of [1440, 390]) {
     if (capture) await page.screenshot({ path: `${capture}/${width}-selector.jpg`, quality: 84 });
     await page.keyboard.press("Home");
     await page.keyboard.press("ArrowDown");
-    await expect(page.getByRole("menuitemradio", { name: "Activate Sandstone" })).toBeFocused();
+    await expect(page.getByRole("menuitemradio", { name: "Activate Midnight Slate" })).toBeFocused();
     await page.keyboard.press("Enter");
     for (const [path, identity] of [["/x1-academic","face"],["/insights-innovation","astronaut"],["/games","phantom"]]) {
       await page.goto(path);
