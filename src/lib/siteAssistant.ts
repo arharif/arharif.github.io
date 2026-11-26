@@ -5,7 +5,7 @@ import { resolveAssistantSection } from '@/components/site-assistant/assistantCo
 import { listPublishedContent, listPublishedTopics } from '@/lib/cms';
 
 export interface AssistantSource { title: string; route: string; excerpt: string }
-export interface AssistantReply { text: string; sources: AssistantSource[]; quickActions?: { label: string; route?: string; prompt?: string }[] }
+export interface AssistantReply { text: string; unavailable?: boolean; sources: AssistantSource[]; quickActions?: { label: string; route?: string; prompt?: string }[] }
 
 const sensitivePatterns = [
   /\b(system|developer) prompt\b/,
@@ -82,7 +82,7 @@ export async function querySiteAssistant(rawQuery: string, pathname = '/', activ
   if (/articles?|posts?|essays?/.test(query)) {
     const terms = tokenize(query).filter(word => !['find','show','me','about','on','articles','article','posts','post','essays','please','for','the','an','and'].includes(word));
     const matches = liveKnowledge.filter(item => /#|\/personal\/post\//.test(item.route) && terms.every(term => tokenize(item.keywords.join(' ')).some(word=>word===term || (term.length>3 && word.startsWith(term)))));
-    return {text: matches.length ? 'Published articles matching your request:' : retrievalAvailable ? 'No published articles match those terms.' : 'Published content is currently unavailable.', sources:matches.slice(0,5).map(item=>({title:item.title,route:item.route,excerpt:item.description})),quickActions:[{label:'Browse Insights',route:'/insights-innovation'}]};
+    return {unavailable: !retrievalAvailable, text: matches.length ? 'Published articles matching your request:' : retrievalAvailable ? 'No published articles match those terms.' : 'Published content is currently unavailable.', sources:matches.slice(0,5).map(item=>({title:item.title,route:item.route,excerpt:item.description})),quickActions:[{label:'Browse Insights',route:'/insights-innovation'}]};
   }
   const authoritativeKnowledge = [...liveKnowledge, ...assistantKnowledge];
   const ranked = authoritativeKnowledge.map((item) => {
@@ -101,5 +101,5 @@ export async function querySiteAssistant(rawQuery: string, pathname = '/', activ
       ? `I could not verify that information in published X1 content. Try a topic, article title, or platform section instead.`
       : `I cannot retrieve reliable platform context right now, so I will not guess. The public website remains available; please browse the main navigation or try again later.`;
 
-  return { text, sources: top, quickActions: contextual };
+  return { text, unavailable: !retrievalAvailable && !top.length, sources: top, quickActions: contextual };
 }

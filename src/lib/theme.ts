@@ -13,6 +13,10 @@ function subscribe(listener: () => void) {
   window.addEventListener("x1-palette", listener);
   return () => window.removeEventListener("x1-palette", listener);
 }
+export function syncBrowserThemeColor() {
+  const bg = getComputedStyle(document.documentElement).getPropertyValue("--x1-bg").trim();
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", bg);
+}
 let paletteFrame = 0;
 function setTheme(theme: ThemeMode) {
   const root = document.documentElement;
@@ -27,6 +31,7 @@ function setTheme(theme: ThemeMode) {
     });
   }
   root.dataset.palette = theme;
+  syncBrowserThemeColor();
   safeStorage.set("theme", theme);
   window.dispatchEvent(new Event("x1-palette"));
 }

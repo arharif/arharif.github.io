@@ -1,3 +1,4 @@
+import {palettes} from '../src/lib/palettes.ts';
 import {chromium,expect} from '@playwright/test';
 import {mkdtemp,mkdir,rm,writeFile} from 'node:fs/promises';
 import {join} from 'node:path';
@@ -12,7 +13,7 @@ try {
   await p.goto(origin);
   const mark=p.locator('header .universe-mark').first();
   const expressions=[];
-  const labels=['Editorial Ivory','Obsidian Sage','Midnight Slate','Sandstone','Pearl Teal','Aubergine','Crimson Red','Imperial Gold'];
+  const labels=Object.values(palettes).map(([label])=>label);
   for(const label of labels) {
     await p.getByLabel('Open theme selector').click();
     await p.getByRole('menuitemradio',{name:'Activate '+label,exact:true}).click();
@@ -22,7 +23,7 @@ try {
     expressions.push(paths);
     await mark.screenshot({path:out+'/face-'+label.toLowerCase().replaceAll(' ','-')+'.png'});
   }
-  if(new Set(expressions).size!==8) throw new Error('Duplicated expression');
+  if(new Set(expressions).size!==labels.length) throw new Error('Duplicated expression');
   const evidence=[];
   for(const [card,world,duration] of [['games','arcade',3600],['insights','insights',4500],['academic','academic',3100]]) {
     await p.goto(origin);

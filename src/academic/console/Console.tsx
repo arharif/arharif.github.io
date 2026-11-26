@@ -99,7 +99,7 @@ const secondary = [
 ];
 function Illustration({ index }: { index: number }) {
   const id = "mini" + index,
-    st = spaces[index].color;
+    st = "var(--card-accent)";
   const hubs = [
     [93, 65],
     [142, 37],
@@ -278,7 +278,7 @@ function Home() {
         {spaces.map((s, i) => (
           <section
             key={s.path}
-            style={{ "--card-accent": s.color } as React.CSSProperties}
+            style={{ "--card-accent": `color-mix(in srgb, ${s.color} 72%, var(--accent))` } as React.CSSProperties}
             className={expanded === i ? "expanded" : ""}
           >
             <button
@@ -451,7 +451,7 @@ function Workspace({
         <div className="xc-viewbar">
           {focus ? (
             <>
-              <X1Mark size="sm" />
+              <Link to="/" aria-label="X1 home"><X1Mark size="sm" /></Link>
               <b>{names[project.framework]}</b>
               <span>
                 {project.demo ? "Fictional demo" : "Personal project"}

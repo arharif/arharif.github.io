@@ -63,13 +63,15 @@ export function ThemeSwitcher({
             const index = buttons.indexOf(
               document.activeElement as HTMLButtonElement,
             );
+            const count = buttons.length;
+            const columns = 3;
             const next = {
-              ArrowRight: (index + 1) % 8,
-              ArrowDown: (index + 4) % 8,
-              ArrowLeft: (index + 7) % 8,
-              ArrowUp: (index + 4) % 8,
+              ArrowRight: (index + 1) % count,
+              ArrowDown: (index + columns) % count,
+              ArrowLeft: (index + count - 1) % count,
+              ArrowUp: (index + count - columns) % count,
               Home: 0,
-              End: 7,
+              End: count - 1,
             }[e.key];
             if (next !== undefined) {
               e.preventDefault();
@@ -78,7 +80,7 @@ export function ThemeSwitcher({
           }}
         >
           {(Object.keys(palettes) as ThemeMode[]).map((id) => {
-            const [label, bg, surface, ink, accent] = palettes[id];
+            const [label, , surface, , accent] = palettes[id];
             return (
               <button
                 key={id}
@@ -93,7 +95,7 @@ export function ThemeSwitcher({
               >
                 <i
                   style={{
-                    background: `conic-gradient(${bg} 25%, ${surface} 0 50%, ${ink} 0 75%, ${accent} 0)`,
+                    background: `linear-gradient(135deg, ${surface} 0 38%, ${accent} 40%)`,
                   }}
                 />
                 <span className="sr-only">{label}</span>

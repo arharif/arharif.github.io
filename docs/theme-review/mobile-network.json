@@ -1,0 +1,84 @@
+{
+  "chromium": "156.0.8078.79",
+  "cpuSlowdown": 4,
+  "conditions": {
+    "offline": false,
+    "latency": 100,
+    "downloadThroughput": 187500,
+    "uploadThroughput": 93750
+  },
+  "samples": [
+    {
+      "build": "before",
+      "path": "/",
+      "lcp": 2852,
+      "cls": 0.0029024132846736397
+    },
+    {
+      "build": "after",
+      "path": "/",
+      "lcp": 2848,
+      "cls": 0.0029024132846736397
+    },
+    {
+      "build": "before",
+      "path": "/",
+      "lcp": 2812,
+      "cls": 0.0029024132846736397
+    },
+    {
+      "build": "after",
+      "path": "/",
+      "lcp": 2948,
+      "cls": 0.0029024132846736397
+    },
+    {
+      "build": "before",
+      "path": "/",
+      "lcp": 2832,
+      "cls": 0.0029024132846736397
+    },
+    {
+      "build": "after",
+      "path": "/",
+      "lcp": 2840,
+      "cls": 0.0029024132846736397
+    },
+    {
+      "build": "before",
+      "path": "/insights-innovation/",
+      "lcp": 2976,
+      "cls": 0.0014177530075838599
+    },
+    {
+      "build": "after",
+      "path": "/insights-innovation/",
+      "lcp": 2952,
+      "cls": 0.0014177530075838599
+    },
+    {
+      "build": "before",
+      "path": "/insights-innovation/",
+      "lcp": 2948,
+      "cls": 0.0014177530075838599
+    },
+    {
+      "build": "after",
+      "path": "/insights-innovation/",
+      "lcp": 3020,
+      "cls": 0.0014177530075838599
+    },
+    {
+      "build": "before",
+      "path": "/insights-innovation/",
+      "lcp": 3028,
+      "cls": 0.0014177530075838599
+    },
+    {
+      "build": "after",
+      "path": "/insights-innovation/",
+      "lcp": 2936,
+      "cls": 0.0014177530075838599
+    }
+  ]
+}

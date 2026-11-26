@@ -8,6 +8,9 @@ const browser = await chromium.launch({
   executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || undefined,
 });
 const samples = [];
+const output = process.env.X1_MOBILE_REPORT || "docs/reference-review/mobile-network.json";
+const visits = Number(process.env.X1_MOBILE_VISITS || 2);
+if (!Number.isInteger(visits) || visits < 1) throw new Error("Set X1_MOBILE_VISITS to a positive integer");
 const conditions = {
   offline: false,
   latency: 100,
@@ -15,8 +18,8 @@ const conditions = {
   uploadThroughput: 750_000 / 8,
 };
 try {
-  for (const path of ["/", "/insights-innovation"]) {
-    for (let visit = 0; visit < 2; visit++) {
+  for (const path of ["/", "/insights-innovation/"]) {
+    for (let visit = 0; visit < visits; visit++) {
       for (const [index, origin] of origins.entries()) {
         const page = await browser.newPage({
           viewport: { width: 390, height: 844 },
@@ -50,7 +53,7 @@ try {
       }
     }
   }
-  await writeFile("docs/reference-review/mobile-network.json",
+  await writeFile(output,
     JSON.stringify({ chromium: browser.version(), cpuSlowdown: 4, conditions, samples }, null, 2) + "\n");
 } finally {
   await browser.close();

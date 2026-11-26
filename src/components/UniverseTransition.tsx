@@ -1,3 +1,4 @@
+import { syncBrowserThemeColor } from "@/lib/theme";
 import type { Journey } from './JourneyScene';
 import {
   lazy, Suspense, useEffect,
@@ -90,6 +91,7 @@ export function UniverseTransition() {
   }, [location.key, navigation]);
   useLayoutEffect(() => {
     document.documentElement.dataset.arcade = String(destination === "arcade");
+    syncBrowserThemeColor();
     const from = previous.current;
     previous.current = destination;
     if (from === destination || from === "site" || destination === "site") {
