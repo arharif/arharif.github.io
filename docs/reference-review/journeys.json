@@ -1,0 +1,20 @@
+[
+  {
+    "world": "arcade",
+    "configuredMs": 3600,
+    "sampledFrames": 29,
+    "captureMs": 9544
+  },
+  {
+    "world": "insights",
+    "configuredMs": 4500,
+    "sampledFrames": 24,
+    "captureMs": 5092
+  },
+  {
+    "world": "academic",
+    "configuredMs": 3100,
+    "sampledFrames": 6,
+    "captureMs": 3658
+  }
+]

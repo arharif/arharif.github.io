@@ -100,7 +100,7 @@ export function Experiment() {
               series={[curve]}
               labels={thresholds.map((t) => t.toFixed(2))}
               max={1}
-              colors={["#64c8b7"]}
+              colors={["var(--chart-current)"]}
               area
               onPick={(i) => update({ threshold: thresholds[i] })}
             />

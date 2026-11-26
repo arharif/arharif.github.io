@@ -1,4 +1,4 @@
-import { Check, Sun } from "lucide-react";
+import { Sun } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { palettes, type ThemeMode } from "@/lib/palettes";
 
@@ -64,8 +64,10 @@ export function ThemeSwitcher({
               document.activeElement as HTMLButtonElement,
             );
             const next = {
-              ArrowDown: (index + 1) % 8,
-              ArrowUp: (index + 7) % 8,
+              ArrowRight: (index + 1) % 8,
+              ArrowDown: (index + 4) % 8,
+              ArrowLeft: (index + 7) % 8,
+              ArrowUp: (index + 4) % 8,
               Home: 0,
               End: 7,
             }[e.key];
@@ -80,6 +82,7 @@ export function ThemeSwitcher({
             return (
               <button
                 key={id}
+                title={label}
                 role="menuitemradio"
                 aria-label={`Activate ${label}`}
                 aria-checked={id === mode}
@@ -93,8 +96,7 @@ export function ThemeSwitcher({
                     background: `conic-gradient(${bg} 25%, ${surface} 0 50%, ${ink} 0 75%, ${accent} 0)`,
                   }}
                 />
-                {label}
-                {id === mode && <Check size={14} />}
+                <span className="sr-only">{label}</span>
               </button>
             );
           })}

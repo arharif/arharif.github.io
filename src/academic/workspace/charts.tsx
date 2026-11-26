@@ -1,15 +1,15 @@
 import type { ReactNode } from "react";
 import { ArrowUpRight } from "lucide-react";
 export const palette = {
-  Critical: "#fb7185",
-  High: "#fbb05b",
-  Medium: "#f0cd6b",
-  Low: "#57d6ad",
-  Neutral: "#8d9dfa",
-  Evidenced: "#57d6ad",
-  Gaps: "#fbb05b",
+  Critical: "var(--chart-critical)",
+  High: "var(--chart-high)",
+  Medium: "var(--chart-medium)",
+  Low: "var(--chart-low)",
+  Neutral: "var(--chart-target)",
+  Evidenced: "var(--chart-low)",
+  Gaps: "var(--chart-high)",
   Unassessed: "#8190a7",
-  Excluded: "#aa9bec",
+  Excluded: "var(--chart-target)",
 };
 export function Panel({
   title,

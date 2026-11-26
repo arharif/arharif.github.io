@@ -1110,7 +1110,7 @@
 }
 .xa .xa-heatmap small {
   font-size: 8px;
-  color: var(--xa-muted);
+  color: inherit;
 }
 .xa .xa-heatmap button:hover {
   background: color-mix(in srgb, var(--cell-color) 33%, var(--xa-bg));
@@ -2304,3 +2304,6 @@
     font-size: 12px;
   }
 }
+
+.xa-brand-pair { display: flex; align-items: center; gap: 9px; }
+@media (max-width: 700px) { .xa-brand-pair .xa-brand { display: none; } }

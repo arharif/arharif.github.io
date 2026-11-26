@@ -163,16 +163,12 @@ function Layout() {
       </a>
       <header className="xa-top">
         <div className="xa-top-inner">
-          <Link
-            className="xa-brand"
-            to={base}
-            aria-label="X1 Academic overview"
-          >
-            <X1Mark size="sm" mode={theme} />{" "}
-            <span>
-              ACADEMIC<small>THE CONNECTED ACADEMY</small>
-            </span>
-          </Link>
+          <div className="xa-brand-pair">
+            <Link to="/" aria-label="X1 home"><X1Mark size="sm" mode={theme} /></Link>
+            <Link className="xa-brand" aria-label="X1 Academic overview" to={base}>
+              <span>ACADEMIC<small>THE CONNECTED ACADEMY</small></span>
+            </Link>
+          </div>
           <GlobalSearch />
           <div className="xa-actions" style={{ margin: 0 }}>
             <label className="xs-mode">

@@ -47,10 +47,14 @@ export const originals = [
     instructions:
       "Choose a topic and timer, then answer five questions. Each correct answer earns 100 points plus the seconds remaining.",
   },
+  { key: "neon-stack", title: "Neon Stack", type: "Timing", desc: "Balance a tower above the skyline.",
+    instructions: "Press Space, tap the board or choose Drop block to stack twelve layers. Only the overlap stays. A missed layer ends the round." },
+  { key: "bubble-blitz", title: "Bubble Blitz", type: "Paddle", desc: "Clear a constellation of neon bubbles.",
+    instructions: "Move with ← and →, a mouse or a finger to return the ball. Pop all 24 bubbles for 50 points each. Three misses end the round." },
 ] as const;
 export type OriginalKey = (typeof originals)[number]["key"];
 export interface PlayProps {
-  onFinish: (score: number) => void;
+  onFinish: (score: number, outcome?: "win" | "loss") => void;
 }
 export function shuffle<T>(values: readonly T[]) {
   const copy = [...values];

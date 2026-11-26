@@ -639,3 +639,13 @@
   inset: 0 0 0 63%;
   background-size: auto, cover;
 }
+.table-art { display: grid; place-content: center; justify-items: center; width: 100%; aspect-ratio: 1.8; overflow: hidden; background: radial-gradient(ellipse at bottom,#35305f,#141228 80%); }
+.table-art i { display: block; }
+.neon-stack i { width: 66px; height: 9px; margin: 1px; border-radius: 2px; background: #81e6e0; transform: skew(-17deg); }
+.neon-stack i:first-child { margin-left: 28px; background: #f9afe4; }
+.neon-stack i:nth-child(2) { width: 80px; background: #a6c4fa; }
+.neon-stack i:nth-child(3) { width: 96px; }
+.neon-stack i:last-child { width: 108px; }
+.bubble-blitz { grid-template-columns: repeat(2,28px); gap: 4px; }
+.bubble-blitz i { width: 28px; height: 28px; border-radius: 50%; background: radial-gradient(at 32% 26%,white,#81e6e0 18%,#4372ad 85%); }
+.bubble-blitz i:nth-child(2n) { transform: translateY(-9px); filter: hue-rotate(70deg); }

@@ -1,107 +1,84 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import { Sparkle } from 'lucide-react';
-import { resolveAssistantSection } from './assistantContext';
-import { safeStorage } from '@/lib/storage';
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { createPortal } from "react-dom";
+import { useLocation } from "react-router-dom";
+import { resolveAssistantSection } from "./assistantContext";
+import { GuidePortrait, guideFor } from "./GuidePortrait";
 
-const SINGLETON_KEY = '__x1_single_launcher__' as const;
-const SEEN_KEY = 'x1-assistant-seen-sections';
-
-type LauncherWindow = Window & { [SINGLETON_KEY]?: boolean };
-
-const SiteAssistantPanel = lazy(() => import('./SiteAssistantPanel').then((module) => ({ default: module.SiteAssistantPanel })));
-
-const readSeen = (): Record<string, boolean> => {
-  const raw = safeStorage.get(SEEN_KEY);
-  if (!raw) return {};
-  try {
-    const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === 'object' ? parsed as Record<string, boolean> : {};
-  } catch {
-    return {};
-  }
-};
-
-const writeSeen = (value: Record<string, boolean>) => safeStorage.set(SEEN_KEY, JSON.stringify(value));
+const loadPanel = () => import("./SiteAssistantPanel");
+const preparePanel = () => { void loadPanel().catch(() => undefined); };
+const Panel = lazy(() =>
+  loadPanel().then((module) => ({
+    default: module.SiteAssistantPanel,
+  })),
+);
 
 export function SiteAssistantLauncher() {
-  const trigger = useRef<HTMLButtonElement>(null);
-  const close = useCallback(() => { setOpen(false); trigger.current?.focus({ preventScroll: true }); }, []);
-  const [open, setOpen] = useState(false);
-  const [hasOpened, setHasOpened] = useState(false);
-  const [enabled, setEnabled] = useState(true);
-  const [seenSections, setSeenSections] = useState<Record<string, boolean>>(() => readSeen());
-
-  const [navIndicator, setNavIndicator] = useState(false);
-  const prevRouteKeyRef = useRef<string>('');
   const location = useLocation();
-  const routeKey = useMemo(() => resolveAssistantSection(location.pathname), [location.pathname]);
-
-  useEffect(() => {
-    const w = window as LauncherWindow;
-    if (w[SINGLETON_KEY]) {
-      setEnabled(false);
-      return;
-    }
-    w[SINGLETON_KEY] = true;
-    return () => {
-      w[SINGLETON_KEY] = false;
-    };
+  const section = resolveAssistantSection(location.pathname);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const [open, setOpen] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const [host, setHost] = useState<HTMLDialogElement | null>(null);
+  const [mood, setMood] = useState("idle");
+  const close = useCallback(() => {
+    setOpen(false);
+    trigger.current?.focus({ preventScroll: true });
   }, []);
 
-  const markSeen = (key: string) => {
-    setSeenSections((prev) => {
-      if (prev[key]) return prev;
-      const next = { ...prev, [key]: true };
-      writeSeen(next);
-      return next;
-    });
-  };
-
   useEffect(() => {
-    if (open) markSeen(routeKey);
-  }, [open, routeKey]);
-
-
-  useEffect(() => {
-    if (!prevRouteKeyRef.current) {
-      prevRouteKeyRef.current = routeKey;
-      return;
+    function syncRoom() {
+      const room =
+        document.querySelector<HTMLDialogElement>(".play-room[open]");
+      setHost(room);
+      setMood(room?.dataset.mood || "idle");
     }
-    if (prevRouteKeyRef.current === routeKey) return;
-    prevRouteKeyRef.current = routeKey;
-    if (open) return;
+    syncRoom();
+    window.addEventListener("x1-play-room", syncRoom);
+    return () => window.removeEventListener("x1-play-room", syncRoom);
+  }, [location.key]);
+  useEffect(() => {
+    setOpen(false);
+  }, [location.key]);
 
-    setNavIndicator(true);
-    const timer = window.setTimeout(() => setNavIndicator(false), 2600);
-    return () => window.clearTimeout(timer);
-  }, [routeKey, open]);
-
-  if (!enabled) return null;
-
-  const showBadge = !open && (!seenSections[routeKey] || navIndicator);
-
-  return (
+  const ui = (
     <>
       <button
         ref={trigger}
         className="assistant-launcher"
-        onClick={() => {
-          if (!open) { setHasOpened(true); setNavIndicator(false); }
-          setOpen(!open);
-        }}
-        aria-label={open ? 'Close X1 assistant' : 'Open X1 assistant'}
+        data-guide={guideFor(section)}
+        data-mood={mood}
         aria-expanded={open}
         aria-controls="x1-assistant-panel"
+        aria-label={open ? "Close X1 assistant" : "Open X1 assistant"}
+        onPointerEnter={preparePanel}
+        onPointerDown={preparePanel}
+        onFocus={preparePanel}
+        onClick={() => {
+          setLoaded(true);
+          setOpen(!open);
+        }}
       >
-        <Sparkle aria-hidden="true" size={24} fill="currentColor" strokeWidth={1.5}/>
-        {showBadge && <span className="assistant-launcher-badge" aria-hidden="true" />}
+        <GuidePortrait section={section} />
       </button>
-      {hasOpened && (
-        <Suspense fallback={<span className="sr-only" role="status" aria-live="polite">Loading X1 assistant…</span>}>
-          <SiteAssistantPanel open={open} onClose={close} />
+      {loaded && (
+        <Suspense
+          fallback={
+            <span role="status" className="sr-only">
+              Opening guide…
+            </span>
+          }
+        >
+          <Panel key={section} open={open} onClose={close} />
         </Suspense>
       )}
     </>
   );
+  return host && section === "games" ? createPortal(ui, host) : ui;
 }

@@ -160,6 +160,16 @@ for (const page of pages) {
   await mkdir(directory, { recursive: true });
   await writeFile(`${directory}/index.html`, html);
 }
+// Give direct Insights visits an entry document so Pages can serve the route
+// in one request and discover its largest image while JavaScript loads.
+const insightsUrl = "https://arharif.github.io/insights-innovation";
+const insightsEntry = template
+  .replace(/<title>.*?<\/title>/, "<title>Insights &amp; Innovation · arharif</title>")
+  .replace(/(<link rel="canonical" href=")[^"]*/, "$1" + insightsUrl)
+  .replace(/(<meta property="og:url" content=")[^"]*/, "$1" + insightsUrl)
+  .replace("</head>", '<link rel="preload" as="image" href="/art/cosmos.webp" fetchpriority="high"></head>');
+await mkdir("dist/insights-innovation", { recursive: true });
+await writeFile("dist/insights-innovation/index.html", insightsEntry);
 const existing = await readFile("public/sitemap.xml", "utf8");
 const additional = pages
   .filter((page) => page.path !== "/progress")

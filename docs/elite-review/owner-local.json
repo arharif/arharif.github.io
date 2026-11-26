@@ -1,0 +1,18 @@
+{
+  "service": "Disposable local Supabase",
+  "client": "Production Vite build with document CSP",
+  "timingsMs": {
+    "verifyToStudio": 1727,
+    "saveToDraftConfirmation": 520,
+    "publishToPublicConfirmation": 388
+  },
+  "evidence": [
+    "Non-owner password sign-in denied by owner RPC",
+    "Owner password, native factor enrollment, TOTP challenge, verification and AAL2 studio access",
+    "Topic creation, visual and Markdown editing, live preview, tags, manual reading time, cover upload/replacement/removal, reload recovery and private draft read boundaries",
+    "An interrupted edit preserves unsaved text and the next attempt succeeds",
+    "Publish, anonymous article and image reads, edit, unpublish and withdrawal of image access",
+    "Logout closes the studio",
+    "Returning owner completes an existing TOTP challenge without re-enrollment"
+  ]
+}

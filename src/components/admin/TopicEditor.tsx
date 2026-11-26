@@ -39,7 +39,7 @@ export function TopicEditor({ value, onSave, saving }: { value?: TopicRecord; on
       palette: value.palette ?? '',
       mood: value.mood ?? '',
       featured: value.featured ?? false,
-      status: 'published',
+      status: value.status ?? 'published',
     });
   }, [value]);
 
@@ -66,8 +66,12 @@ export function TopicEditor({ value, onSave, saving }: { value?: TopicRecord; on
       </div>
       <textarea className="mt-3 w-full rounded-xl bg-white/10 p-2" rows={3} placeholder="Description" value={topic.description} onChange={(e) => set('description', e.target.value)} />
       <label className="mt-2 block text-sm"><input type="checkbox" checked={Boolean(topic.featured)} onChange={(e)=>set('featured', e.target.checked)} /> Featured topic</label>
-      <p className="mt-2 text-xs text-emerald-300">Publish-only workflow: new and updated topics are immediately published.</p>
-      <button disabled={saving || !topic.title.trim() || !topic.slug.trim() || !topic.category.trim()} onClick={() => onSave({ ...topic, status: 'published', slug: topic.slug.trim(), title: topic.title.trim(), category: topic.category.trim(), subcategory: topic.subcategory?.trim() || undefined })} className="mt-3 rounded-xl bg-white/15 px-4 py-2 disabled:cursor-not-allowed disabled:opacity-60">{saving ? 'Saving...' : 'Save Topic'}</button>
+      <label className="mt-2 block text-sm">Topic visibility
+        <select aria-label="Topic visibility" value={topic.status} onChange={e => set('status', e.target.value as TopicInput['status'])}>
+          <option value="published">Published</option><option value="draft">Private draft</option>
+        </select>
+      </label>
+      <button disabled={saving || !topic.title.trim() || !topic.slug.trim() || !topic.category.trim()} onClick={() => onSave({ ...topic, slug: topic.slug.trim(), title: topic.title.trim(), category: topic.category.trim(), subcategory: topic.subcategory?.trim() || undefined })} className="mt-3 rounded-xl bg-white/15 px-4 py-2 disabled:cursor-not-allowed disabled:opacity-60">{saving ? 'Saving...' : 'Save Topic'}</button>
     </div>
   );
 }

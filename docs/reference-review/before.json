@@ -1,0 +1,293 @@
+{
+  "chromium": "156.0.8078.79",
+  "samples": [
+    {
+      "route": "home",
+      "width": 1440,
+      "lcp": 1404,
+      "cls": 0.0031443384910970727,
+      "interaction": 24,
+      "bytes": 418477
+    },
+    {
+      "route": "home",
+      "width": 1440,
+      "lcp": 1092,
+      "cls": 0.0031443384910970727,
+      "interaction": 24,
+      "bytes": 418477
+    },
+    {
+      "route": "home",
+      "width": 1440,
+      "lcp": 1128,
+      "cls": 0.0031443384910970727,
+      "interaction": 24,
+      "bytes": 418477
+    },
+    {
+      "route": "home",
+      "width": 390,
+      "lcp": 768,
+      "cls": 0.002876884804056023,
+      "interaction": 24,
+      "bytes": 418477
+    },
+    {
+      "route": "home",
+      "width": 390,
+      "lcp": 552,
+      "cls": 0.002876884804056023,
+      "interaction": 24,
+      "bytes": 418477
+    },
+    {
+      "route": "home",
+      "width": 390,
+      "lcp": 580,
+      "cls": 0.002876884804056023,
+      "interaction": 24,
+      "bytes": 418477
+    },
+    {
+      "route": "insights",
+      "width": 1440,
+      "lcp": 952,
+      "cls": 0.0016505358535075876,
+      "interaction": 32,
+      "bytes": 626414
+    },
+    {
+      "route": "insights",
+      "width": 1440,
+      "lcp": 888,
+      "cls": 0.00007583108281893004,
+      "interaction": 24,
+      "bytes": 626414
+    },
+    {
+      "route": "insights",
+      "width": 1440,
+      "lcp": 1028,
+      "cls": 0.00007583108281893004,
+      "interaction": 32,
+      "bytes": 626414
+    },
+    {
+      "route": "insights",
+      "width": 390,
+      "lcp": 712,
+      "cls": 0.0010060721039019903,
+      "interaction": 24,
+      "bytes": 626414
+    },
+    {
+      "route": "insights",
+      "width": 390,
+      "lcp": 512,
+      "cls": 0.00009917532434996103,
+      "interaction": 16,
+      "bytes": 580910
+    },
+    {
+      "route": "insights",
+      "width": 390,
+      "lcp": 552,
+      "cls": 0.0010060721039019903,
+      "interaction": 32,
+      "bytes": 626414
+    },
+    {
+      "route": "academic",
+      "width": 1440,
+      "lcp": 560,
+      "cls": 0,
+      "interaction": 40,
+      "bytes": 717640
+    },
+    {
+      "route": "academic",
+      "width": 1440,
+      "lcp": 584,
+      "cls": 0,
+      "interaction": 40,
+      "bytes": 717640
+    },
+    {
+      "route": "academic",
+      "width": 1440,
+      "lcp": 576,
+      "cls": 0,
+      "interaction": 24,
+      "bytes": 717640
+    },
+    {
+      "route": "academic",
+      "width": 390,
+      "lcp": 684,
+      "cls": 0,
+      "interaction": 48,
+      "bytes": 717640
+    },
+    {
+      "route": "academic",
+      "width": 390,
+      "lcp": 520,
+      "cls": 0,
+      "interaction": 48,
+      "bytes": 717640
+    },
+    {
+      "route": "academic",
+      "width": 390,
+      "lcp": 468,
+      "cls": 0,
+      "interaction": 24,
+      "bytes": 717640
+    },
+    {
+      "route": "arcade",
+      "width": 1440,
+      "lcp": 808,
+      "cls": 0,
+      "interaction": 40,
+      "bytes": 650127
+    },
+    {
+      "route": "arcade",
+      "width": 1440,
+      "lcp": 816,
+      "cls": 0,
+      "interaction": 40,
+      "bytes": 666051
+    },
+    {
+      "route": "arcade",
+      "width": 1440,
+      "lcp": 788,
+      "cls": 0,
+      "interaction": 40,
+      "bytes": 666051
+    },
+    {
+      "route": "arcade",
+      "width": 390,
+      "lcp": 652,
+      "cls": 0,
+      "interaction": 40,
+      "bytes": 666051
+    },
+    {
+      "route": "arcade",
+      "width": 390,
+      "lcp": 680,
+      "cls": 0,
+      "interaction": 24,
+      "bytes": 666051
+    },
+    {
+      "route": "arcade",
+      "width": 390,
+      "lcp": 632,
+      "cls": 0,
+      "interaction": 40,
+      "bytes": 666051
+    },
+    {
+      "route": "about",
+      "width": 1440,
+      "lcp": 952,
+      "cls": 0,
+      "interaction": 160,
+      "bytes": 347305
+    },
+    {
+      "route": "about",
+      "width": 1440,
+      "lcp": 688,
+      "cls": 0,
+      "interaction": 160,
+      "bytes": 347305
+    },
+    {
+      "route": "about",
+      "width": 1440,
+      "lcp": 708,
+      "cls": 0,
+      "interaction": 80,
+      "bytes": 347305
+    },
+    {
+      "route": "about",
+      "width": 390,
+      "lcp": 584,
+      "cls": 0,
+      "interaction": 40,
+      "bytes": 347305
+    },
+    {
+      "route": "about",
+      "width": 390,
+      "lcp": 824,
+      "cls": 0,
+      "interaction": 48,
+      "bytes": 347305
+    },
+    {
+      "route": "about",
+      "width": 390,
+      "lcp": 648,
+      "cls": 0,
+      "interaction": 72,
+      "bytes": 347305
+    },
+    {
+      "route": "login",
+      "width": 1440,
+      "lcp": 424,
+      "cls": 0,
+      "interaction": 48,
+      "bytes": 333636
+    },
+    {
+      "route": "login",
+      "width": 1440,
+      "lcp": 444,
+      "cls": 0,
+      "interaction": 32,
+      "bytes": 333636
+    },
+    {
+      "route": "login",
+      "width": 1440,
+      "lcp": 456,
+      "cls": 0,
+      "interaction": 48,
+      "bytes": 333636
+    },
+    {
+      "route": "login",
+      "width": 390,
+      "lcp": 348,
+      "cls": 0,
+      "interaction": 56,
+      "bytes": 333636
+    },
+    {
+      "route": "login",
+      "width": 390,
+      "lcp": 416,
+      "cls": 0,
+      "interaction": 40,
+      "bytes": 333636
+    },
+    {
+      "route": "login",
+      "width": 390,
+      "lcp": 300,
+      "cls": 0,
+      "interaction": 40,
+      "bytes": 333636
+    }
+  ]
+}

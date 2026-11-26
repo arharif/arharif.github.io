@@ -5,18 +5,21 @@ const worlds = [
   {
     id: "games",
     path: "/games",
+    load: () => import("@/components/GamesHub"),
     title: "X1 Games",
     sub: "Interactive Games & Challenges",
   },
   {
     id: "insights",
     path: "/insights-innovation",
+    load: () => import("./Insights"),
     title: "X1 Insights & Innovation",
     sub: "Ideas, Philosophy & Emerging Trends",
   },
   {
     id: "academic",
     path: "/x1-academic",
+    load: () => import("@/academic/app/AcademicApp"),
     title: "X1 Academic",
     sub: "Responsible AI • AI Risks • CISO Tools",
   },
@@ -42,13 +45,17 @@ export function Gateway() {
             key={world.id}
             className={"destination dest-" + world.id}
             to={world.path}
+            onPointerEnter={() => { void world.load().catch(() => undefined); }}
+            onFocus={() => { void world.load().catch(() => undefined); }}
           >
             <img
               src={"/art/" + world.id + ".webp"}
               alt=""
+              srcSet={`/art/${world.id}-small.webp 448w, /art/${world.id}.webp 768w`}
+              sizes="(max-width: 650px) 94vw, 31vw"
               width="768"
-              height="400"
-              fetchPriority="high"
+              height="341"
+              fetchPriority={world.id === "games" ? "high" : "auto"}
             />
             <div>
               <h2>{world.title}</h2>

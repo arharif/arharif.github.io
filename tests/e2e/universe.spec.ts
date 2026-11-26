@@ -10,7 +10,7 @@ async function palette(page: Page, name: string) {
     .getByRole("menuitemradio", { name: "Activate " + name, exact: true })
     .click();
 }
-for (const [id, [name, bg, surface, ink, accent]] of Object.entries(palettes)) {
+for (const [id, [name, bg, surface, ink, accent, , muted]] of Object.entries(palettes)) {
   test(name + " persists and reaches shared surfaces", async ({ page }) => {
     await page.goto("/");
     await page.emulateMedia({ reducedMotion: "reduce" });
@@ -30,13 +30,13 @@ for (const [id, [name, bg, surface, ink, accent]] of Object.entries(palettes)) {
       await expect(page.locator("h1").first()).toBeVisible();
       expect(
         await page.evaluate(() =>
-          ["--x1-bg", "--x1-surface", "--x1-text", "--x1-accent"].map((k) =>
+          ["--x1-bg", "--x1-surface", "--x1-text", "--x1-accent", "--x1-text-muted"].map((k) =>
             getComputedStyle(document.documentElement)
               .getPropertyValue(k)
               .trim(),
           ),
         ),
-      ).toEqual([bg, surface, ink, accent]);
+      ).toEqual([bg, surface, ink, accent, muted]);
       if (["/about-x1", "/professional", "/personal"].includes(path)) {
         const audit = await new AxeBuilder({ page })
           .withRules(["color-contrast"])
@@ -75,7 +75,7 @@ test("legacy and invalid values migrate before the app mounts", async ({
     expect(await page.evaluate(() => localStorage.getItem("theme"))).toBe(id);
   }
 });
-for (const name of ["Metropolitan Plum", "Editorial Ivory", "Graphite Slate"]) {
+for (const name of ["Aubergine", "Editorial Ivory", "Imperial Gold"]) {
   test(name + " cinematic round trip and browser history", async ({ page }) => {
     await page.goto("/");
     await palette(page, name);
@@ -84,6 +84,10 @@ for (const name of ["Metropolitan Plum", "Editorial Ivory", "Graphite Slate"]) {
       "data-to",
       "arcade",
     );
+    const skip = page.getByRole("button",{name:"Skip journey"});
+    await expect(skip).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(skip).toHaveCount(0);
     await expect(
       page.getByRole("heading", { name: "Featured Games" }),
     ).toBeVisible();
@@ -135,7 +139,7 @@ test("gateway destinations, keyboard palette and reduced motion", async ({
   await page.keyboard.press("Enter");
   await expect(page.getByLabel("Open theme selector")).toHaveAttribute(
     "title",
-    "Graphite Slate",
+    "Imperial Gold",
   );
   for (const [card, path] of [
     [".dest-insights", "/insights-innovation"],
@@ -211,7 +215,7 @@ test("guest submission goes to email and protected administration redirects", as
   await page.goto("/admin");
   await expect(page).toHaveURL(/\/login$/);
   await expect(
-    page.getByRole("heading", { name: "Admin sign in" }),
+    page.getByRole("heading", { name: "Owner sign in" }),
   ).toBeVisible();
 });
 for (const width of [360, 390, 768, 1024, 1440, 1920]) {
@@ -256,10 +260,8 @@ for (const path of ["/", "/games", "/insights-innovation", "/submitting"]) {
     ).toEqual([]);
   });
 }
-test("all six original games have playable entry points and restart", async ({
-  page,
-}) => {
-  for (const g of originals) {
+for (const g of originals) {
+  test(g.title + " starts, accepts controls and restarts", async ({page}) => {
     await page.goto("/games?game=" + g.key);
     const room = page.getByRole("dialog");
     await expect(room.getByRole("heading", { name: g.title })).toBeVisible();
@@ -278,15 +280,15 @@ test("all six original games have playable entry points and restart", async ({
       await expect(room.locator(".play-status")).toContainText("Question 2");
     } else {
       await expect(room.locator("canvas")).toBeFocused();
-      await page.keyboard.press("Space");
+      if (g.key !== "neon-stack") await page.keyboard.press("Space");
       await room.getByRole("button", { name: "Pause" }).click();
       await room.getByRole("button", { name: "Resume" }).click();
     }
     await room.getByRole("button", { name: "Restart" }).click();
     await room.getByLabel("Close game").click();
     await expect(room).toHaveCount(0);
-  }
-});
+  });
+}
 test("finished rounds, favorites, earned badge and high score survive refresh", async ({
   page,
 }) => {
@@ -358,4 +360,23 @@ test("invalid game deep link recovers to a playable catalogue", async ({
   await expect(page.getByText(/This game is unavailable/)).toBeVisible();
   await page.getByLabel("Play Rocket Boom").click();
   await expect(page.getByRole("dialog")).toBeVisible();
+});
+
+test("each world opens its compact guide and the game guide follows the active round", async ({page}) => {
+  for (const [path,persona] of [["/","orb"],["/insights-innovation","astronaut"],["/insights-innovation/","astronaut"],["/games","phantom"]]) {
+    await page.goto(path);
+    const trigger = page.getByRole("button",{name:"Open X1 assistant",exact:true});
+    await expect(trigger).toHaveAttribute("data-guide",persona);
+    await trigger.click();
+    await expect(page.getByRole("dialog",{name:"X1 assistant"})).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(trigger).toBeFocused();
+  }
+  await page.getByLabel('Play Neon Stack').click();
+  const room = page.getByRole('dialog',{name:'Neon Stack'});
+  await expect(room.locator('.assistant-launcher')).toHaveAttribute('data-mood','selected');
+  await room.getByText('Start game',{exact:true}).click();
+  await room.getByLabel('Stacking playfield').press('Space');
+  await expect(room.getByRole('status')).toContainText('Round complete');
+  await expect(room.locator('.assistant-launcher')).toHaveAttribute('data-mood','loss');
 });

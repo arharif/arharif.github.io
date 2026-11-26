@@ -1,7 +1,8 @@
+import { imageType, maxImageBytes } from '../../supabase/functions/editorial-upload/imageType';
 import { seedCollections, seedContent, seedTopics } from '@/content/data';
 import { CollectionRecord, ContentInput, ContentRecord, ContentStatus, TopicInput, TopicRecord } from '@/content/types';
 import { isSupabaseConfigured } from './env';
-import { supabaseRest, supabaseUpload } from './supabase';
+import { SupabaseRequestError, supabaseRest, supabaseUpload } from './supabase';
 import { normalizeUniverse } from './universe';
 
 const localTopicsKey = 'arharif-local-topics';
@@ -37,6 +38,7 @@ const normalizeContent = (r: Record<string, unknown>): ContentRecord => ({
   id: String(r.id), topicId: String(r.topic_id), slug: String(r.slug), title: String(r.title), excerpt: String(r.excerpt ?? ''), body: String(r.body ?? ''),
   contentType: String(r.content_type), coverImageUrl: r.cover_image_url ? String(r.cover_image_url) : undefined, videoUrl: r.video_url ? String(r.video_url) : undefined,
   status: String(r.status) as ContentStatus, publishedAt: r.published_at ? String(r.published_at) : undefined,
+  readingMinutes: Number(r.reading_minutes) || undefined,
   tags: Array.isArray(r.tags) ? r.tags.map((x) => String(x)) : [],
   collectionIds: Array.isArray(r.collection_ids) ? r.collection_ids.map((x) => String(x)) : [],
   metaTitle: r.meta_title ? String(r.meta_title) : undefined,
@@ -47,7 +49,7 @@ const normalizeContent = (r: Record<string, unknown>): ContentRecord => ({
   topic: r.topic && typeof r.topic === 'object' ? normalizeTopic(r.topic as Record<string, unknown>) : undefined,
 });
 
-const topicRow = (i: TopicInput) => ({ slug: i.slug, title: i.title, description: i.description, universe: i.universe, category: i.category, subcategory: i.subcategory ?? null, display_style: i.displayStyle, cover_image_url: i.coverImageUrl ?? null, icon: i.icon ?? null, order_index: i.orderIndex, status: i.status ?? 'published' });
+const topicRow = (i: TopicInput) => ({ slug: i.slug, title: i.title, description: i.description, universe: i.universe, category: i.category, subcategory: i.subcategory ?? null, display_style: i.displayStyle, cover_image_url: i.coverImageUrl ?? null, icon: i.icon ?? null, order_index: i.orderIndex, palette: i.palette ?? null, mood: i.mood ?? null, featured: !!i.featured, status: i.status ?? 'published' });
 const contentRow = (i: ContentInput) => ({
   topic_id: i.topicId,
   slug: i.slug,
@@ -62,6 +64,11 @@ const contentRow = (i: ContentInput) => ({
   // caller's timestamp, while the first publication receives one here.
   published_at: i.status === 'published' ? (i.publishedAt ?? new Date().toISOString()) : null,
   author_name: i.authorName,
+  tags: i.tags ?? [],
+  reading_minutes: i.readingMinutes ?? null,
+  collection_ids: i.collectionIds ?? [],
+  meta_title: i.metaTitle ?? null, meta_description: i.metaDescription ?? null,
+  og_image_url: i.ogImageUrl ?? null, featured: !!i.featured, favorite: !!i.favorite,
 });
 
 const getLocalTopics = () => {
@@ -103,7 +110,7 @@ export async function listAdminTopics(accessToken: string) {
 
 export async function createTopic(input: TopicInput, accessToken: string) {
   if (!isSupabaseConfigured) {
-    const next: TopicRecord = { ...input, status: 'published', id: crypto.randomUUID(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+    const next: TopicRecord = { ...input, status: input.status ?? 'published', id: crypto.randomUUID(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
     setLocalTopics([...getLocalTopics(), next]);
     return;
   }
@@ -112,7 +119,7 @@ export async function createTopic(input: TopicInput, accessToken: string) {
 
 export async function updateTopic(id: string, input: TopicInput, accessToken: string) {
   if (!isSupabaseConfigured) {
-    setLocalTopics(getLocalTopics().map((t) => (t.id === id ? { ...t, ...input, status: 'published', updatedAt: new Date().toISOString() } : t)));
+    setLocalTopics(getLocalTopics().map((t) => (t.id === id ? { ...t, ...input, status: input.status ?? 'published', updatedAt: new Date().toISOString() } : t)));
     return;
   }
   await supabaseRest(`topics?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(topicRow(input)) }, accessToken);
@@ -128,17 +135,23 @@ export async function deleteTopic(id: string, accessToken: string) {
 }
 
 export async function listPublishedContent() {
-  if (!isSupabaseConfigured) return getLocalContent().filter((c) => c.status === 'published');
-  // Keep the public read limited to the two records required to render a card.
-  // Tag/collection relationships are optional and must not be allowed to make
-  // the primary published-content request fail when they are not exposed in a
-  // project's PostgREST schema cache.
-  const select = [
-    'id,topic_id,slug,title,excerpt,body,content_type,cover_image_url,video_url,status,published_at,created_at,updated_at,author_name',
-    'topic:topics(id,slug,title,description,universe,category,subcategory,display_style,cover_image_url,icon,order_index,status,created_at,updated_at)',
-  ].join(',');
-  const rows = await supabaseRest<Record<string, unknown>[]>(`content?select=${select}&status=eq.published&order=published_at.desc.nullslast,created_at.desc`);
-  return rows.map(normalizeContent);
+  if (!isSupabaseConfigured) {
+    const drafts = new Set(getLocalTopics().filter(t => t.status === 'draft').map(t => t.id));
+    return getLocalContent().filter(c => c.status === 'published' && !drafts.has(c.topicId));
+  }
+  const fields = 'id,topic_id,slug,title,excerpt,body,content_type,cover_image_url,video_url,status,published_at,created_at,updated_at,author_name';
+  const topic = 'topic:topics(id,slug,title,description,universe,category,subcategory,display_style,cover_image_url,icon,order_index,status,created_at,updated_at)';
+  const published = (select: string) => supabaseRest<Record<string, unknown>[]>(
+    `content?select=${select}&status=eq.published&order=published_at.desc.nullslast,created_at.desc`
+  );
+  try {
+    return (await published([fields, 'tags,reading_minutes', topic].join(','))).map(normalizeContent);
+  } catch (error) {
+    // Older installations can still serve the original public article projection
+    // while the optional tags and reading-time migration is being applied.
+    if (!(error instanceof SupabaseRequestError && error.code === '42703')) throw error;
+    return (await published([fields, topic].join(','))).map(normalizeContent);
+  }
 }
 
 export async function listAdminContent(accessToken: string) {
@@ -147,21 +160,40 @@ export async function listAdminContent(accessToken: string) {
   return rows.map(normalizeContent);
 }
 
-export async function createContent(input: ContentInput, accessToken: string) {
-  if (!isSupabaseConfigured) {
-    const next: ContentRecord = { ...input, publishedAt: input.status === 'published' ? input.publishedAt ?? new Date().toISOString() : undefined, id: crypto.randomUUID(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
-    setLocalContent([next, ...getLocalContent()]);
-    return;
-  }
-  await supabaseRest('content', { method: 'POST', body: JSON.stringify(contentRow(input)) }, accessToken);
+async function confirmExistingWrite(id: string, input: ContentInput, token: string) {
+  const rows = await supabaseRest<Record<string,unknown>[]>(`content?id=eq.${encodeURIComponent(id)}&select=*`,undefined,token);
+  const stored = rows[0];
+  const expected = contentRow(input);
+  // A response may have been interrupted after Postgres committed the write.
+  // Only accept a retry when the stored article matches the requested edit.
+  if (!stored || Object.entries(expected).some(([key, value]) => {
+    if (key === 'published_at') return input.status === 'published' ? !stored[key] : stored[key] != null;
+    return JSON.stringify(stored[key]) !== JSON.stringify(value);
+  })) throw new Error('edit-conflict');
+  return normalizeContent(stored);
 }
 
-export async function updateContent(id: string, input: ContentInput, accessToken: string) {
-  if (!isSupabaseConfigured) {
-    setLocalContent(getLocalContent().map((c) => (c.id === id ? { ...c, ...input, publishedAt: input.status === 'published' ? input.publishedAt ?? c.publishedAt ?? new Date().toISOString() : undefined, updatedAt: new Date().toISOString() } : c)));
-    return;
-  }
-  await supabaseRest(`content?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(contentRow(input)) }, accessToken);
+export async function createContent(input: ContentInput, accessToken: string, id: string) {
+  if (!isSupabaseConfigured) throw new Error('Publishing requires Supabase.');
+  const rows = await supabaseRest<Record<string, unknown>[]>('content', { method: 'POST',
+    headers: {Prefer:'return=representation,resolution=ignore-duplicates'},
+    body: JSON.stringify({...contentRow(input), id}),
+  }, accessToken);
+  return rows.length ? normalizeContent(rows[0]) : confirmExistingWrite(id, input, accessToken);
+}
+
+export async function updateContent(id: string, input: ContentInput, accessToken: string, revision: string) {
+  if (!isSupabaseConfigured) throw new Error('Publishing requires Supabase.');
+  const filter = '&updated_at=eq.' + encodeURIComponent(revision);
+  const rows = await supabaseRest<Record<string,unknown>[]>(`content?id=eq.${encodeURIComponent(id)}${filter}`, {
+    method:'PATCH', headers:{Prefer:'return=representation'}, body:JSON.stringify(contentRow(input)),
+  }, accessToken);
+  return rows.length ? normalizeContent(rows[0]) : confirmExistingWrite(id, input, accessToken);
+}
+
+export async function isPublicArticle(id: string) {
+  const rows = await supabaseRest<{id:string}[]>(`content?id=eq.${encodeURIComponent(id)}&select=id&status=eq.published`);
+  return rows.length === 1;
 }
 
 export async function deleteContent(id: string, accessToken: string) {
@@ -173,11 +205,9 @@ export async function deleteContent(id: string, accessToken: string) {
 }
 
 export async function uploadMedia(file: File, accessToken: string) {
-  const allowed = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
-  if (!allowed.has(file.type) || file.size > 8 * 1024 * 1024) throw new Error('Invalid upload.');
-  const extensionByType: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif' };
-  const ext = extensionByType[file.type];
-  const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-  if (!isSupabaseConfigured) return URL.createObjectURL(file);
-  return supabaseUpload(file, accessToken, path);
+  if (!file.size || file.size > maxImageBytes || imageType(new Uint8Array(await file.arrayBuffer())) !== file.type) throw new Error('Invalid image.');
+  const decoded = await createImageBitmap(file);
+  decoded.close();
+  if (!isSupabaseConfigured) throw new Error('Configure media storage.');
+  return supabaseUpload(file, accessToken);
 }
