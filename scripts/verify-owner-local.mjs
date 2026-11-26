@@ -170,7 +170,7 @@ try {
     .setInputFiles("public/art/insights-small.webp");
   await expect(image).toHaveJSProperty("naturalWidth", 448);
   await page.locator(".studio-editor").evaluate(el => window.scrollTo(0, el.getBoundingClientRect().top + scrollY - 80));
-  await page.screenshot({path:"docs/elite-review/studio.jpg",quality:82});
+  await page.screenshot({path:"docs/reference-review/studio.jpg",quality:82});
   await page.reload();
   await expect(page.getByLabel("Article title")).toHaveValue(title);
   const saveStarted = performance.now();
@@ -303,7 +303,7 @@ try {
   await page.unrouteAll({behavior:"wait"});
   evidence.push("Returning owner completes an existing TOTP challenge without re-enrollment");
   await writeFile(
-    "docs/elite-review/owner-local.json",
+    "docs/reference-review/owner-local.json",
     JSON.stringify(
       { service: "Disposable local Supabase", client:"Production Vite build with document CSP", timingsMs, evidence },
       null,
