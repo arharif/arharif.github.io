@@ -11,8 +11,10 @@ import { useLocation } from "react-router-dom";
 import { resolveAssistantSection } from "./assistantContext";
 import { GuidePortrait, guideFor } from "./GuidePortrait";
 
+const loadPanel = () => import("./SiteAssistantPanel");
+const preparePanel = () => { void loadPanel().catch(() => undefined); };
 const Panel = lazy(() =>
-  import("./SiteAssistantPanel").then((module) => ({
+  loadPanel().then((module) => ({
     default: module.SiteAssistantPanel,
   })),
 );
@@ -55,6 +57,9 @@ export function SiteAssistantLauncher() {
         aria-expanded={open}
         aria-controls="x1-assistant-panel"
         aria-label={open ? "Close X1 assistant" : "Open X1 assistant"}
+        onPointerEnter={preparePanel}
+        onPointerDown={preparePanel}
+        onFocus={preparePanel}
         onClick={() => {
           setLoaded(true);
           setOpen(!open);

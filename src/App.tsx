@@ -119,10 +119,11 @@ function Shell() {
       '/admin': { title: 'Admin', description: 'X1 content administration.' },
       '/login': { title: 'Login', description: 'Sign in to X1 administration.' },
     };
-    const page = location.pathname.startsWith('/professional/topic/') ? { title: 'Technology Topic', description: pages['/professional'].description }
-      : location.pathname.startsWith('/personal/post/') ? { title: 'Curiosity Post', description: pages['/personal'].description }
-      : pages[location.pathname] || { title: 'Page not found', description: 'The requested X1 page could not be found.' };
-    const url = new URL(location.pathname, 'https://arharif.github.io');
+    const pathname = location.pathname.replace(/\/+$/, '') || '/';
+    const page = pathname.startsWith('/professional/topic/') ? { title: 'Technology Topic', description: pages['/professional'].description }
+      : pathname.startsWith('/personal/post/') ? { title: 'Curiosity Post', description: pages['/personal'].description }
+      : pages[pathname] || { title: 'Page not found', description: 'The requested X1 page could not be found.' };
+    const url = new URL(pathname, 'https://arharif.github.io');
     document.title = `${page.title} · arharif`;
     document.querySelector<HTMLMetaElement>('meta[name="description"]')?.setAttribute('content', page.description);
     document.querySelector<HTMLMetaElement>('meta[property="og:title"]')?.setAttribute('content', document.title);
@@ -131,7 +132,7 @@ function Shell() {
     document.querySelector<HTMLMetaElement>('meta[property="twitter:title"]')?.setAttribute('content', document.title);
     document.querySelector<HTMLMetaElement>('meta[property="twitter:description"]')?.setAttribute('content', page.description);
     document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.setAttribute('href', url.href);
-    const privatePage = location.pathname === '/admin' || location.pathname === '/login' || !pages[location.pathname] && !location.pathname.startsWith('/professional/topic/') && !location.pathname.startsWith('/personal/post/');
+    const privatePage = pathname === '/admin' || pathname === '/login' || !pages[pathname] && !pathname.startsWith('/professional/topic/') && !pathname.startsWith('/personal/post/');
     document.querySelector<HTMLMetaElement>('meta[name="robots"]')?.setAttribute('content', privatePage ? 'noindex,nofollow' : 'index,follow,max-image-preview:large');
   }, [location.pathname]);
 
