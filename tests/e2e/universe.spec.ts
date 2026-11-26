@@ -84,6 +84,10 @@ for (const name of ["Aubergine", "Editorial Ivory", "Imperial Gold"]) {
       "data-to",
       "arcade",
     );
+    const skip = page.getByRole("button",{name:"Skip journey"});
+    await expect(skip).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(skip).toHaveCount(0);
     await expect(
       page.getByRole("heading", { name: "Featured Games" }),
     ).toBeVisible();
@@ -359,7 +363,7 @@ test("invalid game deep link recovers to a playable catalogue", async ({
 });
 
 test("each world opens its compact guide and the game guide follows the active round", async ({page}) => {
-  for (const [path,persona] of [["/","orb"],["/insights-innovation","astronaut"],["/games","phantom"]]) {
+  for (const [path,persona] of [["/","orb"],["/insights-innovation","astronaut"],["/insights-innovation/","astronaut"],["/games","phantom"]]) {
     await page.goto(path);
     const trigger = page.getByRole("button",{name:"Open X1 assistant",exact:true});
     await expect(trigger).toHaveAttribute("data-guide",persona);

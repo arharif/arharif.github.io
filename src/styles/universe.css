@@ -759,9 +759,9 @@ a:is(:hover,:focus-visible,:active) .mark-face { opacity:1; transform:scale(1); 
  .phantom-body {transform-origin:center;animation:gentle-wave 3s ease-in-out infinite;}
  @keyframes gentle-wave {50%{transform:rotate(-5deg) translateY(-1px)}}
 }
-.uni-transit.cinema { z-index:90; animation:journey-arrival var(--duration) linear both; color:#d3f7ff; --ray:color-mix(in srgb,var(--x1-accent) 32%,#53d4ff); }
-.cinema[data-to=arcade] {--ray:#dc77ff}
-.cinema[data-to=insights] {--ray:color-mix(in srgb,var(--x1-accent) 30%,#be9eff)}
+.uni-transit.cinema { z-index:90; animation:journey-arrival var(--duration) linear both; color:#d3f7ff; --ray:color-mix(in srgb,var(--journey-accent,var(--x1-accent)) 32%,#53d4ff); }
+.cinema[data-to=arcade] {--ray:color-mix(in srgb,var(--journey-accent,#dc77ff) 14%,#dc77ff)}
+.cinema[data-to=insights] {--ray:color-mix(in srgb,var(--journey-accent,var(--x1-accent)) 30%,#be9eff)}
 .journey-stage {position:absolute;inset:0;overflow:hidden;background:#0b1023;perspective:650px;}
 .journey-land,.journey-stars,.journey-floor,.journey-diagram,.journey-symbols {position:absolute;inset:0;width:100%;height:100%;}
 .journey-land {background-position:center;background-size:cover;opacity:.55;animation:land-flight var(--duration) ease-in-out both;}
@@ -794,3 +794,8 @@ a:is(:hover,:focus-visible,:active) .mark-face { opacity:1; transform:scale(1); 
 .studio-media .cover-drop {order:-1;display:grid;justify-items:center;gap:.4rem;padding:.85rem;width:100%;border:1px dashed var(--accent);border-radius:.75rem;background:var(--accent-soft);}
 .studio-media h3 {order:-2;}
 @media(max-width:750px){.studio-flow{grid-template-columns:repeat(3,minmax(0,1fr));}}
+.stage-arcade .journey-land {background-image:radial-gradient(ellipse at 50% 62%,#7042a6,transparent 47%),linear-gradient(#11112b,#251a4d 60%,#17152c)!important;opacity:1}
+.journey-city {position:absolute;inset:0;width:100%;height:100%;animation:city-flight var(--duration) ease-in both;}
+@keyframes city-flight {0%,30%{transform:scale(.95);opacity:.25}55%{opacity:1}100%{transform:scale(1.25)}}
+.journey-modal[open] {position:fixed;inset:0;max-width:none;max-height:none;width:100%;height:100%;margin:0;border:0;padding:0;background:transparent;color:inherit;pointer-events:auto;overflow:hidden;animation:journey-arrival var(--duration) linear both;}
+.journey-modal::backdrop {background:transparent;}

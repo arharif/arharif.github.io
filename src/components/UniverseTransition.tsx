@@ -1,12 +1,15 @@
-import JourneyScene, { journeyMs, type Journey } from './JourneyScene';
+import type { Journey } from './JourneyScene';
 import {
-  useEffect,
+  lazy, Suspense, useEffect,
   useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
 } from "react";
 import { useLocation, useNavigationType } from "react-router-dom";
+
+const JourneyScene = lazy(() => import('./JourneyScene'));
+const journeyMs = { arcade:3600, insights:4500, academic:3100 };
 
 function world(path: string) {
   if (/^\/games\/?$/.test(path)) return "arcade";
@@ -27,7 +30,7 @@ export function UniverseTransition() {
   const location = useLocation();
   const destination = world(location.pathname);
   const previous = useRef(destination);
-  const origin = useRef<{ world: string; x: number; y: number; card?: DOMRect; image?: string } | null>(null);
+  const origin = useRef<{ world: string; accent: string; x: number; y: number; card?: DOMRect; image?: string } | null>(null);
   useEffect(() => {
     function rememberLink(event: MouseEvent) {
       const target =
@@ -46,6 +49,7 @@ export function UniverseTransition() {
       const bounds = target.getBoundingClientRect();
       origin.current = {
         world: world(target.pathname),
+        accent: getComputedStyle(target).getPropertyValue("--x1-accent").trim(),
         card: target.matches(".destination") ? bounds : undefined,
         image: target.querySelector("img")?.currentSrc,
         x: bounds.left + bounds.width / 2,
@@ -59,11 +63,19 @@ export function UniverseTransition() {
     card?: DOMRect;
     image?: string;
     journey?: Journey;
+    accent?: string;
     from: string;
     to: string;
     x: number;
     y: number;
   } | null>(null);
+  const modal = useRef<HTMLDialogElement>(null);
+  useLayoutEffect(() => {
+    const node = modal.current;
+    if (!node || !travel?.journey) return;
+    node.showModal();
+    return () => node.close();
+  }, [travel]);
   const navigation = useNavigationType();
   const scrollPositions = useRef(new Map<string, number>());
   useLayoutEffect(() => {
@@ -94,7 +106,7 @@ export function UniverseTransition() {
     window.addEventListener('keydown', escape);
     motion.addEventListener('change', cancel);
     setTravel({
-      journey,
+      journey, accent: point?.accent,
       card: point?.card, image: point?.image,
       from,
       to: destination,
@@ -115,6 +127,7 @@ export function UniverseTransition() {
           className={travel.journey ? "uni-transit cinema" : "uni-transit"}
           style={
             {
+              "--journey-accent": travel.accent,
               "--duration": (travel.journey ? journeyMs[travel.journey] : 720) + "ms",
               "--entry-x": travel.x + "px",
               "--entry-y": travel.y + "px",
@@ -124,7 +137,7 @@ export function UniverseTransition() {
           data-to={travel.to}
           aria-hidden={travel.journey ? undefined : true}
         >
-          {travel.journey && <><JourneyScene world={travel.journey}/><button className="journey-skip" onClick={() => setTravel(null)}>Skip journey</button></>}
+          {travel.journey && <dialog ref={modal} className="journey-modal" aria-label={names[travel.journey]+" entrance"} onCancel={() => setTravel(null)} onClick={() => setTravel(null)}><Suspense fallback={null}><JourneyScene world={travel.journey}/></Suspense><button className="journey-skip" onClick={() => setTravel(null)}>Skip journey</button></dialog>}
           {!travel.journey && travel.card && travel.image && <img alt="" className="portal-art" src={travel.image}
             style={{left:travel.card.left, top:travel.card.top,width:travel.card.width,height:travel.card.height}}/>}
           {!travel.journey && <><i/><b/></>}

@@ -7,14 +7,15 @@ export interface AssistantWelcome {
   hint: string;
 }
 
-export function resolveAssistantSection(pathname: string): AssistantSectionKey {
+export function resolveAssistantSection(path: string): AssistantSectionKey {
+  const pathname = path.replace(/\/+$/, "") || "/";
   if (pathname.startsWith('/x1-academic')) return 'academic';
   if (pathname === '/insights-innovation') return 'insights';
   if (pathname === '/') return 'landing';
   if (pathname.startsWith('/professional')) return 'professional';
   if (pathname.startsWith('/personal')) return 'personal';
   if (pathname.startsWith('/security-mindmap') || pathname.startsWith('/Security_Mindmap')) return 'security';
-  if (pathname.startsWith('/games')) return 'games';
+  if (pathname === '/games') return 'games';
   if (pathname.startsWith('/search')) return 'search';
   if (pathname.startsWith('/submitting')) return 'submitting';
   if (pathname.startsWith('/admin') || pathname.startsWith('/login')) return 'admin';

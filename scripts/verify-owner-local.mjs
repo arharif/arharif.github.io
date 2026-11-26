@@ -217,15 +217,25 @@ try {
   const visitor = await browser.newPage();
   await visitor.route("https://x1-local.example/**",proxy);
   async function publicCover(file) {
-    const expected = (await readFile(file)).toString("base64");
+
     await visitor.goto("http://127.0.0.1:4177/insights-innovation");
     const card = visitor.locator(".editorial-card").filter({hasText:title});
     async function matchImage(image) {
-      await expect.poll(() => image.evaluate(async el => {
-        if (!el.complete || !el.naturalWidth || !el.src.startsWith("blob:")) return "";
-        const bytes = new Uint8Array(await (await fetch(el.src)).arrayBuffer());
-        return btoa(Array.from(bytes,b => String.fromCharCode(b)).join(""));
-      })).toBe(expected);
+      await expect.poll(() => image.evaluate(async (el, path) => {
+        if (!el.complete || !el.naturalWidth || !el.src.startsWith("blob:")) return false;
+        const original = new Image();
+        original.src = "/" + path.replace(/^public\//,"");
+        await original.decode();
+        const pixels = img => {
+          const canvas = document.createElement("canvas");
+          canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img,0,0);
+          return ctx.getImageData(0,0,canvas.width,canvas.height).data;
+        };
+        const a = pixels(el), b = pixels(original);
+        return a.length === b.length && a.every((value,i) => value === b[i]);
+      },file)).toBe(true);
     }
     await matchImage(card.locator("img"));
     await card.getByRole("link").click();
@@ -244,7 +254,7 @@ try {
   await expect(visitor.getByRole("heading",{name:title,exact:true}).last()).toBeVisible();
   await expect(visitor.getByRole("img",{name:title,exact:true})).toHaveCount(0);
   await visitor.close();
-  evidence.push("Anonymous Insights card and full article rendered byte-identical uploaded and replaced covers. Published removal cleared the full article cover.");
+  evidence.push("Anonymous Insights card and full article rendered pixel-identical uploaded and replaced covers. Published removal cleared the full article cover.");
   await page.getByLabel("Article Markdown").fill("Published revision.");
   const mutation = /https:\/\/x1-local\.example\/rest\/v1\/content\?.*/;
   await page.route(mutation, route => route.request().method() === "PATCH" ? route.abort() : route.fallback());

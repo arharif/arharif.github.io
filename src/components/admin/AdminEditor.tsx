@@ -139,7 +139,8 @@ export function AdminEditor({
             requestAnimationFrame(() => {
               const panel = document.getElementById('studio-'+step);
               panel?.scrollIntoView({block:'center'});
-              const target = panel?.querySelector<HTMLElement>('input,select,button,textarea');
+              const selector = step === 'cover' ? '[aria-label="Cover image"]' : step === 'publish' ? '.studio-primary' : 'input,select,button,textarea';
+              const target = panel?.querySelector<HTMLElement>(selector);
               if (target) target.focus({preventScroll:true});
               else if (panel) { panel.tabIndex = -1; panel.focus({preventScroll:true}); }
             });
@@ -226,7 +227,7 @@ export function AdminEditor({
         <button type="button" disabled={incomplete} onClick={() => void save('draft')}>
           {saving ? 'Saving…' : form.status === 'published' ? 'Unpublish to draft' : 'Save draft'}
         </button>
-        <button type="button" disabled={incomplete || !form.body.trim()} onClick={() => void save('published')}>
+        <button type="button" className="studio-primary" disabled={incomplete || !form.body.trim()} onClick={() => void save('published')}>
           {saving ? 'Saving…' : form.status === 'published' ? 'Update published' : 'Publish'}
         </button>
         {dirty && <small>Unsaved changes</small>}
