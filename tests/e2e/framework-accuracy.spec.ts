@@ -64,8 +64,8 @@ test("an assessment links its finding and a matching risk to an automatically sc
   await form.getByLabel("asset", { exact: true }).fill("Support processing");
   await form.getByLabel("threat", { exact: true }).fill("Unrecorded secondary disclosure");
   await form.getByLabel("controls", { exact: true }).fill("Art. 30");
-  await form.getByLabel("Residual Likelihood", { exact: true }).selectOption("5");
-  await form.getByLabel("Residual Impact", { exact: true }).selectOption("4");
+  await form.getByRole("combobox", { name: "Residual Likelihood", exact: true }).selectOption("5");
+  await form.getByRole("combobox", { name: "Residual Impact", exact: true }).selectOption("4");
   const id = (await form.locator("form > small").first().innerText()).trim();
   await form.getByRole("button", { name: "Save risk" }).click();
   await page.keyboard.press("Escape");
@@ -82,4 +82,22 @@ test("an assessment links its finding and a matching risk to an automatically sc
   await page.getByRole("button", { name: "Start New Assessment" }).click();
   await page.getByRole("button", { name: "Cancel", exact: true }).click();
   await expect(page.locator(".demo-status")).toContainText("SAMPLE DATA");
+});
+
+test("ISO SoA keeps a pending decision separate from assessed applicability", async ({ page }) => {
+  await page.goto(academic + "/assess-simulate?standard=iso-27001&view=profile");
+  await page.getByRole("button", { name: /Organisational controls/ }).click();
+  const dialog = page.getByRole("dialog", { name: "Organisational controls" });
+  const decision = dialog.getByRole("combobox", { name: "Statement of Applicability decision", exact: true });
+  await expect(decision).toHaveValue("Pending");
+  await decision.selectOption("Included");
+  await dialog.getByLabel("SoA justification and risk reference").fill("R-001 policy discrepancy");
+  await page.keyboard.press("Escape");
+  await page.getByRole("link", { name: "Remediation schedule" }).click();
+  const event = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Export SoA" }).click();
+  const csv = await readFile((await (await event).path())!, "utf8");
+  expect(csv.split("\r\n").find((row) => row.includes("A.5.1,") || row.includes('"A.5.1"'))).toContain("R-001 policy discrepancy");
+  expect(csv).toContain("Included");
+  expect(csv).toContain("Pending");
 });

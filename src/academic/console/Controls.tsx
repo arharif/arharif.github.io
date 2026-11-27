@@ -178,12 +178,17 @@ export function ControlTable({
               </label>
             </>}
             {control.id.startsWith("A.") && project.framework === "iso-27001" && <>
+              <label>Statement of Applicability decision
+                <select value={selected.soa} onChange={(event) => patch(control.id, { soa: event.target.value as Assessment["soa"] })}>
+                  <option>Pending</option><option>Included</option><option>Excluded</option>
+                </select>
+              </label>
               <label>Risk treatment decision
                 <select value={selected.treatment} onChange={(event) => patch(control.id, { treatment: event.target.value as Assessment["treatment"] })}>
                   <option>Undecided</option><option>Modify</option><option>Avoid</option><option>Share</option><option>Retain</option>
                 </select>
               </label>
-              <label>SoA inclusion justification and risk reference
+              <label>SoA justification and risk reference
                 <textarea maxLength={3000} value={selected.tailoring} onChange={(event) => patch(control.id, { tailoring: event.target.value })} />
               </label>
             </>}

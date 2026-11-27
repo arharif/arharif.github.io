@@ -39,6 +39,7 @@ const assessment = z.object({
   location: short.default(""),
   asset: short.default(""),
   finding: z.string().max(3000),
+  soa: z.enum(["Pending", "Included", "Excluded"]).default("Pending"),
   selection: z.enum(["System-specific", "Inherited", "Shared"]).default("System-specific"),
   tailoring: z.string().max(3000).default(""),
   treatment: z.enum(["Undecided", "Modify", "Avoid", "Share", "Retain"]).default("Undecided"),
@@ -56,6 +57,7 @@ export const unassessed: Assessment = {
   location: "",
   asset: "",
   finding: "",
+  soa: "Pending",
   selection: "System-specific",
   tailoring: "",
   treatment: "Undecided",
@@ -268,9 +270,10 @@ export function demoProject(framework: Framework): Project {
       location: ["North campus", "Field office", "Central office"][i % 3],
       asset: ["Service platform", "Identity provider", "Data store"][i % 3],
       note: !excluded && current > 0 ? "SAMPLE DATA " + (i + 1) + " · " + c.evidence : "",
+      soa: framework === "iso-27001" && c.id.startsWith("A.") ? "Included" : "Pending",
       selection: "System-specific",
-      tailoring: "",
-      treatment: "Undecided",
+      tailoring: framework === "iso-27001" && c.id.startsWith("A.") ? "SAMPLE DATA · Selected for the scoped service and recorded in the draft risk treatment plan." : "",
+      treatment: framework === "iso-27001" && c.id.startsWith("A.") && current < target ? "Modify" : "Undecided",
       finding:
         !excluded && current < target
           ? "Follow up on " +
@@ -279,15 +282,23 @@ export function demoProject(framework: Framework): Project {
           : "",
     };
   });
-  const legacyRisks = ["nist-csf-2", "iso-27001", "pci-dss"].includes(framework);
+  const existingRiskLinks = {
+    "nist-csf-2": ["PR.AA-05", "PR.AA-03", "PR.DS-11", "DE.CM-09", "ID.RA-01", "DE.AE-02", "PR.AT-01", "PR.AA-01"],
+    "iso-27001": ["A.8.2", "A.8.5", "A.8.13", "A.8.15", "A.8.8", "", "A.6.3", "A.5.18"],
+    "pci-dss": ["7.2.2", "8.4.2", "", "10.5.1", "6.3.3", "", "5.4.1", "7.2.2"],
+  } as const;
   const anchors = {
     "nist-800-53": [["AC-2", "Unreviewed privileged access"], ["SI-7", "Undetected integrity change"], ["SI-2", "Delayed flaw remediation"]],
     dora: [["Art. 5", "Unclear board accountability"], ["Art. 19", "Late major incident notification"], ["Art. 28", "Settlement provider outage"]],
     gdpr: [["Art. 30", "Incomplete processing inventory"], ["Arts. 5–6", "Undisclosed analytics use"], ["Arts. 33–34", "Delayed breach assessment"]],
     "eu-ai-act": [["Arts. 2–3, 6", "Incorrect recruitment classification"], ["Arts. 9–10", "Biased candidate ranking"], ["Arts. 26–27", "Ineffective human oversight"]],
   };
-  const risks = legacyRisks
-    ? scenarioRisks(scenario.caseId)
+  const risks = framework in existingRiskLinks
+    ? scenarioRisks(scenario.caseId).map((risk, i) => ({
+        ...risk,
+        controls: existingRiskLinks[framework as keyof typeof existingRiskLinks][i],
+        evidence: risk.evidence ? "SAMPLE DATA · " + risk.evidence : "",
+      }))
     : anchors[framework as keyof typeof anchors].map(([id, threat], i) => {
         const control = items.find((row) => row.id === id)!;
         return {

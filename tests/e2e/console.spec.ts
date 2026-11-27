@@ -109,6 +109,7 @@ test("control ratings update profile, radar, evidence and linked remediation", a
   await page
     .getByLabel("Evidence status 1.2.3", { exact: true })
     .selectOption("Missing");
+  await page.getByRole("button", { name: "1.2.3 Network boundary diagrams", exact: true }).click();
   await expect(page.getByRole("link", { name: "Open remediation plan", exact: false })).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.locator(".xc-maturity b")).not.toHaveText(before);

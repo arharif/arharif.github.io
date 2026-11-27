@@ -69,8 +69,8 @@ export function Planner() {
       const row = project.assessments[item.id] ?? unassessed;
       return {
         Scenario: project.demo ? "SAMPLE DATA" : project.name, Control: item.id, Topic: item.title,
-        Decision: !project.assessments[item.id] ? "Review pending" : row.applicability === "Excluded" ? "Excluded" : "Included",
-        "Selection justification and risk reference": row.tailoring, "Exclusion rationale": row.exclusion,
+        Decision: row.soa, "Assessment applicability": row.applicability,
+        "SoA justification and risk reference": row.tailoring, "Exclusion rationale": row.exclusion,
         Treatment: row.treatment, "Implementation rating": row.current ?? "", Evidence: row.note, Owner: row.owner,
       };
     })), "text/csv;charset=utf-8");
