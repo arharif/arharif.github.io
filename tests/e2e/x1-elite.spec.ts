@@ -157,3 +157,36 @@ test("mobile control edits show one requirement at a time and update the assessm
   await expect(editor.getByLabel("current Art. 5", { exact: true })).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 });
+
+test("the guide opens the demo from a personal project for the same standard", async ({ page }) => {
+  await page.goto("/x1-academic/assess-simulate?standard=dora&view=profile");
+  await expect(page.locator(".xc-workhead")).toContainText("Personal project");
+  await page.getByRole("button", { name: "Open X1 assistant" }).click();
+  await page.getByRole("link", { name: "Open the DORA demo" }).click();
+  await expect(page.locator(".demo-status")).toHaveText("Fictional demo");
+  await page.getByRole("button", { name: "Start My Own Assessment" }).click();
+  await expect(page.locator(".xc-workhead")).toContainText("Personal project");
+  await page.getByRole("button", { name: "Open X1 assistant" }).click();
+  await page.getByRole("link", { name: "Open the DORA demo" }).click();
+  await expect(page.locator(".demo-status")).toHaveText("Fictional demo");
+});
+
+test("executive evidence and effectiveness use the applicable population", async ({ page }) => {
+  await page.goto("/x1-academic/assess-simulate?standard=dora&view=profile&demo=1");
+  await page.getByRole("button", { name: "All controls" }).click();
+  const editor = page.getByRole("dialog");
+  await editor.getByLabel("Evidence status Art. 5", { exact: true }).selectOption("Tested");
+  await editor.getByLabel("Applicability Art. 5", { exact: true }).selectOption("Excluded");
+  await page.keyboard.press("Escape");
+  const views = page.getByRole("navigation", { name: "Workspace views" });
+  await views.getByRole("link", { name: "Cyber risk" }).click();
+  const counts = page.locator(".xc-donutrow").getByRole("button", { name: /^(Reviewed|Outstanding) \d+$/ }).locator("b");
+  await expect(counts).toHaveCount(2);
+  expect((await counts.allTextContents()).reduce((count, value) => count + Number(value), 0)).toBe(7);
+  await views.getByRole("link", { name: "Executive dashboard" }).click();
+  await expect(page.getByRole("heading", { name: "Control effectiveness" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Unassessed controls", exact: true })).toHaveCount(0);
+  await page.locator(".xc-execnums").getByRole("button", { name: /Reviewed/ }).click();
+  await expect(editor.getByLabel("Applicability Art. 5", { exact: true })).toHaveCount(0);
+  await expect(editor.getByLabel("Applicability Art. 26", { exact: true })).toHaveCount(0);
+});

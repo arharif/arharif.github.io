@@ -99,13 +99,6 @@ export function ProjectProvider({
       );
     }
   }
-  const enteredDemo = useRef(false);
-  useEffect(() => {
-    if (openDemo && project.demo && !enteredDemo.current) {
-      enteredDemo.current = true;
-      commit(project, "Fictional scenario ready. Changes are saved separately.");
-    }
-  }, [openDemo, project]);
   function switchMode(mode: Mode) {
     try {
       commit(
@@ -120,6 +113,16 @@ export function ProjectProvider({
       );
     }
   }
+  const consumedDemoRequest = useRef(false);
+  useEffect(() => {
+    if (!openDemo) {
+      consumedDemoRequest.current = false;
+    } else if (!consumedDemoRequest.current) {
+      consumedDemoRequest.current = true;
+      switchMode("demo");
+    }
+  }, [openDemo]);
+
   function confirm(message: string, apply: () => void) {
     setPending({
       message,

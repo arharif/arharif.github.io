@@ -264,7 +264,7 @@ export function Profile() {
     {
       title: "Evidence reviewed",
       n: s.verified,
-      rows: s.rows.filter((c) => c.applicability === "Applicable" && ["Reviewed", "Tested"].includes(c.evidence)),
+      rows: s.reviewed,
       icon: ShieldCheck,
       colour: "#bc83d5",
     },
@@ -383,7 +383,7 @@ export function Profile() {
               onPick={(id) =>
                 open(
                   "Group controls",
-                  s.rows.filter((c) => c.group === id),
+                  s.applicable.filter((c) => c.group === id),
                 )
               }
             />
@@ -409,11 +409,11 @@ export function Governance() {
     ),
     [scope, setScope] = useState("all"),
     [selection, pick] = useState<Selection | null>(null);
-  const filtered = s.rows.filter(
+  const filtered = s.applicable.filter(
     (c) => scope === "all" || (c[dimension] || "Unassigned") === scope,
   );
   function axis(id: string, label: string, rows: typeof filtered) {
-    const rated = rows.filter((c) => c.applicability === "Applicable" && c.current !== null);
+    const rated = rows.filter((c) => c.current !== null);
     return {
       id,
       label,
@@ -478,7 +478,7 @@ export function Governance() {
           onChange={(e) => setScope(e.target.value)}
         >
           <option value="all">All records</option>
-          {[...new Set(s.rows.map((c) => c[dimension] || "Unassigned"))].map(
+          {[...new Set(s.applicable.map((c) => c[dimension] || "Unassigned"))].map(
             (v) => (
               <option key={v}>{v}</option>
             ),

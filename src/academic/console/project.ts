@@ -331,6 +331,8 @@ export function stats(p: Project) {
   }));
   const applicable = rows.filter((r) => r.applicability === "Applicable");
   const scored = applicable.filter((r) => r.current !== null);
+  const reviewed = applicable.filter((c) => c.evidence === "Reviewed" || c.evidence === "Tested");
+  const outstanding = applicable.filter((c) => c.evidence === "Missing" || c.evidence === "Requested");
   const avg = (values: number[]) =>
     values.length ? values.reduce((a, b) => a + b, 0) / values.length : 0;
   const profiles = groups.map((g) => {
@@ -346,15 +348,16 @@ export function stats(p: Project) {
   });
   return {
     rows,
+    applicable,
     profiles,
+    reviewed,
+    outstanding,
     scored,
     current: avg(scored.map((c) => c.current!)),
     target: avg(applicable.map((c) => c.target)),
     met: scored.filter((c) => c.current! >= c.target).length,
     gaps: scored.filter((c) => c.current! < c.target),
-    verified: applicable.filter(
-      (c) => c.evidence === "Reviewed" || c.evidence === "Tested",
-    ).length,
+    verified: reviewed.length,
   };
 }
 
