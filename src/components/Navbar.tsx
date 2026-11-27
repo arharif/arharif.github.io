@@ -38,8 +38,8 @@ export function Navbar() {
           {links.map(([to, label]) => {
             const withinInsights = to === "/insights-innovation" && /^\/(professional|personal)(\/|$)/.test(location.pathname);
             return withinInsights
-              ? <Link key={to} to={to} className="active" aria-current="location">{label}</Link>
-              : <NavLink key={to} to={to}>{label}</NavLink>;
+              ? <Link key={to} to={to} className="active" aria-current="location" onClick={() => setOpen(false)}>{label}</Link>
+              : <NavLink key={to} to={to} onClick={() => setOpen(false)}>{label}</NavLink>;
           })}
         </nav>
         <div className="uni-utilities">

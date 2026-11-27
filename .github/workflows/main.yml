@@ -30,6 +30,15 @@ jobs:
       - run: npm run test:e2e -- --project=${{ matrix.browser }}
         env:
           X1_ALL_BROWSERS: '1'
+      - name: Exercise owner login with isolated synthetic Auth
+        if: matrix.browser == 'chromium'
+        run: |
+          npm run build
+          npm run test:e2e -- --project=chromium tests/e2e/owner-auth.spec.ts
+        env:
+          VITE_SUPABASE_URL: https://x1-auth.example
+          VITE_SUPABASE_ANON_KEY: sb_publishable_browser_test_fixture
+          X1_AUTH_FIXTURE: '1'
       - name: Retain browser failure traces
         if: failure()
         uses: actions/upload-artifact@v4

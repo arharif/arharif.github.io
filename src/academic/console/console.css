@@ -2852,3 +2852,14 @@
 .xc-nist-detail { overflow-wrap: anywhere; }
 .xc-learn-detail :is(ul, dl) { padding-inline-start: 1rem; }
 .xc-learn :is(p, li) a { text-decoration: underline; text-underline-offset: .17em; }
+
+.xc-learning-figure { margin-block: .95rem 0; }
+.xc-learning-figure figcaption { font-weight: 650; }
+.xc-learning-figure ol { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 8.5rem), 1fr)); gap: .6rem; margin: .75rem 0; padding: 0; list-style: none; }
+.xc-learning-figure li { display: flex; min-width: 0; }
+.xc-learning-figure li button { width: 100%; min-height: 2.75rem; border: 1px solid var(--border-soft); border-radius: .55rem; padding: .45rem .6rem; }
+.xc-learning-figure li button[aria-pressed="true"] { border-color: var(--control-border); background: var(--accent-soft); }
+.xc-learning-step { border-inline-start: 2px solid var(--accent); padding-inline-start: .8rem; }
+
+.xc-subphase { display: block; color: var(--muted); font-size: .72rem; }
+.xc-critical { padding: .1rem .27rem; border: 1px solid var(--control-border); border-radius: .25rem; color: var(--text); font-size: .7rem; }

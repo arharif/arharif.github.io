@@ -1005,7 +1005,7 @@ export const standards: Standard[] = [
     "NIST AI RMF",
     "AI governance",
     "Framework",
-    "AI RMF 1.0 · additional profiles and updates pending verification",
+    "AI RMF 1.0 · NIST AI 100-1",
     "https://www.nist.gov/itl/ai-risk-management-framework",
     "Manage AI risks through Govern, Map, Measure and Manage.",
     "Voluntary risk-management framework. Profiles and context influence use. It is distinct from a management-system certification.",

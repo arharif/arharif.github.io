@@ -3,9 +3,12 @@ import { standards } from "../data/standards";
 import { priorityControls } from "./priorityStandards";
 import nistIndex from "../data/sp80053-index.json";
 import { annexA } from "../data/iso27001";
+import { isoGuidance } from "../data/isoGuidance";
 import { pciExamples, pciSections } from "../data/pci401";
 import pciIndex from "../data/pci401-index.json";
+import { pciGuidance } from "../data/pciGuidance";
 import { euStructure } from "../data/euStructure";
+import { aiFunctions, aiOutcomes } from "../data/aiRmf";
 
 import type { Framework } from "./editions";
 export { frameworkIds, names, type Framework } from "./editions";
@@ -38,6 +41,7 @@ export type Group = {
   colour: string;
 };
 export const cases = {
+  "nist-ai-rmf": { name: "Juniper Payments", scope: "Merchant fraud triage with a third-party model and human review", owner: "Nadia Vale", caseId: "paysecure" },
   "nist-800-53": { name: "Aster Research Services", scope: "Research data platform and software supply chain", owner: "Jo Rivera", caseId: "smartfactory" },
   dora: { name: "Bridgewater Mutual", scope: "EU credit institution’s payments and outsourced ICT settlement", owner: "Samira Hart", caseId: "paysecure" },
   gdpr: { name: "Cedar Member Services", scope: "Customer support, analytics and EU member records", owner: "Alex Morgan", caseId: "paysecure" },
@@ -159,6 +163,14 @@ export function catalogue(framework: Framework) {
         evidence: sample?.evidence ?? "Use the SP 800-53A assessment objects to identify appropriate evidence for this system and assessment period.",
       };
     });
+  } else if (framework === "nist-ai-rmf") {
+    groups = aiFunctions.map(([id, description], i) => group(id, id, description, i));
+    items = aiOutcomes.map((row) => ({
+      ...row,
+      title: row.outcome.split(/(?<=[.!?]) +/)[0],
+      explanation: row.outcome,
+      locator: row.group.toLowerCase(),
+    }));
   } else if (framework === "dora" || framework === "gdpr" || framework === "eu-ai-act") {
     groups = euStructure[framework].map((entry, index) => group(entry.id, entry.title, `Chapter ${entry.id} · Article${entry.first === entry.last ? ` ${entry.first}` : `s ${entry.first}–${entry.last}`}`, index));
     items = priorityControls[framework].map((row) => ({
@@ -177,9 +189,9 @@ export function catalogue(framework: Framework) {
     })));
     items.push(...annexA.flatMap(({ section, title, topics }) => topics.map((topic, i) => ({
       id: `A.${section}.${i + 1}`, title: topic, group: "A." + section, category: title,
-      explanation: "Use this Annex A reference when reviewing necessary risk treatments and omitted controls.",
-      example: `Record how ${topic.toLowerCase()} addresses the identified risk, then confirm whether the treatment is implemented.`,
-      evidence: "Statement of Applicability decision, risk treatment reference and sample operating evidence.",
+      explanation: isoGuidance[section][i],
+      example: `Use the observed result for ${topic.toLowerCase()} to decide whether the treatment needs correction, further evidence or review of its selection.`,
+      evidence: "Statement of Applicability rationale, linked risk treatment, test sample and review outcome.",
     }))));
   } else if (framework === "pci-dss") {
     const principal = controls.filter((c) => c.framework === framework);
@@ -196,8 +208,8 @@ export function catalogue(framework: Framework) {
         id, group, category: `${requirement}.${objective} · ${topic}`,
         parent: ids.has(parent) ? parent : undefined,
         title: sample?.[1] ?? topic,
-        explanation: sample?.[2] ?? `Verify applicability to the scoped payment environment using the official v4.0.1 requirement ${id} and its applicability notes.`,
-        example: sample?.[4] ?? `Use the finding and official text for ${id} to define the change, affected components and acceptance criteria.`,
+        explanation: sample?.[2] ?? pciGuidance[requirement - 1][objective - 1],
+        example: sample?.[4] ?? `Confirm the scope, applicability notes and official testing procedure for ${id} before recording an implementation finding.`,
         evidence: sample?.[3] ?? `Apply the official tests for ${id} and document the population, samples, observations and exceptions.`,
       };
     });

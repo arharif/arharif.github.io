@@ -19,7 +19,7 @@ const pages = [
     path: "/" + path,
     title,
     description:
-      "Interactive workspaces for seven cybersecurity, privacy and AI standards with editable assessments and fictional demonstration projects.",
+      "Interactive workspaces for eight cybersecurity, privacy and AI standards with editable assessments and fictional demonstration projects.",
   })),
   ...["standards", "implement", "risk-register", "knowledge-graph"].map(
     (path) => ({

@@ -12,7 +12,7 @@ type Result = { id: string; title: string; path: string; description?: string; k
 
 const tools: Result[] = [
   { id: "risk", title: "Cyber risk simulator", path: "/x1-academic/assess-simulate?view=risk", description: "Estimate loss exposure and compare risk treatments.", keywords: ["demo", "risk", "security"] },
-  { id: "profile", title: "Framework profile", path: "/x1-academic/explore?view=profile", description: "Assess controls and requirements across seven frameworks." },
+  { id: "profile", title: "Framework profile", path: "/x1-academic/explore?view=profile", description: "Assess controls and requirements across eight frameworks." },
   { id: "ai", title: "AI experiment", path: "/x1-academic/assess-simulate?view=experiment", description: "Compare AI governance and risk scenarios." },
   { id: "planner", title: "Project dashboard", path: "/x1-academic/implement-plan?view=planner", description: "Plan and track control implementation." },
   { id: "graph", title: "Knowledge graph", path: "/x1-academic/explore?view=graph", description: "Explore relationships between cybersecurity controls." },

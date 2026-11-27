@@ -8,6 +8,7 @@ import { ReplayIntroduction } from "@/components/UniverseTransition";
 import { LightTrails } from "@/components/LightTrails";
 import { AcademicFrame } from "./AcademicFrame";
 import { editions, frameworkIds, frameworkMetadata, moreStandards, names, primaryStandards, type Framework } from "./editions";
+import { lessons } from "./learningContent";
 import "./standardsLanding.css";
 
 const base = "/x1-academic";
@@ -17,6 +18,7 @@ const icons = {
   gdpr: Fingerprint,
   "eu-ai-act": CircuitBoard,
   "nist-csf-2": Radar,
+  "nist-ai-rmf": CircuitBoard,
   "iso-27001": Layers3,
   "pci-dss": CreditCard,
 };
@@ -37,6 +39,7 @@ function Card({ id, compact = false }: { id: Framework; compact?: boolean }) {
         <p className="standard-full-name">{edition.name}</p>
         <p className="standard-edition">{edition.edition}</p>
         <p className="standard-description">{edition.description}</p>
+        <p className="standard-edition">{lessons[id].structure}</p>
         <a className="standard-source" href={edition.sources[0][1]} target="_blank" rel="noreferrer" aria-label={`Official source for ${names[id]}`}>Official source</a>
         <div className="standard-actions">
           <Link className="standard-explore" to={`${base}?standard=${id}`} aria-label={`Explore ${names[id]}`}>Explore <ArrowRight size={16} /></Link>

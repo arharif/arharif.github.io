@@ -76,13 +76,15 @@ export function Planner() {
     })), "text/csv;charset=utf-8");
   }
   function exportSchedule() {
-    download(`${project.framework}-${project.demo ? "fictional-demo" : "project"}-plan.csv`, csv(rows.map(({ task, start, end, late: overdue }) => ({
+    download(`${project.framework}-${project.demo ? "fictional-demo" : "project"}-plan.csv`, csv(rows.map(({ task, start, end, late: overdue, critical }) => ({
       Scenario: project.demo ? "SAMPLE DATA · Fictional educational demo" : project.name,
       Framework: names[project.framework],
       Action: task.title,
       "Control or group": task.sourceIds.join(", "),
       "Linked risks": project.risks.filter((risk) => riskControls(risk.controls).some((id) => task.sourceIds.includes(id))).map((risk) => risk.id).join(", "),
       Phase: phaseNames[task.stage],
+      Subphase: task.subphase || "",
+      "Dependency-critical": critical ? "Yes" : "No",
       Owner: task.owner,
       Priority: task.priority ?? "Medium",
       Start: start,
@@ -227,7 +229,7 @@ export function Planner() {
         <Link to={`/x1-academic/assess-simulate?standard=${project.framework}&view=matrix`}>Review risk and treatment</Link>
       </nav>
       {!!rows.length && <p className="xc-planning-method">
-        Generated work uses one working day per implementation gap point, up to 730 days per work package, and six effort hours per day. Linked residual risk and gap severity determine priority. Edit estimates, dependencies and evidence in task details.
+        Generated work uses one working day per implementation gap point, up to 730 days per work package, and six effort hours per day. Linked residual risk and gap severity determine priority. The critical indicator marks zero slack in the dependency network. Scheduled dates also account for working days and resource capacity.
       </p>}
       {!rows.length && (
         <div className="xc-plan-empty">
@@ -299,7 +301,7 @@ export function Planner() {
               ))}
           </div>
           <div className="xc-ganttrows">
-            {visible.map(({ task: t, start, end }, index) => {
+            {visible.map(({ task: t, start, end, critical }, index) => {
               const left = x(start),
                 width = ((days(start, end) + 1) / range) * 100,
                 colour = phaseColours[stages.indexOf(t.stage)];
@@ -310,11 +312,13 @@ export function Planner() {
                   data-task={t.id}
                   data-start={start}
                   data-end={end}
+                  data-critical={critical || undefined}
                   style={{ "--phase": colour } as CSSProperties}
                 >
                   <button className="xc-ganttlabel" onClick={() => taskEdit(t)}>
                     {t.milestone && <Diamond />}
-                    {t.title}
+                    <span>{t.title}{t.subphase && <small className="xc-subphase">{t.subphase}</small>}</span>
+                    {critical && <small className="xc-critical">Critical</small>}
                   </button>
                   <div className="xc-track">
                     {t.dependencies.map((id) => {
@@ -556,6 +560,10 @@ export function Planner() {
                     </option>
                   ))}
                 </select>
+              </label>
+              <label>
+                Subphase
+                <input value={draft.subphase ?? ""} maxLength={120} onChange={e => edit({ ...draft, subphase: e.target.value })} />
               </label>
               <label>
                 Earliest start

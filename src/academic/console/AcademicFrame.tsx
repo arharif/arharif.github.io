@@ -14,7 +14,7 @@ const secondary = [
   ["X1 Insights", "/insights-innovation"],
   ["X1 Games", "/games"],
 ];
-export function AcademicFrame({ children, focus = false, title = "X1 Academic", description = "Explore seven cybersecurity, privacy and AI standards with editable assessments and implementation plans." }: {
+export function AcademicFrame({ children, focus = false, title = "X1 Academic", description = "Explore eight cybersecurity, privacy and AI standards with editable assessments and implementation plans." }: {
   children: ReactNode;
   focus?: boolean;
   title?: string;

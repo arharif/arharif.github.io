@@ -2,11 +2,12 @@ import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { readFile } from "node:fs/promises";
 const base = "/x1-academic";
-test("seven standards lead to three workspaces and retain the selected theme", async ({ page }) => {
+test("eight standards lead to three workspaces and retain the selected theme", async ({ page }) => {
   await page.goto(base);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("X1 Academic.");
   await expect(page.locator(".standard-primary article")).toHaveCount(4);
-  await expect(page.locator(".standard-compact")).toHaveCount(3);
+  await expect(page.locator(".standard-compact")).toHaveCount(4);
+  await expect(page.getByRole("link", { name: "Explore NIST AI RMF", exact: true })).toBeVisible();
   await page.getByRole("link", { name: "Explore PCI DSS", exact: true }).click();
   const choices = page.getByRole("navigation", { name: "PCI DSS workspaces" });
   await expect(choices.getByRole("link")).toHaveCount(3);
