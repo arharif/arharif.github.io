@@ -112,7 +112,9 @@ test("initial enrolment, reload, expired code, verified owner session and logout
   await page.getByRole("button", { name: "Open navigation menu" }).click();
   await page.getByRole("link", { name: "X1 Academic", exact: true }).click();
   await expect(page).toHaveURL(/\/x1-academic$/);
+  await expect(page.getByRole("heading", { name: "X1 Academic.", exact: true })).toBeVisible();
   await page.goBack();
+  await expect(page.getByRole("button", { name: "Open navigation menu" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Logout", exact: true })).toBeVisible();
   expect(server.refreshes()).toBe(0);
   await page.getByRole("button", { name: "Logout", exact: true }).click();
