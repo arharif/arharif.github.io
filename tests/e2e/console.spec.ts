@@ -344,41 +344,30 @@ test("bookmarked dashboards open their rebuilt views and historic project links 
     page.getByRole("button", { name: "Generate seven-stage project" }),
   ).toBeVisible();
 });
-test("dashboard accessibility in dark and light themes", async ({ page }) => {
-  test.setTimeout(120000);
-  await page.emulateMedia({ reducedMotion: "reduce" });
-  const failures: string[] = [];
-  for (const [space, views] of [
-    ["explore", ["profile", "graph", "governance"]],
-    ["assess-simulate", ["risk", "matrix", "executive", "experiment", "flow"]],
-    ["implement-plan", ["planner"]],
-  ] as const) {
-    for (const view of views) {
-      await page.goto(base + "/" + space + "?view=" + view);
-      await demo(page);
-      for (const theme of ["Onyx Black", "Mature White", "Rainbow"]) {
-        await page.getByLabel("Open theme selector").click();
-        await page
-          .getByRole("menuitemradio", { name: "Activate " + theme })
-          .click();
+for (const theme of ["Onyx Black", "Mature White", "Rainbow"]) {
+  test(`dashboard accessibility in ${theme}`, async ({ page }) => {
+    test.setTimeout(90000);
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.addInitScript((next) => localStorage.setItem("theme", next), theme.toLowerCase().replaceAll(" ", "-"));
+    const failures: string[] = [];
+    for (const [space, views] of [
+      ["explore", ["profile", "graph", "governance"]],
+      ["assess-simulate", ["risk", "matrix", "executive", "experiment", "flow"]],
+      ["implement-plan", ["planner"]],
+    ] as const) {
+      for (const view of views) {
+        await page.goto(base + "/" + space + "?view=" + view);
+        await demo(page);
         const result = await new AxeBuilder({ page })
           .include(".xc")
           .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
           .analyze();
-        for (const v of result.violations)
-          failures.push(
-            view +
-              " " +
-              theme +
-              " " +
-              v.id +
-              " " +
-              JSON.stringify(
-                v.nodes.slice(0, 3).map((n) => [n.target, n.any[0]?.data]),
-              ),
-          );
+        for (const violation of result.violations) {
+          const nodes = violation.nodes.slice(0, 3).map((node) => [node.target, node.any[0]?.data]);
+          failures.push(`${view} ${violation.id} ${JSON.stringify(nodes)}`);
+        }
       }
     }
-  }
-  expect(failures).toEqual([]);
-});
+    expect(failures).toEqual([]);
+  });
+}
