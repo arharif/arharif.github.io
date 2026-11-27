@@ -43,7 +43,7 @@ const spaces = [
   {
     path: "explore",
     title: "Learn",
-    desc: "Navigate framework architecture, assess controls and compare maturity profiles.",
+    desc: "Explore the framework’s official structure, scope and evidence guidance.",
     icon: Layers3,
     color: "#7da8ff",
     views: [
@@ -117,7 +117,10 @@ function Workspace({
   const [rename, setRename] = useState(project.name);
   function demoButton() {
     return (
-      <button className="xc-demo" onClick={tryDemo}>
+      <button className="xc-demo" onClick={() => {
+        if (space.path === "assess-simulate" && selected.id === "profile") tryDemo();
+        else navigate(`${base}/assess-simulate?standard=${project.framework}&view=profile&demo=1`);
+      }}>
         <Lightbulb />
         Try Demo
       </button>
@@ -176,7 +179,7 @@ function Workspace({
                 <p>
                   {project.name} <span> / </span>
                   <b className={project.demo ? "demo-status" : ""}>
-                    {project.demo ? "Fictional demo" : "Personal project"}
+                    {project.demo ? "SAMPLE DATA · Fictional demo" : "Personal project"}
                   </b>
                 </p>
               </div>
@@ -199,10 +202,11 @@ function Workspace({
                 {demoButton()}
                 {project.demo && <>
                   <button onClick={resetDemo}>Reset Demo</button>
+                  <button onClick={() => startBlank(() => navigate(`${base}/assess-simulate?standard=${project.framework}&view=profile`))}>Start New Assessment</button>
                   <button onClick={() => {
                     resume();
                     navigate(`${base}/assess-simulate?standard=${project.framework}&view=profile`);
-                  }}>Start My Own Assessment</button>
+                  }}>Return to my assessment</button>
                 </>}
                 <button
                   className="xc-icon"
@@ -225,7 +229,7 @@ function Workspace({
               <Link to="/" aria-label="X1 home"><X1Mark size="sm" /></Link>
               <b>{names[project.framework]}</b>
               <span>
-                {project.demo ? "Fictional demo" : "Personal project"}
+                {project.demo ? "SAMPLE DATA · Fictional demo" : "Personal project"}
               </span>
               {demoButton()}
             </>
@@ -296,7 +300,7 @@ function Workspace({
           <footer className="xc-workfoot">
             <span>
               <Database />
-              {project.demo ? "Fictional scenario" : "Local assessment"}
+              {project.demo ? "SAMPLE DATA" : "Local assessment"}
             </span>
             <button
               onClick={() => {
@@ -368,7 +372,7 @@ function Workspace({
                       },
                     ]
                   : []),
-                { label: "Start Blank", icon: FilePlus2, action: startBlank },
+                { label: "Start Blank", icon: FilePlus2, action: () => startBlank() },
               ].map((a) => (
                 <button
                   key={a.label}

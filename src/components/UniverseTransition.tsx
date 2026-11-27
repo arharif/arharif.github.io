@@ -136,7 +136,7 @@ export function UniverseTransition() {
       seen.current.add(candidate);
       safeStorage.set(key, "seen");
     }
-    setTravel({ from, to: destination, journey, accent: point?.accent, x: point?.x ?? innerWidth / 2, y: point?.y ?? innerHeight / 2 });
+    setTravel({ from, to: destination, journey, accent: destination === "arcade" ? "#7cecf7" : point?.accent, x: point?.x ?? innerWidth / 2, y: point?.y ?? innerHeight / 2 });
   }, [destination, location.pathname, location.key, navigation]);
 
   useEffect(() => {

@@ -15,7 +15,7 @@ const action = async (page: Page, name: string) => {
 };
 const demo = async (page: Page) => {
   await page.getByRole("button", { name: "Try Demo", exact: true }).click();
-  await expect(page.locator(".demo-status")).toHaveText("Fictional demo");
+  await expect(page.locator(".demo-status")).toHaveText("SAMPLE DATA · Fictional demo");
 };
 async function exported(page: Page) {
   const download = page.waitForEvent("download");
@@ -24,7 +24,7 @@ async function exported(page: Page) {
 }
 for (const [standard, scenario, count] of [
   ["nist-csf-2", "Northstar Manufacturing", 106],
-  ["iso-27001", "Meridian Energy", 10],
+  ["iso-27001", "Meridian Energy", 21],
   ["pci-dss", "Harbour Payments", 12],
 ] as const) {
   for (const space of ["explore", "assess-simulate", "implement-plan"]) {
@@ -40,10 +40,10 @@ for (const [standard, scenario, count] of [
         expect(p.tasks.length).toBeGreaterThan(8);
         expect(p.risks.length).toBeGreaterThan(0);
         expect(p.flow.length).toBeGreaterThan(0);
-        if (space === "implement-plan")
-          await expect(page.locator(".xc-ganttrow")).toHaveCount(
-            p.tasks.length,
-          );
+        if (space === "implement-plan") {
+          await page.getByRole("link", { name: "Plan & Implement", exact: true }).click();
+          await expect(page.locator(".xc-ganttrow")).toHaveCount(p.tasks.length);
+        }
       },
     );
   }
@@ -104,18 +104,17 @@ test("control ratings update profile, radar, evidence and linked remediation", a
   const before = await page.locator(".xc-maturity b").innerText();
   const reviewed = await page.locator(".xc-kpis button").last().innerText();
   await page.getByRole("button", { name: "All controls", exact: true }).click();
-  const field = page.getByLabel("current PCI-1", { exact: true });
+  const field = page.getByLabel("current 1.2.3", { exact: true });
   await field.selectOption("0");
   await page
-    .getByLabel("Evidence status PCI-1", { exact: true })
+    .getByLabel("Evidence status 1.2.3", { exact: true })
     .selectOption("Missing");
   await expect(page.getByRole("link", { name: "Open remediation plan", exact: false })).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.locator(".xc-maturity b")).not.toHaveText(before);
   await expect(page.locator(".xc-kpis button").last()).not.toHaveText(reviewed);
-  await page
-    .getByRole("link", { name: "Governance radar", exact: true })
-    .click();
+  await page.getByRole("link", { name: "Learn", exact: true }).click();
+  await page.getByRole("link", { name: "Governance radar", exact: true }).click();
   const radar = page.locator(".xc-radar").first().locator("polygon").last();
   const points = await radar.getAttribute("points");
   await page.getByLabel("Governance scope").selectOption("Operations");
@@ -124,7 +123,7 @@ test("control ratings update profile, radar, evidence and linked remediation", a
     .getByRole("link", { name: "Plan & Implement", exact: true })
     .click();
   await expect(
-    page.locator(".xc-ganttlabel").filter({ hasText: "Network & system security controls" }),
+    page.locator(".xc-ganttlabel").filter({ hasText: "Network security controls" }),
   ).toBeVisible();
 });
 test("CSV, Excel and manual risk records recalculate risk distribution and treatment simulation", async ({
@@ -199,6 +198,7 @@ test("editing Gantt dates and effort reschedules dependencies and moving a Kanba
 }) => {
   await page.goto(base + "/implement-plan");
   await demo(page);
+  await page.getByRole("link", { name: "Plan & Implement", exact: true }).click();
   const first = page.locator(".xc-ganttrow").first(),
     second = page.locator(".xc-ganttrow").nth(1);
   const before = await second.getAttribute("data-start");
@@ -232,6 +232,8 @@ test("graph inspection, experiment and privacy flow edits", async ({
 }) => {
   await page.goto(base + "/explore?view=graph");
   await demo(page);
+  await page.getByRole("link", { name: "Learn", exact: true }).click();
+  await page.getByRole("link", { name: "Knowledge graph", exact: true }).click();
   await page.getByLabel("Search knowledge graph").fill("GV.OC-01");
   await page
     .locator(".xc-knowledge aside")
@@ -276,9 +278,7 @@ test("main-site navigation, resource links, themes, keyboard and responsive layo
     "X1 Academic",
   );
   await expect(
-    page
-      .getByRole("navigation", { name: "Academic resources" })
-      .getByRole("link"),
+    page.getByRole("navigation", { name: "Academic navigation" }).getByRole("link"),
   ).toHaveCount(3);
   for (const theme of ["Mature White", "Onyx Black"]) {
     await page.getByRole("button", { name: "Open theme selector" }).click();

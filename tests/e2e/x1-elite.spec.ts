@@ -18,7 +18,7 @@ for (const [name, id, scenario] of standards) {
     await page.goto("/x1-academic");
     await page.getByRole("link", { name: `Try Demo for ${name}`, exact: true }).click();
     await expect(page.locator(".xc-workhead")).toContainText(scenario);
-    await expect(page.locator(".demo-status")).toHaveText("Fictional demo");
+    await expect(page.locator(".demo-status")).toHaveText("SAMPLE DATA · Fictional demo");
     await expect(page.locator(".xc-maturity b")).not.toHaveText("—");
     await page.getByRole("link", { name: "Plan & Implement", exact: true }).click();
     await expect(page.locator(".xc-ganttrow").first()).toBeVisible();
@@ -30,7 +30,7 @@ for (const [name, id, scenario] of standards) {
     expect(content).toContain("Fictional educational demo");
     expect(content).toContain("Dependencies");
     expect(content).toContain("Priority");
-    await page.getByRole("button", { name: "Start My Own Assessment" }).click();
+    await page.getByRole("button", { name: "Return to my assessment" }).click();
     await expect(page.locator(".xc-workhead")).toContainText("Personal project");
     await expect(page.locator(".xc-maturity b")).toHaveText("—");
   });
@@ -163,12 +163,12 @@ test("the guide opens the demo from a personal project for the same standard", a
   await expect(page.locator(".xc-workhead")).toContainText("Personal project");
   await page.getByRole("button", { name: "Open X1 assistant" }).click();
   await page.getByRole("link", { name: "Open the DORA demo" }).click();
-  await expect(page.locator(".demo-status")).toHaveText("Fictional demo");
-  await page.getByRole("button", { name: "Start My Own Assessment" }).click();
+  await expect(page.locator(".demo-status")).toHaveText("SAMPLE DATA · Fictional demo");
+  await page.getByRole("button", { name: "Return to my assessment" }).click();
   await expect(page.locator(".xc-workhead")).toContainText("Personal project");
   await page.getByRole("button", { name: "Open X1 assistant" }).click();
   await page.getByRole("link", { name: "Open the DORA demo" }).click();
-  await expect(page.locator(".demo-status")).toHaveText("Fictional demo");
+  await expect(page.locator(".demo-status")).toHaveText("SAMPLE DATA · Fictional demo");
 });
 
 test("executive evidence and effectiveness use the applicable population", async ({ page }) => {

@@ -91,14 +91,24 @@ for (const name of ["Onyx Black", "Mature White", "Rainbow"]) {
     await expect(
       page.getByRole("heading", { name: "Featured Games" }),
     ).toBeVisible();
-    await expect(page.getByLabel("Open theme selector")).toHaveAttribute("title", name);
+    await expect(page.getByLabel("Open theme selector")).toHaveCount(0);
     expect(
       await page.evaluate(() =>
         getComputedStyle(document.documentElement)
           .getPropertyValue("--x1-bg")
           .trim(),
       ),
-    ).toBe(name === "Onyx Black" ? "#080A0D" : "#FFFFFF");
+    ).toBe("#0c0922");
+    const colours = () => page.evaluate(() => {
+      const root = getComputedStyle(document.documentElement);
+      const arcade = getComputedStyle(document.querySelector(".arcade-layout")!);
+      return [root.colorScheme, arcade.background, arcade.color, arcade.getPropertyValue("--accent-2").trim()];
+    });
+    const initialNeon = await colours();
+    expect(initialNeon).toEqual(["dark", expect.stringContaining("rgb(70, 32, 113)"), "rgb(246, 242, 255)", "#ff8ee8"]);
+    await page.reload();
+    await expect(page.locator(".arcade-layout")).toBeVisible();
+    expect(await colours()).toEqual(initialNeon);
     // Capture brief effects at insertion so an assertion can survive a busy renderer.
     await page.evaluate(() => {
       new MutationObserver(() => {

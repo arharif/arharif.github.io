@@ -17,6 +17,7 @@ export function Navbar() {
   const [mode, setMode] = useTheme();
   const [open, setOpen] = useState(false);
   const location = useLocation();
+  const arcade = /^\/games\/?$/.test(location.pathname);
   const trigger = useRef<HTMLButtonElement>(null);
   useEffect(() => setOpen(false), [location.pathname]);
   return (
@@ -31,7 +32,7 @@ export function Navbar() {
     >
       <div className="uni-nav-inner">
         <Link to="/" aria-label="X1 home">
-          <X1Mark size="sm" />
+          <X1Mark size="sm" mode={arcade ? "onyx-black" : undefined} />
         </Link>
         <nav id="gateway-nav" aria-label="Primary navigation" data-open={open}>
           {links.map(([to, label]) => {
@@ -43,7 +44,7 @@ export function Navbar() {
         </nav>
         <div className="uni-utilities">
           <SiteSearchButton />
-          <ThemeSwitcher mode={mode} onChange={setMode} />
+          {!arcade && <ThemeSwitcher mode={mode} onChange={setMode} />}
           <Link to="/admin" aria-label="Owner login" title="Owner login">
             <UserRound size={19} />
           </Link>

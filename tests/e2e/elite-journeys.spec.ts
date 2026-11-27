@@ -27,7 +27,7 @@ for (const width of [1440, 390]) {
       await expect(page.locator(".destination")).toHaveCount(3);
       await page.locator(".dest-academic").click();
       await page.getByRole("link", { name: "Try Demo for NIST CSF 2.0", exact: true }).click();
-      await expect(page.locator(".demo-status")).toHaveText("Fictional demo");
+      await expect(page.locator(".demo-status")).toHaveText("SAMPLE DATA · Fictional demo");
       await expect(page.getByRole("dialog", { name: /entrance/ })).toHaveCount(0);
 
       await page.goto("/");

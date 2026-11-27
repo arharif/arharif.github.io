@@ -67,7 +67,7 @@ for (const group of catalog.groups) {
           parts.filter((p) => p.name === "assessment-objective"),
         ).map(plain),
         methods: parts
-          .filter((p) => /assessment-method|assessment-object/.test(p.name))
+          .filter((p) => p.name === "assessment-method")
           .flatMap((p) => [
             {
               method:
@@ -100,6 +100,7 @@ await writeFile(
   "src/academic/data/sp80053-catalog.json",
   JSON.stringify(output),
 );
+await import("./index-nist.mjs");
 console.log(
   JSON.stringify({
     controls: controls.length,

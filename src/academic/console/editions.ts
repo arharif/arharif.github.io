@@ -24,6 +24,7 @@ export const editions = {
       ["NIST SP 800-53 and Release 5.2.0", "https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final"],
       ["NIST SP 800-53A assessment procedures", "https://csrc.nist.gov/pubs/sp/800/53/a/r5/final"],
       ["NIST SP 800-53B control baselines", "https://csrc.nist.gov/pubs/sp/800/53/b/upd1/final"],
+      ["NIST machine-readable reference data", "https://csrc.nist.gov/projects/risk-management/sp800-53-controls/downloads"],
     ],
   },
   dora: {
@@ -42,6 +43,10 @@ export const editions = {
       ["Register of information ITS · 2024/2956", "https://eur-lex.europa.eu/eli/reg_impl/2024/2956/oj"],
       ["Threat-led penetration testing RTS · 2025/1190", "https://eur-lex.europa.eu/eli/reg_del/2025/1190/oj"],
       ["ICT subcontracting RTS · 2025/532", "https://eur-lex.europa.eu/eli/reg_del/2025/532/oj"],
+      ["Contractual risk policy RTS · 2024/1773", "https://eur-lex.europa.eu/eli/reg_del/2024/1773/oj"],
+      ["Critical provider designation criteria · 2024/1502", "https://eur-lex.europa.eu/eli/reg_del/2024/1502/oj"],
+      ["Oversight conditions RTS · 2025/295", "https://eur-lex.europa.eu/eli/reg_del/2025/295/oj"],
+      ["Joint Examination Teams RTS · 2025/420", "https://eur-lex.europa.eu/eli/reg_del/2025/420/oj"],
     ],
   },
   gdpr: {
@@ -88,6 +93,7 @@ export const editions = {
     sources: [
       ["ISO/IEC 27001:2022", "https://www.iso.org/standard/27001"],
       ["ISO/IEC 27001 Amendment 1:2024", "https://www.iso.org/standard/88435.html"],
+      ["ISO/IEC 27002:2022 implementation guidance", "https://www.iso.org/standard/75652.html"],
     ],
   },
   "pci-dss": {
@@ -104,3 +110,16 @@ export const editions = {
     ],
   },
 } satisfies Record<string, {name:string; edition:string; description:string; category:string; application:string; scenario:string; sources:[string,string][]}>;
+
+const checked = "2026-11-27";
+const nistReuse = "NIST publication and OSCAL data. The publisher’s publication is authoritative. Evidence and recommendations labelled as examples are X1 guidance.";
+const lawReuse = "Official Journal and consolidated references via EUR-Lex. X1 uses article identifiers and original educational summaries. Check authentic acts, corrigenda and applicable national measures.";
+export const frameworkMetadata: Record<Framework, { verified: string; reuse: string; focus: string; scope: string; plan: [string, string, string]; risk: string }> = {
+  "nist-800-53": { verified: checked, reuse: nistReuse, focus: "System categorisation, baseline selection and documented tailoring", scope: "System boundary, information types, impact categorisation, overlays and inherited controls", plan: ["Categorise the system and approve the baseline", "Specify selected and inherited safeguards", "Apply SP 800-53A procedures and update the POA&M"], risk: "Consider confidentiality, integrity and availability impacts, threat likelihood, inherited safeguards and residual exposure within the system boundary." },
+  "nist-csf-2": { verified: checked, reuse: nistReuse, focus: "Current and Target Profiles", scope: "Organisational scope, stakeholders, risk appetite and relevant outcomes", plan: ["Define the Current Profile scope", "Agree a risk-prioritised Target Profile", "Verify outcomes and refresh the Current Profile"], risk: "Use business and cybersecurity objectives to judge the consequence of an outcome gap. CSF Tiers describe governance practices and are recorded separately." },
+  "iso-27001": { verified: checked, reuse: "ISO/IEC retains copyright. X1 uses references and original summaries. Consult the licensed text for requirements, Annex A and conformity criteria.", focus: "ISMS risk treatment and Statement of Applicability", scope: "ISMS boundaries, relevant external and internal issues and interested parties, including applicable climate considerations", plan: ["Set ISMS scope and risk acceptance criteria", "Agree treatments and approve the Statement of Applicability", "Audit treatment evidence and obtain management review"], risk: "Use your approved ISMS risk criteria and document risk owners, treatment choices and residual risk acceptance. The X1 risk matrix is an optional local prioritisation method." },
+  "pci-dss": { verified: checked, reuse: "PCI SSC retains copyright. X1 uses identifiers, brief topic summaries and original examples. Consult the official v4.0.1 document for requirements, applicability and testing procedures.", focus: "Payment environment scope, applicability and operating evidence", scope: "Account data flows, connected or security-impacting components, merchant or service-provider role and authorised validation path", plan: ["Validate cardholder data environment boundaries", "Agree requirement applicability and validation approach", "Collect test evidence for the applicable validation path"], risk: "Assess exposure of payment account data and dependencies. Use a targeted risk analysis only where the applicable PCI DSS requirement calls for it." },
+  dora: { verified: checked, reuse: lawReuse, focus: "ICT resilience duties and applicable RTS/ITS", scope: "Article 2 entity type, Article 16 simplified regime, critical functions and any authority TLPT identification", plan: ["Confirm entity scope and map critical functions", "Agree ICT resilience, reporting and supplier remediation", "Validate recovery and reporting evidence"], risk: "Estimate disruption to critical or important functions and concentration exposure. Determine major ICT incident classification from the RTS criteria separately." },
+  gdpr: { verified: checked, reuse: lawReuse, focus: "Role-specific obligations, RoPA and DPIA", scope: "Controller or processor roles, processing purposes, data categories, territorial scope and transfer destinations", plan: ["Identify processing, roles and lawful grounds", "Document safeguards and resolve DPIA decisions", "Review residual risks to individuals and record consultation where required"], risk: "Assess likelihood and severity of harm to individuals’ rights and freedoms. A local score cannot decide whether a DPIA, consultation or breach notification is legally required." },
+  "eu-ai-act": { verified: checked, reuse: lawReuse, focus: "AI use classification and obligations by actor", scope: "Intended purpose, provider or deployer roles, applicable annex, high-risk classification and date of application", plan: ["Classify the intended AI use and identify responsible actors", "Agree actor-specific safeguards and documentation", "Verify oversight and applicable conformity or monitoring evidence"], risk: "Consider harms to health, safety and fundamental rights, foreseeable misuse and human oversight. Determine the Act’s legal classification separately." },
+};

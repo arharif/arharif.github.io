@@ -11,9 +11,13 @@ import {
   scenarioRisks,
   blankRisk,
   validateRisk,
+  residualScore,
   type RiskRecord,
 } from "../workspace/risk";
-import { catalogue, frameworkIds, cases, names, type Framework } from "./catalogue";
+import { baselineIds, catalogue, frameworkIds, cases, nistActiveIds, nistParent, type Framework } from "./catalogue";
+
+import { frameworkMetadata } from "./editions";
+import { pciExamples } from "../data/pci401";
 
 export const evidenceStates = [
   "Missing",
@@ -35,6 +39,9 @@ const assessment = z.object({
   location: short.default(""),
   asset: short.default(""),
   finding: z.string().max(3000),
+  selection: z.enum(["System-specific", "Inherited", "Shared"]).default("System-specific"),
+  tailoring: z.string().max(3000).default(""),
+  treatment: z.enum(["Undecided", "Modify", "Avoid", "Share", "Retain"]).default("Undecided"),
 });
 export type Assessment = z.infer<typeof assessment>;
 export const unassessed: Assessment = {
@@ -49,6 +56,9 @@ export const unassessed: Assessment = {
   location: "",
   asset: "",
   finding: "",
+  selection: "System-specific",
+  tailoring: "",
+  treatment: "Undecided",
 };
 export const flowStages = [
   "Collection",
@@ -75,10 +85,26 @@ const riskSchema = z
   .transform(
     (v) => validateRisk(v as unknown as Record<string, unknown>).record,
   );
+const scope = z.object({
+  baseline: z.enum(["ALL", "LOW", "MODERATE", "HIGH", "NONE"]),
+  privacy: z.boolean(),
+  added: z.array(short).max(1200),
+  overlay: short,
+  context: z.string().max(3000),
+  decision: z.string().max(3000),
+  decisionType: short.default(""),
+  evidenceRef: short.default(""),
+  tier: z.enum(["", "1", "2", "3", "4"]),
+  targetTier: z.enum(["", "1", "2", "3", "4"]),
+});
+const defaultScope: z.infer<typeof scope> = {
+  baseline: "ALL", privacy: false, added: [], overlay: "", context: "", decision: "", decisionType: "", evidenceRef: "", tier: "", targetTier: "",
+};
 const projectSchema = z.object({
   version: z.literal(1),
   framework: z.enum(frameworkIds),
   demo: z.boolean(),
+  scope: scope.default(defaultScope),
   name: short.min(1),
   start: isoDate,
   assessments: z.record(short, assessment),
@@ -115,6 +141,9 @@ export function parseProject(raw: string) {
     throw Error("Projects can contain up to 3 MB of data.");
   const p = projectSchema.parse(JSON.parse(raw));
   const allowed = new Set(catalogue(p.framework).items.map((c) => c.id));
+  if (p.framework === "iso-27001") allowed.add("ISO-A.5"); // Retain the historic aggregate in project exports.
+  if (p.framework === "nist-800-53" && p.scope.added.some((id) => !nistActiveIds.has(id)))
+    throw Error("Unknown overlay or tailored control.");
   if (Object.keys(p.assessments).some((id) => !allowed.has(id)))
     throw Error("Unknown framework control.");
   if (new Set(p.risks.map((r) => r.id.toLowerCase())).size !== p.risks.length)
@@ -133,6 +162,7 @@ export function blank(framework: Framework): Project {
     version: 1,
     framework,
     demo: false,
+    scope: { ...defaultScope },
     name: "My assessment",
     start: today(),
     assessments: {},
@@ -157,32 +187,20 @@ export function makePlan(
   demo: boolean,
   start: string,
 ): Task[] {
-  const { groups } = catalogue(framework);
-  const prefix = names[framework];
+  const [scoping, design, validation] = frameworkMetadata[framework].plan;
   const stages: [Task["stage"], string, string, number][] = [
-    ["FRAME", prefix + " scope", "lead", 3],
+    ["FRAME", scoping, "lead", 3],
     ["DIAGNOSE", "Inventory and evidence review", "assessor", 5],
-    ["DESIGN", prefix + " target design", "control-owner", 4],
+    ["DESIGN", design, "control-owner", 4],
     ["PLAN", "Approve treatment plan", "lead", 0],
-    ...groups.map((g): [Task["stage"], string, string, number] => [
-      "IMPLEMENT",
-      g.title + " controls",
-      "control-owner",
-      4,
-    ]),
-    ["ASSURE", "Test operating evidence", "assessor", 5],
+    ["ASSURE", validation, "assessor", 5],
     ["EMBED", "Management sign-off", "lead", 0],
   ];
   const tasks: Task[] = [];
   stages.forEach(([stage, title, resourceId, days], i) => {
     const t = newTask("objective:" + framework + ":" + stage, title, stage);
-    const group = groups[i - 4];
     t.id = `roadmap:${framework}:${i}`;
-    if (stage === "IMPLEMENT" && group) {
-      t.id = `remediation:${framework}:${group.id}`;
-      t.sourceIds = [group.id];
-    }
-    const progress = demo ? (i < 4 ? 100 : i === 4 ? 65 : i === 5 ? 30 : 0) : 0;
+    const progress = demo && i < 4 ? 100 : 0;
     tasks.push({
       ...t,
       resourceId,
@@ -212,7 +230,14 @@ export function demoProject(framework: Framework): Project {
   p.name = scenario.name;
   p.start = "2026-11-04";
   const scenarioDate = "2026-11-27";
-  items.forEach((c, i) => {
+  const demoNist = new Set(["AC-2", "AU-6", "CM-3", "IR-4", "RA-5", "SA-15", "SI-2", "SI-7", "SR-11", "SA-15(13)", "SA-24", "SI-2(7)"]);
+  if (framework === "nist-800-53") p.scope = { ...p.scope, baseline: "MODERATE", added: [...demoNist].filter((id) => !baselineIds("MODERATE").includes(id)) };
+  const pciSampleIds = new Set(pciExamples.map(([id]) => id));
+  const sample = items.filter((item) => framework === "nist-800-53"
+    ? demoNist.has(item.id)
+    : framework === "iso-27001" && item.id.startsWith("A.") ? /^A\.[5-8]\.[1-3]$/.test(item.id)
+    : framework === "pci-dss" ? pciSampleIds.has(item.id) : true);
+  sample.forEach((c, i) => {
     const family = groups.findIndex((g) => g.id === c.group);
     const current = Math.max(
       0,
@@ -224,7 +249,7 @@ export function demoProject(framework: Framework): Project {
     );
     const evidence = evidenceStates[Math.min(3, current)];
     const excluded = (framework === "dora" && c.id === "Art. 26") ||
-      (framework === "eu-ai-act" && c.group === "model");
+      (framework === "eu-ai-act" && c.group === "V");
     p.assessments[c.id] = {
       current: excluded ? null : current,
       applicability: excluded ? "Excluded" : "Applicable",
@@ -242,7 +267,10 @@ export function demoProject(framework: Framework): Project {
       unit: ["Operations", "Technology", "Assurance"][i % 3],
       location: ["North campus", "Field office", "Central office"][i % 3],
       asset: ["Service platform", "Identity provider", "Data store"][i % 3],
-      note: !excluded && current > 0 ? "Fictional sample " + (i + 1) + " · " + c.evidence : "",
+      note: !excluded && current > 0 ? "SAMPLE DATA " + (i + 1) + " · " + c.evidence : "",
+      selection: "System-specific",
+      tailoring: "",
+      treatment: "Undecided",
       finding:
         !excluded && current < target
           ? "Follow up on " +
@@ -253,15 +281,15 @@ export function demoProject(framework: Framework): Project {
   });
   const legacyRisks = ["nist-csf-2", "iso-27001", "pci-dss"].includes(framework);
   const anchors = {
-    "nist-800-53": ["Unreviewed privileged access", "Undetected integrity change", "Delayed flaw remediation"],
-    dora: ["Unclear board accountability", "Late major incident notification", "Settlement provider outage"],
-    gdpr: ["Incomplete processing inventory", "Undisclosed analytics use", "Delayed breach assessment"],
-    "eu-ai-act": ["Incorrect recruitment classification", "Biased candidate ranking", "Ineffective human oversight"],
+    "nist-800-53": [["AC-2", "Unreviewed privileged access"], ["SI-7", "Undetected integrity change"], ["SI-2", "Delayed flaw remediation"]],
+    dora: [["Art. 5", "Unclear board accountability"], ["Art. 19", "Late major incident notification"], ["Art. 28", "Settlement provider outage"]],
+    gdpr: [["Art. 30", "Incomplete processing inventory"], ["Arts. 5–6", "Undisclosed analytics use"], ["Arts. 33–34", "Delayed breach assessment"]],
+    "eu-ai-act": [["Arts. 2–3, 6", "Incorrect recruitment classification"], ["Arts. 9–10", "Biased candidate ranking"], ["Arts. 26–27", "Ineffective human oversight"]],
   };
   const risks = legacyRisks
     ? scenarioRisks(scenario.caseId)
-    : anchors[framework as keyof typeof anchors].map((threat, i) => {
-        const control = items.filter((item) => p.assessments[item.id].applicability === "Applicable")[i * 2];
+    : anchors[framework as keyof typeof anchors].map(([id, threat], i) => {
+        const control = items.find((row) => row.id === id)!;
         return {
           ...blankRisk(),
           id: `R-${framework}-${i + 1}`,
@@ -274,7 +302,7 @@ export function demoProject(framework: Framework): Project {
           residualLikelihood: 3 - (i % 2),
           residualImpact: 5 - (i % 2),
           treatment: control.example,
-          evidence: "Fictional example · " + control.evidence,
+          evidence: "SAMPLE DATA · " + control.evidence,
           owner: scenario.owner,
         };
       });
@@ -325,10 +353,20 @@ export function demoProject(framework: Framework): Project {
 }
 export function stats(p: Project) {
   const { items, groups } = catalogue(p.framework);
-  const rows = items.map((c) => ({
-    ...c,
-    ...(p.assessments[c.id] ?? unassessed),
-  }));
+  const scope = p.scope ?? defaultScope;
+  const selected = new Set([
+    ...(scope.baseline !== "ALL" && scope.baseline !== "NONE" ? baselineIds(scope.baseline) : []),
+    ...(scope.privacy ? baselineIds("PRIVACY") : []),
+    ...scope.added,
+    ...scope.added.flatMap((id) => {
+      const parent = nistParent(id);
+      return parent ? [parent] : [];
+    }),
+  ]);
+  const rows = items.filter((control) => !control.withdrawn &&
+    (p.framework !== "nist-800-53" || scope.baseline === "ALL" || selected.has(control.id)) &&
+    (p.framework !== "pci-dss" || !control.id.startsWith("PCI-") || p.assessments[control.id]),
+  ).map((c) => ({ ...c, ...(p.assessments[c.id] ?? unassessed) }));
   const applicable = rows.filter((r) => r.applicability === "Applicable");
   const scored = applicable.filter((r) => r.current !== null);
   const reviewed = applicable.filter((c) => c.evidence === "Reviewed" || c.evidence === "Tested");
@@ -361,34 +399,85 @@ export function stats(p: Project) {
   };
 }
 
-// Recalculate generated work from remaining gap points while retaining manual task edits.
+// Keep one scheduled work package per group. Exact findings and linked risks
+// remain available in the register even when the task's reference list is capped.
+export function riskControls(reference: string) {
+  // A grouped legal citation can contain commas. Semicolons and new lines
+  // separate explicit identifiers; comma lists are supported for simple IDs.
+  return reference.split(/[;\n]+/).flatMap((entry) =>
+    /^Arts?\./i.test(entry.trim()) ? entry.trim() : entry.split(",").map((id) => id.trim()),
+  ).filter(Boolean);
+}
+function residualByControl(source?: Project) {
+  const map = new Map<string, number>();
+  for (const risk of source?.risks ?? []) {
+    if (risk.status === "Closed") continue;
+    for (const id of riskControls(risk.controls)) {
+      const key = id.toUpperCase();
+      map.set(key, Math.max(map.get(key) ?? 0, residualScore(risk)));
+    }
+  }
+  return map;
+}
 export function syncPlan(project: Project, previous?: Project): Project {
   const prefix = `remediation:${project.framework}:`;
-  if (!project.tasks.some((task) => task.id.startsWith(prefix))) return project;
   const gaps = stats(project).gaps;
-  const before = previous ? stats(previous).gaps : [];
-  const estimate = (rows: typeof gaps) => Math.max(1, rows.reduce(
-    (total, row) => total + row.target - row.current!, 0,
-  ));
-  const priority = (rows: typeof gaps): Task["priority"] => {
-    const highest = Math.max(0, ...rows.map((row) => row.target - row.current!));
-    return highest >= 3 ? "High" : highest >= 2 ? "Medium" : "Low";
+  const oldGaps = previous ? stats(previous).gaps : [];
+  if (!project.tasks.length && !gaps.length) return project;
+  const currentRisks = residualByControl(project);
+  const previousRisks = residualByControl(previous);
+  const estimates = (rows: typeof gaps, risks: Map<string, number>) => {
+    const gap = Math.max(0, ...rows.map((row) => row.target - row.current!));
+    const risk = Math.max(0, ...rows.map((row) => risks.get(row.id.toUpperCase()) ?? 0));
+    const priority: Task["priority"] = risk >= 10 || gap >= 3 ? "High" : risk >= 5 || gap >= 2 ? "Medium" : "Low";
+    const duration = Math.min(730, Math.max(1, rows.reduce((total, row) => total + row.target - row.current!, 0)));
+    return { priority, duration, effort: duration * 6 };
   };
-  const tasks = project.tasks.map((task) => {
-    if (!task.id.startsWith(prefix)) return task;
-    const group = task.id.slice(prefix.length);
-    const old = previous?.tasks.find((row) => row.id === task.id);
-    const linked = gaps.filter((row) => row.group === group);
-    const oldRows = before.filter((row) => row.group === group);
-    const oldEstimate = estimate(oldRows);
-    const days = estimate(linked);
-    return {
-      ...task,
-      sourceIds: [group, ...linked.slice(0, 29).map((row) => row.id)],
-      priority: old?.priority && old.priority !== priority(oldRows) ? task.priority : priority(linked),
-      duration: old && old.duration !== oldEstimate ? task.duration : days,
-      effort: old && old.effort !== oldEstimate * 6 ? task.effort : days * 6,
-    };
-  });
+  const generated = project.tasks.some(t => t.id.startsWith(`roadmap:${project.framework}:`));
+  const scaffold = makePlan(project.framework, project.demo, project.start);
+  const schedule = generated || !gaps.length || project.tasks.length + scaffold.length > 500
+    ? project.tasks : [...scaffold, ...project.tasks];
+  const approval = schedule.find((task) => task.stage === "PLAN" && task.id.startsWith("roadmap:"));
+  const assurance = schedule.find((task) => task.stage === "ASSURE" && task.id.startsWith("roadmap:"));
+  const tasks = [...schedule];
+  for (const group of catalogue(project.framework).groups) {
+    const id = prefix + group.id;
+    const linked = gaps.filter((row) => row.group === group.id)
+      .sort((a, b) => (currentRisks.get(b.id.toUpperCase()) ?? 0) - (currentRisks.get(a.id.toUpperCase()) ?? 0) || b.target - b.current! - (a.target - a.current!));
+    const index = tasks.findIndex((task) => task.id === id);
+    const task = tasks[index];
+    if (!linked.length && (!task || !oldGaps.some((row) => row.group === group.id))) continue;
+    const next = estimates(linked, currentRisks);
+    const old = estimates(oldGaps.filter((row) => row.group === group.id), previousRisks);
+    const sourceIds = [group.id, ...linked.slice(0, 29).map((row) => row.id)];
+    if (task) {
+      tasks[index] = {
+        ...task, sourceIds: linked.length ? sourceIds : task.sourceIds,
+        duration: !previous || task.duration === old.duration ? next.duration : task.duration,
+        effort: !previous || task.effort === old.effort ? next.effort : task.effort,
+        priority: !task.priority || !previous || task.priority === old.priority ? next.priority : task.priority,
+      };
+    } else if (tasks.length < 500) {
+      const first = linked[0];
+      tasks.push({
+        ...newTask(first.id, group.title + " controls", "IMPLEMENT"),
+        id, sourceIds, ...next,
+        owner: first.owner || (project.demo ? cases[project.framework].owner : "Unassigned"),
+        dependencies: approval ? [approval.id] : [],
+        evidence: (`${first.id}: ${first.example} Evidence: ${first.evidence}`).slice(0, 3000),
+      });
+    }
+  }
+  if (assurance && approval) {
+    const index = tasks.findIndex((task) => task.id === assurance.id);
+    const existing = new Set(assurance.dependencies);
+    // Only the generated predecessor list is managed automatically.
+    if (existing.has(approval.id)) {
+      tasks[index] = {
+        ...assurance,
+        dependencies: [...new Set([...assurance.dependencies, ...tasks.filter((t) => t.id.startsWith(prefix)).map((t) => t.id)])].slice(0, 100),
+      };
+    }
+  }
   return { ...project, tasks };
 }

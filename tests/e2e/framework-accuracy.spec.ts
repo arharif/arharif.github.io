@@ -1,0 +1,85 @@
+import { readFile } from "node:fs/promises";
+import { expect, test } from "@playwright/test";
+
+const academic = "/x1-academic";
+test("Academic offers one searchable framework directory with contextual learning links", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(academic);
+  await expect(page.getByRole("heading", { name: "Frameworks & Standards", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /^(Resources|More Standards|Expert Frameworks)$/ })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: /^Explore / })).toHaveCount(7);
+  await page.getByRole("searchbox", { name: "Search frameworks and standards" }).fill("climate");
+  await expect(page.getByRole("link", { name: /^Explore / })).toHaveCount(0);
+  await page.getByRole("searchbox", { name: "Search frameworks and standards" }).fill("27001");
+  await expect(page.getByRole("link", { name: /^Explore / })).toHaveCount(1);
+  await page.getByRole("link", { name: "Explore ISO/IEC 27001", exact: true }).click();
+  const flows = page.getByRole("navigation", { name: "ISO/IEC 27001 workspaces" });
+  await expect(flows.getByRole("link")).toHaveCount(3);
+  await flows.getByRole("link", { name: /^Learn/ }).click();
+  await expect(page.getByRole("link", { name: "Academic Library", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Security Mindmap", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Compliance Frameworks", exact: true })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+});
+
+test("NIST shows the official control tree, assessment methods and baseline tailoring", async ({ page }) => {
+  await page.goto(academic + "/explore?standard=nist-800-53&view=learn");
+  const areas = page.getByRole("group", { name: "Framework architecture areas" });
+  await expect(areas.getByRole("button")).toHaveCount(20);
+  await areas.getByRole("button", { name: "System and Services Acquisition" }).click();
+  await page.getByRole("searchbox", { name: "Search within this framework area" }).fill("SA-15(13)");
+  await page.getByText(/^SA-15 · Development Process/).click();
+  const enhancement = page.getByText("SA-15(13) · Logging Syntax", { exact: true });
+  await enhancement.click();
+  const control = enhancement.locator("..");
+  await control.getByText("NIST text and assessment procedures", { exact: true }).click();
+  await expect(control.getByRole("heading", { name: "SP 800-53 control statement" })).toBeVisible();
+  await control.getByText("SP 800-53A objectives and methods").click();
+  await expect(control.getByRole("heading", { name: "EXAMINE" })).toBeVisible();
+
+  await page.goto(academic + "/assess-simulate?standard=nist-800-53&view=profile");
+  await page.getByText("System categorisation, baseline selection and documented tailoring", { exact: true }).click();
+  await page.getByLabel("SP 800-53B starting baseline").selectOption("LOW");
+  await expect(page.locator(".xc-profile-banner")).toContainText("149 controls");
+  await page.getByLabel("Add active control or enhancement from an overlay").fill("SA-15(13)");
+  await page.getByRole("button", { name: "Include control", exact: true }).click();
+  await expect(page.locator(".xc-profile-banner")).toContainText("151 controls");
+  await page.getByRole("button", { name: "All controls" }).click();
+  await page.getByLabel("Find control").fill("SA-15(13)");
+  await expect(page.getByRole("dialog").getByRole("heading", { name: "SA-15(13) · Logging Syntax" })).toBeVisible();
+});
+
+test("an assessment links its finding and a matching risk to an automatically scheduled work package", async ({ page }) => {
+  await page.goto(academic + "/assess-simulate?standard=gdpr&view=profile");
+  await page.getByRole("button", { name: "All controls" }).click();
+  await page.getByLabel("current Art. 30", { exact: true }).selectOption("2");
+  await page.keyboard.press("Escape");
+  await page.getByRole("link", { name: "Remediation schedule" }).click();
+  await expect(page.locator(".xc-ganttlabel").filter({ hasText: "Controller and processor controls" })).toBeVisible();
+  await expect(page.getByText(/1 rated requirements are below/)).toBeVisible();
+  await page.getByRole("link", { name: "Review risk and treatment" }).click();
+  await page.getByRole("button", { name: "Risk register", exact: true }).click();
+  await page.getByRole("button", { name: "Add risk", exact: true }).click();
+  const form = page.getByRole("dialog", { name: "Edit risk" });
+  await form.getByLabel("asset", { exact: true }).fill("Support processing");
+  await form.getByLabel("threat", { exact: true }).fill("Unrecorded secondary disclosure");
+  await form.getByLabel("controls", { exact: true }).fill("Art. 30");
+  await form.getByLabel("Residual Likelihood", { exact: true }).selectOption("5");
+  await form.getByLabel("Residual Impact", { exact: true }).selectOption("4");
+  const id = (await form.locator("form > small").first().innerText()).trim();
+  await form.getByRole("button", { name: "Save risk" }).click();
+  await page.keyboard.press("Escape");
+  await page.getByRole("link", { name: "Plan & Implement", exact: true }).click();
+  const event = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Export POA&M" }).click();
+  const csv = await readFile((await (await event).path())!, "utf8");
+  const packageRow = csv.split("\r\n").find((row) => row.includes("Controller and processor controls"));
+  expect(packageRow).toContain(id);
+  expect(packageRow).toContain("High");
+  await page.getByRole("button", { name: "Try Demo", exact: true }).click();
+  await expect(page.locator(".demo-status")).toContainText("SAMPLE DATA");
+  await expect(page.getByText(/Customer support, analytics and EU member records/)).toBeVisible();
+  await page.getByRole("button", { name: "Start New Assessment" }).click();
+  await page.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(page.locator(".demo-status")).toContainText("SAMPLE DATA");
+});
