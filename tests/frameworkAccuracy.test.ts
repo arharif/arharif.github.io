@@ -113,8 +113,9 @@ test("ISO and PCI references have distinct IDs, expected group sizes and officia
   }
 });
 
-test("AI RMF 1.0 has 72 uniquely identified outcomes in 19 categories", () => {
+test("AI RMF 1.0 maps 72 uniquely identified outcomes to individual exercises and evidence", async () => {
   const core = data("ai-rmf-core");
+  const { outcomeGuidance } = await import("../src/academic/data/aiRmfGuidance.ts");
   assert.equal(core.version, "1.0");
   assert.equal(core.source, "https://doi.org/10.6028/NIST.AI.100-1");
   const counts: Record<string, number[]> = {
@@ -126,7 +127,13 @@ test("AI RMF 1.0 has 72 uniquely identified outcomes in 19 categories", () => {
   assert.equal(expected.length, 72);
   assert.equal(core.outcomes.length, 72);
   assert.deepEqual(new Set(core.outcomes.map(([id]: string[]) => id)), new Set(expected));
+  assert.deepEqual(new Set(Object.keys(outcomeGuidance)), new Set(expected));
+  assert.equal(new Set(expected.map(id => outcomeGuidance[id][0])).size, 72);
   for (const [, description] of core.outcomes) assert.ok(description.length > 36);
+  for (const [exercise, evidence] of Object.values(outcomeGuidance)) {
+    assert.ok(exercise.length > 90);
+    assert.ok(evidence.length > 20);
+  }
 });
 
 test("each ISO reference and PCI objective has a nonempty original review prompt", async () => {

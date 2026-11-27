@@ -357,7 +357,7 @@ export function Profile() {
         </div>
         <div className="xc-sectionhead">
           <h3>
-            {project.framework === "nist-csf-2"
+            {project.framework === "nist-csf-2" || project.framework === "nist-ai-rmf"
               ? "Functions"
               : project.framework === "iso-27001"
                 ? "ISMS clauses and Annex A"

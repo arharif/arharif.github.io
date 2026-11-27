@@ -30,7 +30,10 @@ test("AI RMF demo preserves the learning figure and assessment tab, with an actu
   await workbook.xlsx.readFile((await file.path())!);
   expect(workbook.worksheets).toHaveLength(7);
   expect(workbook.getWorksheet("Framework Requirements")?.rowCount).toBe(74);
-  expect(workbook.getWorksheet("Risk Register")?.getColumn("H").values).toContain("MEASURE 2.11");
+  const risks = workbook.getWorksheet("Risk Register")!;
+  expect(risks.getColumn("H").values).toContain("MEASURE 2.11");
+  expect(risks.getCell("E3").value).toBe(Number(risks.getCell("M3").value) * Number(risks.getCell("N3").value));
+  expect(risks.getCell("F3").value).toBe(Number(risks.getCell("O3").value) * Number(risks.getCell("P3").value));
   expect(workbook.getWorksheet("Assessment Summary")?.getCell("A1").text).toContain("SAMPLE DATA");
 });
 

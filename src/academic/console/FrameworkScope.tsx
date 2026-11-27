@@ -42,8 +42,7 @@ export function FrameworkScope() {
       <summary>{guidance.focus}</summary>
       <p>{guidance.scope}.</p>
       <div className="xc-fields">
-        <label>
-          {workflow && <>
+        {workflow && <>
           <label>{workflow.label}
             <select value={scope.decisionType} onChange={(event) => patch({ decisionType: event.target.value })}>
               <option value="">Review pending</option>
@@ -54,7 +53,8 @@ export function FrameworkScope() {
             <input value={scope.evidenceRef} maxLength={240} onChange={(event) => patch({ evidenceRef: event.target.value })} />
           </label>
         </>}
-        {framework === "nist-csf-2" ? "Current Profile scope" : "Assessment scope"}
+        <label>
+          {framework === "nist-csf-2" ? "Current Profile scope" : "Assessment scope"}
           <textarea value={scope.context} maxLength={3000} onChange={(e) => patch({ context: e.target.value })} />
         </label>
         <label>
