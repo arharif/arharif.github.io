@@ -12,14 +12,14 @@ const pages = [
       "Explore standards, assess and simulate risk, build implementation roadmaps and connect cybersecurity, privacy, resilience and AI through professional practice.",
   },
   ...[
-    ["explore", "Explore Standards"],
+    ["explore", "Learn"],
     ["assess-simulate", "Assess & Simulate"],
-    ["implement-plan", "Implement & Plan"],
+    ["implement-plan", "Plan & Implement"],
   ].map(([path, title]) => ({
     path: "/" + path,
     title,
     description:
-      "Interactive NIST CSF 2.0, ISO/IEC 27001 and PCI DSS workspaces with editable assessments and fictional demonstration projects.",
+      "Interactive workspaces for seven cybersecurity, privacy and AI standards with editable assessments and fictional demonstration projects.",
   })),
   ...["standards", "implement", "risk-register", "knowledge-graph"].map(
     (path) => ({
@@ -181,18 +181,36 @@ function publicEntry([path, title, description, art]) {
     .replace(/(<meta property="og:image:alt" content=")[^"]*/, `$1${escape(title + " artwork")}`);
 }
 const headlineFont = '<link rel="preload" as="font" href="/fonts/dm-serif-text-latin.woff" type="font/woff" crossorigin>';
-const insightsRoute = manifest["src/pages/Insights.tsx"];
-const insightsEntryAssets = [
-  '<link rel="preload" as="image" href="/art/cosmos-small.webp">',
-  headlineFont,
-  ...insightsRoute.css.map((file) => `<link rel="stylesheet" href="/${file}">`),
-  `<link rel="modulepreload" href="/${insightsRoute.file}" crossorigin>`,
-].join("");
+const publicRouteAssets = {
+  "/insights-innovation": {
+    entry: "src/pages/Insights.tsx",
+    links: [
+      '<link rel="preload" as="image" href="/art/insights-observatory-mobile.webp" media="(max-width: 620px)" fetchpriority="high">',
+      '<link rel="preload" as="image" href="/art/insights-observatory.webp" media="(min-width: 621px)" fetchpriority="high">',
+      headlineFont,
+    ],
+  },
+  "/games": {
+    entry: "src/components/GamesHub.tsx",
+    links: ['<link rel="preload" as="image" href="/art/x1-platform-adventure-small.webp" media="(max-width: 720px)" fetchpriority="high">'],
+  },
+  "/about-x1": { entry: "src/pages/AboutX1Page.tsx", links: [headlineFont] },
+};
+function routeAssets(path) {
+  const config = publicRouteAssets[path];
+  if (!config) return "";
+  const route = manifest[config.entry];
+  return [
+    ...config.links,
+    ...(route.css ?? []).map((file) => `<link rel="stylesheet" href="/${file}">`),
+    `<link rel="modulepreload" href="/${route.file}" crossorigin>`,
+    ...(route.imports ?? []).map((file) => `<link rel="modulepreload" href="/${manifest[file].file}" crossorigin>`),
+  ].join("");
+}
 for (const page of publicPages) {
   const directory = "dist" + page[0];
   await mkdir(directory, { recursive: true });
-  let html = publicEntry(page);
-  if (page[0] === "/insights-innovation") html = html.replace("</head>", insightsEntryAssets + "</head>");
+  const html = publicEntry(page).replace("</head>", routeAssets(page[0]) + "</head>");
   await writeFile(directory + "/index.html", html);
 }
 

@@ -1,6 +1,7 @@
 import { useState, type CSSProperties } from "react";
 import {
   CalendarDays,
+  Download,
   ChevronDown,
   Diamond,
   GanttChartSquare,
@@ -8,11 +9,13 @@ import {
   Plus,
 } from "lucide-react";
 import { useProject } from "./context";
-import { makePlan, phaseNames, plan, resources } from "./project";
+import { makePlan, phaseNames, plan, resources, syncPlan } from "./project";
 import { addDays } from "../studio/engines";
 import { newTask, stages, today, type Task } from "../studio/model";
 import { Dialog, Empty, Panel, Ring, Trend, fmtDate } from "./ui";
 import { names } from "./catalogue";
+import { csv } from "../utils/engines";
+import { download } from "../components/shared";
 
 const phaseColours = [
   "#398cd0",
@@ -58,6 +61,28 @@ export function Planner() {
     addDays(project.start, Math.floor((i * range) / 6)),
   );
   const owners = [...new Set(rows.map((r) => r.task.owner))];
+  function exportSchedule() {
+    download(`${project.framework}-${project.demo ? "fictional-demo" : "project"}-plan.csv`, csv(rows.map(({ task, start, end, late: overdue }) => ({
+      Scenario: project.demo ? "Fictional educational demo" : project.name,
+      Framework: names[project.framework],
+      Action: task.title,
+      "Control or group": task.sourceIds.join(", "),
+      Phase: phaseNames[task.stage],
+      Owner: task.owner,
+      Priority: task.priority ?? "Medium",
+      Start: start,
+      Finish: end,
+      Deadline: task.deadline,
+      Dependencies: task.dependencies.join(", "),
+      Milestone: task.milestone ? "Yes" : "No",
+      Status: task.status,
+      "Progress (%)": task.progress,
+      "Effort (hours)": task.effort,
+      Delayed: overdue || (end < today() && task.progress < 100) ? "Yes" : "No",
+      Evidence: task.evidence,
+      Validation: task.validation,
+    }))), "text/csv;charset=utf-8");
+  }
   function save(t: Task) {
     try {
       if (!t.title.trim() || !t.owner.trim())
@@ -162,6 +187,7 @@ export function Planner() {
               <option key={v}>{v}</option>
             ))}
           </select>
+          {rows.length > 0 && <button onClick={exportSchedule}><Download size={16} /> Export POA&M</button>}
           <button
             onClick={() =>
               taskEdit({
@@ -174,6 +200,9 @@ export function Planner() {
           </button>
         </div>
       </div>
+      {!!rows.length && <p className="xc-planning-method">
+        Generated remediation estimates use one working day per remaining maturity gap point with a minimum of one day, with six effort hours per estimated day. Adjust estimates from task details.
+      </p>}
       {!rows.length && (
         <div className="xc-plan-empty">
           <h3>Build your implementation schedule</h3>
@@ -184,7 +213,7 @@ export function Planner() {
           <button
             className="xc-primary"
             onClick={() =>
-              change((p) => ({
+              change((p) => syncPlan({
                 ...p,
                 tasks: makePlan(p.framework, false, p.start),
               }))
@@ -519,6 +548,13 @@ export function Planner() {
                   value={draft.deadline}
                   onChange={(e) => edit({ ...draft, deadline: e.target.value })}
                 />
+              </label>
+              <label>
+                Priority
+                <select value={draft.priority ?? "Medium"}
+                  onChange={(event) => edit({ ...draft, priority: event.target.value as Task["priority"] })}>
+                  <option>Low</option><option>Medium</option><option>High</option>
+                </select>
               </label>
               <label>
                 Duration (workdays)

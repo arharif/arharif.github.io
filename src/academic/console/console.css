@@ -544,7 +544,6 @@
 }
 .xc-dialog::backdrop {
   background: #040b16ad;
-  backdrop-filter: blur(3px);
 }
 .xc-dialog > header {
   position: sticky;
@@ -1506,12 +1505,12 @@
 .xc-flow-head {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  background: var(--brand);
-  color: var(--bg);
-  font-size: 0.7em;
+  background: var(--accent);
+  color: var(--inverse-ink);
+  font-size: 0.8em;
   text-transform: uppercase;
   text-align: center;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.05em;
 }
 .xc-flow-head b {
   padding: 0.45em;
@@ -2710,9 +2709,6 @@
     transform 0.15s ease,
     border-color 0.15s ease;
 }
-.xc-flow-head {
-  background: #2876b2;
-}
 .xc[data-scheme="light"] .xc-confusion button:is(:first-child, :last-child) b {
   color: #136d59;
 }
@@ -2840,3 +2836,11 @@
   }
 }
 .xc-section-name { margin-left: -14px; font-size: 18px; font-weight: 650; }
+
+.xc-profile-actions { display: flex; flex-wrap: wrap; gap: .5rem 1rem; margin-block: .65rem; }
+.xc-profile-actions a { display: inline-flex; align-items: center; min-height: 2.75rem; color: var(--x1-accent-ink); text-decoration: underline; text-underline-offset: .2rem; }
+.xc-planning-method { color: var(--muted); padding: .55rem 1rem; font-size: .88rem; line-height: 1.45; }
+
+.xc-mobile-assessment { display: grid; gap: .65rem; margin-block: .75rem; }
+.xc-mobile-assessment > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
+.xc-mobile-assessment select { width: 100%; min-height: 2.65rem; }

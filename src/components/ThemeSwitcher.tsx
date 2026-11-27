@@ -64,12 +64,11 @@ export function ThemeSwitcher({
               document.activeElement as HTMLButtonElement,
             );
             const count = buttons.length;
-            const columns = 2;
             const next = {
               ArrowRight: (index + 1) % count,
-              ArrowDown: (index + columns) % count,
+              ArrowDown: (index + 1) % count,
               ArrowLeft: (index + count - 1) % count,
-              ArrowUp: (index + count - columns) % count,
+              ArrowUp: (index + count - 1) % count,
               Home: 0,
               End: count - 1,
             }[e.key];
@@ -79,13 +78,11 @@ export function ThemeSwitcher({
             }
           }}
         >
-          <p className="palette-foundation" role="presentation">Professional Light</p>
           {(Object.keys(palettes) as ThemeMode[]).map((id) => {
             const [label, , surface, , accent] = palettes[id];
             return (
               <button
                 key={id}
-                data-foundation={id === "onyx-black" ? "onyx" : "light"}
                 title={label}
                 role="menuitemradio"
                 aria-label={`Activate ${label}`}

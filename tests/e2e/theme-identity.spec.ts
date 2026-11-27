@@ -17,7 +17,8 @@ for (const width of [1440, 390]) {
       await page.getByRole("button", { name: "Open theme selector" }).click();
       await page.getByRole("menuitemradio", { name: "Activate " + name, exact: true }).click();
       await expect(shell).toHaveCSS("background-color", id === "onyx-black" ? "rgb(8, 10, 13)" : "rgb(255, 255, 255)");
-      await expect(shell).toHaveCSS("background-image", "none");
+      if (id === "rainbow") await expect(shell).toHaveCSS("background-image", /linear-gradient/);
+      else await expect(shell).toHaveCSS("background-image", "none");
       await expect(logo.locator(".mark-word")).toHaveText("X1");
       await expect(logo.locator(".universe-mark")).toHaveCSS("width", "36px");
       // Move keyboard focus back to the brand from the selector, independent of pointer hover.
@@ -41,12 +42,12 @@ for (const width of [1440, 390]) {
         await page.screenshot({ path: `${capture}/${width}-${id}.jpg`, quality: 84 });
       }
     }
-    expect(expressions.size).toBe(9);
+    expect(expressions.size).toBe(3);
     await page.getByRole("button", { name: "Open theme selector" }).click();
     if (capture) await page.screenshot({ path: `${capture}/${width}-selector.jpg`, quality: 84 });
     await page.keyboard.press("Home");
     await page.keyboard.press("ArrowDown");
-    await expect(page.getByRole("menuitemradio", { name: "Activate Midnight Slate" })).toBeFocused();
+    await expect(page.getByRole("menuitemradio", { name: "Activate Mature White" })).toBeFocused();
     await page.keyboard.press("Enter");
     for (const [path, identity] of [["/x1-academic","face"],["/insights-innovation","astronaut"],["/games","phantom"]]) {
       await page.goto(path);

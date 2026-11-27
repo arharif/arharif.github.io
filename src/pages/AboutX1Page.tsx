@@ -1,3 +1,6 @@
+import { Activity, Compass, Network, ScanLine, ShieldCheck, Waypoints } from "lucide-react";
+import "./advisory.css";
+import { LightTrails } from "@/components/LightTrails";
 import { CSSProperties, KeyboardEvent, SyntheticEvent, useState } from 'react';
 
 const portraitUrl = 'https://media.licdn.com/dms/image/v2/D4D03AQHwOA1DG7VJZQ/profile-displayphoto-scale_200_200/B4DZm6CPbRHYAc-/0/1759762774254?e=2147483647&v=beta&t=yzSDalrj20Mgz4WtEfglrPHXInGV8qmiDTLSVTXVzOQ';
@@ -20,6 +23,7 @@ const roadmap = [
   { id: 'evolve', stage: 'Evolve', shortLabel: 'Resilience & adaptation', title: 'Measurement, Resilience & Adaptation', purpose: 'Use metrics, incidents, intelligence, assurance findings and business change to adapt cybersecurity priorities.', executiveQuestion: 'Are we becoming more resilient as the organisation and threat environment evolve?', decision: 'Adapt', principle: 'Resilience Focused', focus: 'Metrics · KRIs · KPIs · Incidents · Threat intelligence · Recovery · Lessons learned', outcome: 'A cybersecurity capability that evolves with business and risk.' },
 ] as const;
 
+const stageIcons = [Compass, ScanLine, Network, Waypoints, ShieldCheck, Activity];
 const axes = ['M250 250V50', 'M250 250L423 150', 'M250 250L423 350', 'M250 250V450', 'M250 250L77 350', 'M250 250L77 150'];
 const radarPoint = (score: number, index: number) => {
   const angle = -Math.PI / 2 + index * Math.PI / 3;
@@ -31,9 +35,9 @@ const radarPoints = vertices.map(([x, y]) => `${x},${y}`).join(' ');
 
 function selectWithArrows(event: KeyboardEvent<HTMLButtonElement>, current: number, total: number, select: (index: number) => void) {
   const delta = event.key === 'ArrowRight' || event.key === 'ArrowDown' ? 1 : event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? -1 : 0;
-  if (!delta) return;
+  if (!delta && event.key !== 'Home' && event.key !== 'End') return;
   event.preventDefault();
-  const next = (current + delta + total) % total;
+  const next = event.key === 'Home' ? 0 : event.key === 'End' ? total - 1 : (current + delta + total) % total;
   select(next);
   event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('button')[next]?.focus();
 }
@@ -85,9 +89,36 @@ export function AboutX1Page() {
     <section className="about-section advisory-journey" aria-labelledby="journey-title"><p className="academic-eyebrow">Cybersecurity Advisory Journey</p><h2 id="journey-title">From Business Context to Resilient Outcomes</h2><p className="section-copy">A six-stage journey from business context and risk insight to transformation, assurance and resilience.</p><p className="journey-cue">Select a stage to explore its decision, focus and outcome.</p>
       <div className="roadmap" role="tablist" aria-label="Cybersecurity advisory journey" style={{ '--journey-progress': `${stage / (roadmap.length - 1) * 100}%` } as CSSProperties}>
         <svg className="journey-path" viewBox="0 0 1000 240" preserveAspectRatio="none" aria-hidden="true" focusable="false"><defs><linearGradient id="journey-gradient"><stop stopColor="var(--accent)"/><stop offset="1" stopColor="var(--accent-2)"/></linearGradient></defs><path className="journey-path-base" pathLength="5" d="M83 120 C140 120 190 160 250 160 S355 80 417 80 S522 160 583 160 S688 80 750 80 S855 160 917 160"/><path className="journey-path-progress" pathLength="5" strokeDasharray={`${Math.min(5, stage + 0.12)} 5`} d="M83 120 C140 120 190 160 250 160 S355 80 417 80 S522 160 583 160 S688 80 750 80 S855 160 917 160"/></svg>
-        {roadmap.map((item, index) => <button id={`stage-${item.id}`} key={item.id} type="button" role="tab" aria-selected={stage === index} aria-current={stage === index ? 'step' : undefined} aria-controls="journey-detail" className={stage === index ? 'is-active' : ''} onClick={() => setStage(index)} onKeyDown={(event) => selectWithArrows(event, index, roadmap.length, setStage)}><span className="milestone-copy"><b>{String(index + 1).padStart(2, '0')}</b><strong>{item.stage}</strong><small>{item.shortLabel}</small>{stage === index && <em>Selected</em>}</span><i className="milestone-node" aria-hidden="true" /></button>)}
+        <LightTrails className="advisory-trails" />
+        {roadmap.map((item, index) => {
+          const Icon = stageIcons[index];
+          return <button id={`stage-${item.id}`} key={item.id} type="button" role="tab"
+            aria-selected={stage === index} aria-controls="journey-detail" tabIndex={stage === index ? 0 : -1}
+            className={stage === index ? "is-active" : ""} data-reached={index <= stage}
+            onClick={() => setStage(index)}
+            onKeyDown={(event) => selectWithArrows(event, index, roadmap.length, setStage)}
+          >
+            <span className="milestone-copy"><strong>{item.stage}</strong><small>{item.shortLabel}</small></span>
+            <i className="milestone-node" aria-hidden="true"><Icon size={17} /></i>
+          </button>;
+        })}
       </div>
-      <div id="journey-detail" role="tabpanel" aria-labelledby={`stage-${currentStage.id}`} className="journey-detail" tabIndex={0}><div className="journey-primary"><p className="stage-number">Stage {String(stage + 1).padStart(2, '0')} · {currentStage.stage}</p><h3>{currentStage.title}</h3><p>{currentStage.purpose}</p><div className="journey-signals"><span><small>Decision</small>{currentStage.decision}</span><span><small>Leadership principle</small>{currentStage.principle}</span></div></div><dl><div><dt>Executive question</dt><dd>{currentStage.executiveQuestion}</dd></div><div><dt>Typical focus</dt><dd>{currentStage.focus}</dd></div><div><dt>Outcome</dt><dd>{currentStage.outcome}</dd></div></dl></div>
+      <div id="journey-detail" role="tabpanel" aria-labelledby={`stage-${currentStage.id}`} className="journey-detail" tabIndex={0}>
+        <div key={currentStage.id} className="journey-content">
+          <div className="journey-primary">
+            <p className="stage-number">Stage {stage + 1} of {roadmap.length} · {currentStage.stage}</p>
+            <h3>{currentStage.title}</h3>
+            <h4>Business objective</h4>
+            <p>{currentStage.purpose}</p>
+            <div className="journey-signals"><span><small>Decision</small>{currentStage.decision}</span><span><small>Leadership principle</small>{currentStage.principle}</span></div>
+          </div>
+          <dl>
+            <div><dt>Executive question</dt><dd>{currentStage.executiveQuestion}</dd></div>
+            <div><dt>Activities</dt><dd>{currentStage.focus}</dd></div>
+            <div><dt>Outcome</dt><dd>{currentStage.outcome}</dd></div>
+          </dl>
+        </div>
+      </div>
     </section>
 
     <footer className="executive-objective"><blockquote><strong>My objective is to turn cyber risk into clearer decisions, stronger resilience and greater confidence in the organisation’s ability to operate and transform securely.</strong></blockquote></footer>

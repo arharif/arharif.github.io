@@ -388,7 +388,7 @@ for (const route of [
       })),
     ).toEqual([]);
     await page.getByRole("button", { name: "Open theme selector" }).click();
-    await page.getByRole("menuitemradio", { name: "Activate Midnight Slate" }).click();
+    await page.getByRole("menuitemradio", { name: "Activate Onyx Black" }).click();
     const darkResults = await new AxeBuilder({ page })
       .include(".xa")
       .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])

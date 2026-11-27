@@ -2,34 +2,54 @@
   position: relative;
   isolation: isolate;
   padding: clamp(28px, 5vw, 56px) clamp(16px, 3vw, 52px) 24px;
-  text-align: center;
+  text-align: left;
   color: var(--text);
   background: var(--surface);
   border-bottom: 1px solid var(--border-soft);
 }
-.insights-hero::before {
-  content: "";
+.insights-panorama,
+.insights-panorama::after,
+.insights-panorama img {
   position: absolute;
   inset: 0;
-  z-index: -1;
-  background: url("/art/cosmos-small.webp") center 56% / cover;
-  filter: var(--art-filter);
-  opacity: .12;
-  mask-image: linear-gradient(to bottom, black, transparent);
+  width: 100%;
+  height: 100%;
+}
+.insights-panorama { z-index: -1; pointer-events: none; overflow: hidden; }
+.insights-panorama img { object-fit: cover; object-position: 50% 54%; }
+.insights-panorama::after { content: ""; background: var(--insights-scrim); }
+.insights-hero {
+  --insights-scrim: linear-gradient(90deg, #f5f5f2 3%, #f5f5f2ed 39%, #f5f5f21f 90%), linear-gradient(0deg, #f5f5f284, transparent 55%);
+  padding-block: clamp(2.25rem, 6vw, 5.6rem);
+}
+:root[data-palette="mature-white"] .insights-panorama img {
+  filter: saturate(.56) contrast(.94) brightness(1.17);
+}
+:root[data-palette="onyx-black"] .insights-hero {
+  --insights-scrim: linear-gradient(90deg, #080a0d 4%, #080a0def 37%, #080a0d10 91%), linear-gradient(0deg, #080a0dbc, transparent 55%);
+}
+:root[data-palette="rainbow"] .insights-hero {
+  --insights-scrim: linear-gradient(90deg, #f5f2fc 4%, #f7eff9f7 37%, #84d5e749 88%), linear-gradient(0deg, #e3f8f5aa, transparent 55%);
+}
+:root[data-palette="rainbow"] .insights-panorama img { filter: hue-rotate(14deg) saturate(1.12); }
+@media (max-width: 620px) {
+  .insights-hero { padding-block: 1.75rem; }
+  .insights-panorama img { object-position: 68% center; }
+  .insights-panorama::after { background: linear-gradient(90deg, var(--surface) 4%, color-mix(in srgb, var(--surface) 94%, transparent) 65%, color-mix(in srgb, var(--surface) 70%, transparent)); }
 }
 .insights-hero h1 {
   font-size: clamp(2.6rem, 4.2vw, 5rem);
   line-height: 1.13;
-  font-family: var(--serif);
-  letter-spacing: -.035em;
+  font-family: Inter, system-ui, sans-serif;
+  font-weight: 650;
+  letter-spacing: -.065em;
   margin: 0 0 10px;
 }
 .insights-intro {
   max-width: 65ch;
-  margin: 0 auto;
+  margin: 0;
   font-size: 0.94rem;
   line-height: 1.4;
-  text-wrap: balance;
 }
 .insights-search {
   margin: 16px auto 12px;
@@ -192,3 +212,17 @@
 
 /* Reserve the first screen of results while the public catalogue loads. */
 .insights-status[data-loading="true"] { min-height: 100vh; min-height: 100svh; }
+
+.insights-hero-copy { max-width: min(43rem, 70%); }
+.cosmic-kicker { font-size: .8rem; font-weight: 650; letter-spacing: .15em; text-transform: uppercase; margin-bottom: .55rem; }
+.insights-hero h1 span { color: var(--x1-accent-ink); }
+.insights-hero-actions { display: flex; align-items: center; flex-wrap: wrap; gap: .55rem; margin-top: 1.35rem; }
+.insights-hero-actions :is(a, button) { display: inline-flex; align-items: center; gap: .4rem; min-height: 2.7rem; border-radius: .85rem; border: 1px solid var(--control-border); padding: .45rem .75rem; font-size: .86rem; font-weight: 650; background: var(--surface); color: var(--text); }
+.insights-hero-actions > a:first-child { color: var(--bg); background: var(--text); }
+.insights-hero-actions :is(a, button):hover { box-shadow: 0 0 0 2px var(--x1-accent); }
+.insights-discovery { padding: 1rem clamp(.85rem, 4vw, 3.6rem) .2rem; scroll-margin-top: 4.5rem; }
+.insights-discovery .insights-search { margin-top: 0; }
+@media (max-width: 620px) {
+  .insights-hero-copy { max-width: 100%; }
+  .insights-hero h1 { font-size: clamp(2.35rem, 11vw, 3.1rem); }
+}

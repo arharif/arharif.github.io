@@ -18,7 +18,7 @@ function luminance(hex: string) {
   return rgb[0] * 0.2126 + rgb[1] * 0.7152 + rgb[2] * 0.0722;
 }
 test("approved palettes provide readable text and cover every historic preference", () => {
-  assert.equal(Object.keys(palettes).length, 9);
+  assert.equal(Object.keys(palettes).length, 3);
   for (const [label, bg, surface, ink, accent, scheme, muted] of Object.values(palettes)) {
     assert.equal(bg, label === "Onyx Black" ? "#080A0D" : "#FFFFFF");
     assert.equal(scheme, label === "Onyx Black" ? "dark" : "light");
@@ -29,7 +29,7 @@ test("approved palettes provide readable text and cover every historic preferenc
       }
     }
   }
-  assert.equal(Object.keys(legacyThemes).length, 13);
+  assert.deepEqual(Object.values(palettes).map((entry) => entry[0]), ["Onyx Black", "Mature White", "Rainbow"]);
   for (const id of Object.values(legacyThemes)) assert.ok(id in palettes);
 });
 test("all maze levels connect the player, crystal and exit", () => {

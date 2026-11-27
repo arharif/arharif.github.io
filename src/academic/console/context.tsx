@@ -1,11 +1,12 @@
 import {
   createContext,
   useContext,
+  useEffect,
   useRef,
   useState,
   type ReactNode,
 } from "react";
-import { blank, demoProject, parseProject, type Project } from "./project";
+import { blank, demoProject, parseProject, syncPlan, type Project } from "./project";
 import type { Framework } from "./catalogue";
 
 type Mode = "demo" | "work";
@@ -26,9 +27,11 @@ type Context = {
 const Store = createContext<Context | null>(null);
 export function ProjectProvider({
   framework,
+  openDemo = false,
   children,
 }: {
   framework: Framework;
+  openDemo?: boolean;
   children: ReactNode;
 }) {
   const key = "x1-academic-console-v1-" + framework;
@@ -55,7 +58,7 @@ export function ProjectProvider({
   const [initial] = useState(() => {
     try {
       return {
-        p: read(localStorage.getItem(key) === "demo" ? "demo" : "work"),
+        p: read(openDemo || localStorage.getItem(key) === "demo" ? "demo" : "work"),
         notice: "",
       };
     } catch {
@@ -110,6 +113,16 @@ export function ProjectProvider({
       );
     }
   }
+  const consumedDemoRequest = useRef(false);
+  useEffect(() => {
+    if (!openDemo) {
+      consumedDemoRequest.current = false;
+    } else if (!consumedDemoRequest.current) {
+      consumedDemoRequest.current = true;
+      switchMode("demo");
+    }
+  }, [openDemo]);
+
   function confirm(message: string, apply: () => void) {
     setPending({
       message,
@@ -171,7 +184,11 @@ export function ProjectProvider({
     <Store.Provider
       value={{
         project,
-        change: (update) => commit(update(current.current)),
+        change: (update) => {
+          const before = current.current;
+          const next = update(before);
+          commit(next.assessments === before.assessments ? next : syncPlan(next, before));
+        },
         message,
         notify,
         tryDemo: () => switchMode("demo"),

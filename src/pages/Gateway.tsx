@@ -7,8 +7,8 @@ const worlds = [
     path: "/x1-academic",
     load: () => import("@/academic/app/AcademicApp"),
     title: "X1 Academic",
-    sub: "Explore professional tools and interactive learning.",
-    action: "Explore tools",
+    sub: "Explore standards, assess controls and build implementation plans.",
+    action: "Explore standards",
   },
   {
     id: "insights",

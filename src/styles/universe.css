@@ -1,11 +1,3 @@
-:root[data-palette][data-arcade="true"] {
-  --x1-bg: #0b0920;
-  --x1-surface: #181332;
-  --x1-text: #f6f2ff;
-  --x1-accent: #5eecff;
-  --x1-text-muted: #c5bfd8;
-  color-scheme: dark;
-}
 :root[data-palette] {
   --x1-surface-raised: color-mix(
     in srgb,
@@ -819,3 +811,28 @@ a:is(:hover,:focus-visible,:active) .mark-face { opacity:1; transform:scale(1); 
 
 .executive-contact { display: flex; gap: 8px 18px; flex-wrap: wrap; margin-top: 14px; }
 .executive-contact a { display: inline-flex; align-items: center; min-height: 36px; color: var(--accent); font-size: .9rem; font-weight: 650; text-decoration: underline; text-underline-offset: 4px; }
+
+:root[data-palette="rainbow"] {
+  --x1-spectrum: linear-gradient(120deg, #7544d625, #42c6df26 51%, #e9589d22);
+  --accent-2: #ac4184;
+  --art-tint: #a385dc47;
+}
+:root[data-palette="rainbow"] :is(.universe-shell, .xc[data-theme]) {
+  background: var(--x1-spectrum), var(--bg);
+}
+.palette-menu { grid-template-columns: minmax(0, 1fr); min-width: 9.5rem; }
+.standards-replay { margin-top: 1rem; }
+@media (prefers-reduced-motion: no-preference) {
+  .assistant-panel .guide-portrait { animation: guide-float 4.6s ease-in-out infinite; }
+  .character-eyes { animation: guide-eyes 16s ease-in-out infinite; }
+  .guide-portrait.phantom .character-eyes { animation-delay: -5s; }
+  .assistant-panel[data-expression="thinking"] .guide-portrait { animation-duration: 2.85s; }
+}
+@keyframes guide-eyes {
+  0%, 10%, 14%, 38%, 44%, 61%, 67%, 90%, 100% { transform: translateX(0) scaleY(1); }
+  12%, 41%, 64%, 93% { transform: translateX(0) scaleY(.12); }
+  22%, 29% { transform: translateX(13%); }
+  75%, 82% { transform: translateX(-12%); }
+}
+
+.universe-shell :is(.route-loading) { min-height: calc(100svh - 4rem); }

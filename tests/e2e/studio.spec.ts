@@ -44,10 +44,7 @@ test("novice CSF profile → gap → risk → task → dependency schedule → i
 }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto(base);
-  await page
-    .getByRole("link", { name: "Previous Academy projects", exact: true })
-    .click();
+  await page.goto(base + "/assess?previous=1");
   await page
     .getByRole("button", { name: "Continue to outcome assessment" })
     .click();
@@ -540,7 +537,7 @@ for (const route of [
       await expect(page.getByRole("heading", { name: /AC-2/ })).toBeVisible();
     for (const theme of ["dark", "light"]) {
       await page.getByRole("button", { name: "Open theme selector" }).click();
-      await page.getByRole("menuitemradio", { name: theme === "light" ? "Activate Editorial Ivory" : "Activate Midnight Slate" }).click();
+      await page.getByRole("menuitemradio", { name: theme === "light" ? "Activate Mature White" : "Activate Onyx Black" }).click();
       const result = await new AxeBuilder({ page })
         .include(".xa")
         .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])

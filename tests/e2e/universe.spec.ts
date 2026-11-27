@@ -5,7 +5,7 @@ import { originals } from "../../src/components/arcade/catalog";
 
 async function palette(page: Page, name: string) {
   await page.getByRole("button", { name: "Open theme selector" }).click();
-  await expect(page.getByRole("menuitemradio")).toHaveCount(9);
+  await expect(page.getByRole("menuitemradio")).toHaveCount(3);
   await page
     .getByRole("menuitemradio", { name: "Activate " + name, exact: true })
     .click();
@@ -75,7 +75,7 @@ test("legacy and invalid values migrate before the app mounts", async ({
     expect(await page.evaluate(() => localStorage.getItem("theme"))).toBe(id);
   }
 });
-for (const name of ["Aubergine", "Editorial Ivory", "Imperial Gold"]) {
+for (const name of ["Onyx Black", "Mature White", "Rainbow"]) {
   test(name + " cinematic round trip and browser history", async ({ page }) => {
     await page.goto("/");
     await palette(page, name);
@@ -91,14 +91,14 @@ for (const name of ["Aubergine", "Editorial Ivory", "Imperial Gold"]) {
     await expect(
       page.getByRole("heading", { name: "Featured Games" }),
     ).toBeVisible();
-    expect(await page.getByLabel("Open theme selector").count()).toBe(0);
+    await expect(page.getByLabel("Open theme selector")).toHaveAttribute("title", name);
     expect(
       await page.evaluate(() =>
         getComputedStyle(document.documentElement)
           .getPropertyValue("--x1-bg")
           .trim(),
       ),
-    ).toBe("#0b0920");
+    ).toBe(name === "Onyx Black" ? "#080A0D" : "#FFFFFF");
     // Capture brief effects at insertion so an assertion can survive a busy renderer.
     await page.evaluate(() => {
       new MutationObserver(() => {
@@ -117,7 +117,7 @@ for (const name of ["Aubergine", "Editorial Ivory", "Imperial Gold"]) {
     await expect(page.locator(".xc")).toBeVisible();
     await page.getByRole("link", { name: "X1 Games", exact: true }).click();
     await expect(
-      page.getByRole("heading", { name: "X1 Arcade", exact: true }),
+      page.getByRole("heading", { name: "X1 Games.", exact: true }),
     ).toBeVisible();
     await page.goBack();
     await expect(page.locator(".xc")).toBeVisible();
@@ -136,7 +136,7 @@ test("gateway destinations, keyboard palette and reduced motion", async ({
   await page.keyboard.press("Enter");
   await expect(page.getByLabel("Open theme selector")).toHaveAttribute(
     "title",
-    "Onyx Black",
+    "Rainbow",
   );
   for (const [card, path] of [
     [".dest-insights", "/insights-innovation"],
@@ -290,6 +290,7 @@ test("finished rounds, favorites, earned badge and high score survive refresh", 
   page,
 }) => {
   await page.goto("/games");
+  await page.getByRole("button", { name: /All games/ }).click();
   await page.getByLabel("Favorite Phantom Dash", { exact: true }).click();
   await page.getByLabel("Play Phantom Dash").click();
   const room = page.getByRole("dialog");
@@ -299,7 +300,9 @@ test("finished rounds, favorites, earned badge and high score survive refresh", 
   });
   await room.getByLabel("Close game").click();
   await page.reload();
+  await page.getByRole("button", { name: "Favorites", exact: true }).click();
   await expect(page.getByLabel("Unfavorite Phantom Dash")).toBeVisible();
+  await page.getByRole("button", { name: "Arcade", exact: true }).click();
   await expect(page.locator(".badge-row [data-earned=true]")).toHaveCount(1);
   await expect(page.locator("progress")).toHaveAttribute("value", "1");
   await page.getByRole("button", { name: "My Stats" }).click();
@@ -369,6 +372,7 @@ test("each world opens its compact guide and the game guide follows the active r
     await page.keyboard.press("Escape");
     await expect(trigger).toBeFocused();
   }
+  await page.getByRole('button', { name: /All games/ }).click();
   await page.getByLabel('Play Neon Stack').click();
   const room = page.getByRole('dialog',{name:'Neon Stack'});
   await expect(room.locator('.assistant-launcher')).toHaveAttribute('data-mood','selected');

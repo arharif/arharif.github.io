@@ -492,7 +492,7 @@ export function RiskDashboard({
           onClick={() =>
             openControls(
               g.title,
-              s.rows.filter((c) => c.group === g.id),
+              s.applicable.filter((c) => c.group === g.id),
             )
           }
         >
@@ -508,20 +508,15 @@ export function RiskDashboard({
   const evidence = (
     <div className="xc-donutrow">
       <Ring
-        values={[s.verified, s.rows.length - s.verified]}
+        values={[s.reviewed.length, s.outstanding.length]}
         colors={["var(--chart-low)", "var(--chart-target)"]}
-        center={Math.round((s.verified / s.rows.length) * 100) + "%"}
+        center={s.applicable.length ? Math.round((s.verified / s.applicable.length) * 100) + "%" : "—"}
         caption="reviewed"
         labels={["Reviewed evidence", "Outstanding evidence"]}
         onPick={(i) =>
           openControls(
             "Evidence status",
-            i < 0
-              ? s.rows
-              : s.rows.filter(
-                  (c) =>
-                    ["Reviewed", "Tested"].includes(c.evidence) === (i === 0),
-                ),
+            i < 0 ? s.applicable : i === 0 ? s.reviewed : s.outstanding,
           )
         }
       />
@@ -530,7 +525,7 @@ export function RiskDashboard({
           onClick={() =>
             openControls(
               "Reviewed evidence",
-              s.rows.filter((r) => ["Reviewed", "Tested"].includes(r.evidence)),
+              s.reviewed,
             )
           }
         >
@@ -540,13 +535,11 @@ export function RiskDashboard({
           onClick={() =>
             openControls(
               "Evidence outstanding",
-              s.rows.filter(
-                (r) => !["Reviewed", "Tested"].includes(r.evidence),
-              ),
+              s.outstanding,
             )
           }
         >
-          {dot("var(--chart-target)")}Outstanding <b>{s.rows.length - s.verified}</b>
+          {dot("var(--chart-target)")}Outstanding <b>{s.outstanding.length}</b>
         </button>
       </div>
     </div>
@@ -797,9 +790,7 @@ export function RiskDashboard({
                             ? s.gaps
                             : i === 1
                               ? s.scored.filter((r) => r.current! >= r.target)
-                              : s.rows.filter((r) =>
-                                  ["Reviewed", "Tested"].includes(r.evidence),
-                                ),
+                              : s.reviewed,
                         )
                   }
                 >
@@ -851,7 +842,7 @@ export function RiskDashboard({
                 onPick={(i) =>
                   openControls(
                     s.profiles[i].title,
-                    s.rows.filter((c) => c.group === s.profiles[i].id),
+                    s.applicable.filter((c) => c.group === s.profiles[i].id),
                   )
                 }
               />
@@ -864,10 +855,11 @@ export function RiskDashboard({
           >
             <div className="xc-execpair">
               <Ring
-                values={[s.met, s.gaps.length, s.rows.length - s.scored.length]}
+                values={[s.met, s.gaps.length, s.applicable.length - s.scored.length]}
                 colors={["#44ba8f", "#ecaf50", "#6c85b5"]}
                 center={percent + "%"}
                 caption="at target"
+                labels={["At target controls", "Below target controls", "Unassessed controls"]}
                 onPick={(i) =>
                   openControls(
                     "Control status",
@@ -876,8 +868,8 @@ export function RiskDashboard({
                       : i === 1
                         ? s.gaps
                         : i === 2
-                          ? s.rows.filter((c) => c.current === null)
-                          : s.rows,
+                          ? s.applicable.filter((c) => c.current === null)
+                          : s.applicable,
                   )
                 }
               />
@@ -889,7 +881,7 @@ export function RiskDashboard({
                   </tr>
                 </thead>
                 <tbody>
-                  {s.rows.slice(0, 4).map((c) => (
+                  {s.applicable.slice(0, 4).map((c) => (
                     <tr key={c.id}>
                       <td>
                         <button onClick={() => openControls(c.id, [c])}>

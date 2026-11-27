@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { BookOpen, ExternalLink, Filter, Search } from 'lucide-react';
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
@@ -63,6 +64,7 @@ export function AcademicLibraryPage({ embedded = false }: { embedded?: boolean }
   }, [query, resources, type]);
   return <section className="space-y-6">
     <header className="academic-hero glass rounded-3xl p-6 md:p-9"><p className="academic-eyebrow">X1 Academic</p>{embedded ? <h2 className="mt-2 text-3xl font-semibold md:text-5xl">Course &amp; PDF Library</h2> : <h1 className="mt-2 text-3xl font-semibold md:text-5xl">Course &amp; PDF Library</h1>}<p className="mt-4 max-w-3xl text-muted">Curated cybersecurity courses, framework guidance, research and practitioner resources. Each is selected to turn complex requirements into usable knowledge.</p></header>
+    {!embedded && <Link to="/x1-academic/assess?previous=1" className="academic-open">Open advanced Academic tools</Link>}
     {isAdmin && <ResourceAdminForm resources={resources} onCreated={(resource) => setResources((current) => [resource, ...current])} />}
     <div className="glass grid gap-3 rounded-2xl p-4 md:grid-cols-[1fr_auto]">
       <label className="academic-search"><Search size={18} aria-hidden="true" /><span className="sr-only">Search resources</span><input value={query} maxLength={120} onChange={(e) => setQuery(e.target.value)} placeholder="Search courses, PDFs, frameworks…" /></label>

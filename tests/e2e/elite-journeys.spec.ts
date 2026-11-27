@@ -26,9 +26,7 @@ for (const width of [1440, 390]) {
       await page.goto("/");
       await expect(page.locator(".destination")).toHaveCount(3);
       await page.locator(".dest-academic").click();
-      await page.getByRole("button", { name: /Assess & Simulate/ }).click();
-      await page.getByRole("link", { name: "NIST CSF 2.0", exact: true }).click();
-      await page.getByRole("button", { name: "Try Demo", exact: true }).click();
+      await page.getByRole("link", { name: "Try Demo for NIST CSF 2.0", exact: true }).click();
       await expect(page.locator(".demo-status")).toHaveText("Fictional demo");
       await expect(page.getByRole("dialog", { name: /entrance/ })).toHaveCount(0);
 
@@ -41,6 +39,7 @@ for (const width of [1440, 390]) {
 
       await page.goto("/");
       await page.locator(".dest-games").click();
+      await page.getByRole("button", { name: "All games", exact: false }).click();
       await page.getByRole("button", { name: "Play Haunted Memory", exact: true }).click();
       await page.getByRole("button", { name: "Start game" }).click();
       await page.getByText("Deal cards").click();
@@ -99,7 +98,7 @@ test("first intentional entry, interior clicks, repeat visits and replay", async
   await expect(intro).toHaveCount(0);
 });
 
-for (const [id, label] of [["onyx-black", "Onyx Black"], ["editorial-ivory", "Editorial Ivory"]]) {
+for (const [id, label] of [["onyx-black", "Onyx Black"], ["mature-white", "Mature White"]]) {
   test(label + " search overlay meets automated accessibility rules", async ({ page }) => {
     await page.addInitScript((theme) => localStorage.setItem("theme", theme), id);
     await page.goto("/");

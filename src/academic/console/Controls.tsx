@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { newTask } from "../studio/model";
-import { useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import {
   ArrowRight,
   BookOpen,
@@ -13,9 +13,18 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { useProject } from "./context";
-import { catalogue, names } from "./catalogue";
+import { cases, catalogue, names } from "./catalogue";
+import { editions } from "./editions";
 import { evidenceStates, stats, unassessed, type Assessment } from "./project";
 import { Dialog, Empty, Panel, Radar, dot } from "./ui";
+
+const controlViewport = "(max-width: 640px)";
+function subscribeToControlViewport(listener: () => void) {
+  const media = window.matchMedia(controlViewport);
+  media.addEventListener("change", listener);
+  return () => media.removeEventListener("change", listener);
+}
+const compactControlEditor = () => window.matchMedia(controlViewport).matches;
 
 export function ControlTable({
   ids,
@@ -28,6 +37,7 @@ export function ControlTable({
 }) {
   const { project, change } = useProject(),
     { items, source } = catalogue(project.framework);
+  const compact = useSyncExternalStore(subscribeToControlViewport, compactControlEditor);
   const [query, setQuery] = useState(""),
     [open, setOpen] = useState(ids[0] ?? "");
   const allowed = new Set(ids),
@@ -49,6 +59,34 @@ export function ControlTable({
     }));
   }
   const selected = control && (project.assessments[control.id] ?? unassessed);
+  function fields(id: string) {
+    const value = project.assessments[id] ?? unassessed;
+    const excluded = value.applicability === "Excluded";
+    return [
+      {
+        label: "Applicability",
+        input: <select aria-label={"Applicability " + id} value={value.applicability}
+          onChange={(event) => patch(id, { applicability: event.target.value as Assessment["applicability"] })}>
+          <option>Applicable</option><option>Excluded</option>
+        </select>,
+      },
+      ...(["current", "target"] as const).map((key) => ({
+        label: key === "current" ? "Current" : "Target",
+        input: <select disabled={excluded} aria-label={key + " " + id} value={value[key] ?? ""}
+          onChange={(event) => patch(id, { [key]: event.target.value === "" ? null : Number(event.target.value) })}>
+          {key === "current" && <option value="">Unrated</option>}
+          {[0, 1, 2, 3, 4].map((level) => <option key={level}>{level}</option>)}
+        </select>,
+      })),
+      {
+        label: "Evidence",
+        input: <select disabled={excluded} aria-label={"Evidence status " + id} value={value.evidence}
+          onChange={(event) => patch(id, { evidence: event.target.value as Assessment["evidence"] })}>
+          {evidenceStates.map((status) => <option key={status}>{status}</option>)}
+        </select>,
+      },
+    ];
+  }
   return (
     <Dialog title={title} close={close} wide>
       <input
@@ -58,72 +96,36 @@ export function ControlTable({
         value={query}
         onChange={(e) => setQuery(e.target.value)}
       />
-      <div className="xc-scroll-table">
-        <table>
-          <thead>
-            <tr>
-              <th>Control</th>
-              <th>Current</th>
-              <th>Target</th>
-              <th>Evidence</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((c) => {
-              const a = project.assessments[c.id] ?? unassessed;
-              return (
-                <tr
-                  key={c.id}
-                  className={control?.id === c.id ? "selected" : ""}
-                >
-                  <td>
-                    <button className="xc-record" onClick={() => setOpen(c.id)}>
-                      <b>{c.id}</b>
-                      {c.title}
-                    </button>
-                  </td>
-                  {(["current", "target"] as const).map((k) => (
-                    <td key={k}>
-                      <select
-                        aria-label={k + " " + c.id}
-                        value={a[k] ?? ""}
-                        onChange={(e) =>
-                          patch(c.id, {
-                            [k]:
-                              e.target.value === ""
-                                ? null
-                                : Number(e.target.value),
-                          })
-                        }
-                      >
-                        {k === "current" && <option value="">Unrated</option>}
-                        {[0, 1, 2, 3, 4].map((v) => (
-                          <option key={v}>{v}</option>
-                        ))}
-                      </select>
-                    </td>
-                  ))}
-                  <td>
-                    <select
-                      aria-label={"Evidence status " + c.id}
-                      value={a.evidence}
-                      onChange={(e) =>
-                        patch(c.id, {
-                          evidence: e.target.value as Assessment["evidence"],
-                        })
-                      }
-                    >
-                      {evidenceStates.map((v) => (
-                        <option key={v}>{v}</option>
-                      ))}
-                    </select>
-                  </td>
+      {compact ? (
+        <section className="xc-mobile-assessment">
+          {control && <>
+            <label>Choose control
+              <select value={control.id} onChange={(event) => setOpen(event.target.value)}>
+                {rows.map((row) => <option key={row.id} value={row.id}>{row.id} · {row.title}</option>)}
+              </select>
+            </label>
+            <div>
+              {fields(control.id).map(({ label, input }) => <label key={label}>{label}{input}</label>)}
+            </div>
+          </>}
+        </section>
+      ) : (
+        <div className="xc-scroll-table">
+          <table>
+            <thead><tr>
+              <th>Control</th><th>Applicability</th><th>Current</th><th>Target</th><th>Evidence</th>
+            </tr></thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={row.id} className={control?.id === row.id ? "selected" : ""}>
+                  <td><button className="xc-record" onClick={() => setOpen(row.id)}><b>{row.id}</b>{row.title}</button></td>
+                  {fields(row.id).map(({label, input}) => <td key={label}>{input}</td>)}
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
       {!rows.length && <Empty>No controls match this selection.</Empty>}
       {control && selected && (
         <section className="xc-control-detail">
@@ -141,6 +143,12 @@ export function ControlTable({
             </a>
           </details>
           <div className="xc-fields">
+            {selected.applicability === "Excluded" && (
+              <label>Exclusion rationale
+                <textarea maxLength={3000} value={selected.exclusion}
+                  onChange={(event) => patch(control.id, { exclusion: event.target.value })} />
+              </label>
+            )}
             <label>
               Control owner
               <input
@@ -180,7 +188,7 @@ export function ControlTable({
               />
             </label>
           </div>
-          {selected.current !== null && selected.current < selected.target && (
+          {selected.applicability === "Applicable" && selected.current !== null && selected.current < selected.target && (
             <div className="xc-toolbar">
               {project.tasks.some((t) => t.sourceIds.includes(control.id)) ? (
                 <Link
@@ -225,7 +233,7 @@ export function ControlTable({
 type Selection = { title: string; ids: string[] };
 export function Profile() {
   const { project } = useProject(),
-    s = stats(project),
+    s = useMemo(() => stats(project), [project]),
     { source } = catalogue(project.framework);
   const [selection, pick] = useState<Selection | null>(null),
     [guide, setGuide] = useState(true);
@@ -256,7 +264,7 @@ export function Profile() {
     {
       title: "Evidence reviewed",
       n: s.verified,
-      rows: s.rows.filter((c) => ["Reviewed", "Tested"].includes(c.evidence)),
+      rows: s.reviewed,
       icon: ShieldCheck,
       colour: "#bc83d5",
     },
@@ -277,12 +285,17 @@ export function Profile() {
             <p>
               {project.name} <span> / </span> {s.rows.length} controls
             </p>
+            {project.demo && <p>{cases[project.framework].scope}. Assessment values and evidence references are fictional.</p>}
           </div>
           <div className="xc-maturity">
             <b>{s.scored.length ? s.current.toFixed(1) : "—"}</b>
             <small>Maturity / 4</small>
           </div>
         </section>
+        <nav className="xc-profile-actions" aria-label="Assessment outputs">
+          <Link to={`/x1-academic/assess-simulate?standard=${project.framework}&view=executive`}>Executive dashboard</Link>
+          <Link to={`/x1-academic/implement-plan?standard=${project.framework}`}>Remediation schedule</Link>
+        </nav>
         <div className="xc-kpis">
           {cards.map((c) => (
             <button key={c.title} onClick={() => open(c.title, c.rows)}>
@@ -370,7 +383,7 @@ export function Profile() {
               onPick={(id) =>
                 open(
                   "Group controls",
-                  s.rows.filter((c) => c.group === id),
+                  s.applicable.filter((c) => c.group === id),
                 )
               }
             />
@@ -378,8 +391,7 @@ export function Profile() {
           <details>
             <summary>Scoring and source</summary>
             <p>
-              Current is the mean of rated controls on the X1 educational scale
-              (0–4). Target includes every scoped control.
+              Current is the mean of scored applicable controls. Target includes all applicable controls. The X1 rubric is 0 absent, 1 planned, 2 partially operating, 3 implemented and 4 evidenced and reviewed. Use the publisher’s criteria for compliance, assurance or certification decisions.
             </p>
             <a href={source.source}>Publisher guidance ↗</a>
           </details>
@@ -397,7 +409,7 @@ export function Governance() {
     ),
     [scope, setScope] = useState("all"),
     [selection, pick] = useState<Selection | null>(null);
-  const filtered = s.rows.filter(
+  const filtered = s.applicable.filter(
     (c) => scope === "all" || (c[dimension] || "Unassigned") === scope,
   );
   function axis(id: string, label: string, rows: typeof filtered) {
@@ -466,7 +478,7 @@ export function Governance() {
           onChange={(e) => setScope(e.target.value)}
         >
           <option value="all">All records</option>
-          {[...new Set(s.rows.map((c) => c[dimension] || "Unassigned"))].map(
+          {[...new Set(s.applicable.map((c) => c[dimension] || "Unassigned"))].map(
             (v) => (
               <option key={v}>{v}</option>
             ),
@@ -511,6 +523,54 @@ export function Governance() {
         {dot("var(--chart-target)")} Target score {dot("var(--chart-current)")} Current score
       </div>
       {selection && <ControlTable {...selection} close={() => pick(null)} />}
+    </div>
+  );
+}
+
+export function Learn() {
+  const { project } = useProject();
+  const { groups, items, source } = catalogue(project.framework);
+  const edition = editions[project.framework];
+  const [groupId, setGroup] = useState(groups[0].id);
+  const group = groups.find((entry) => entry.id === groupId) ?? groups[0];
+  return (
+    <div className="xc-learn">
+      <Panel title={edition.name}>
+        <p className="xc-learn-edition">{edition.edition} · {edition.category}</p>
+        <p>{source.applicability}</p>
+        <p>{edition.application}</p>
+        <h3>Practical example</h3>
+        <p>{edition.scenario}</p>
+      </Panel>
+      <Panel title="Framework architecture">
+        <p>Select an area to explore its requirements, evidence and implementation examples.</p>
+        <div className="xc-learn-groups" role="group" aria-label="Framework architecture areas">
+          {groups.map((entry) => (
+            <button aria-pressed={entry.id === group.id} key={entry.id} onClick={() => setGroup(entry.id)}>
+              {entry.title}
+            </button>
+          ))}
+        </div>
+        <section className="xc-learn-detail" key={group.id} aria-labelledby="xc-learn-group">
+          <h3 id="xc-learn-group">{group.title}</h3>
+          <p>{group.description}</p>
+          {items.filter((item) => item.group === group.id).map((item) => (
+            <details key={item.id}>
+              <summary>{item.id} · {item.title}</summary>
+              <p>{item.explanation}</p>
+              <dl>
+                <div><dt>Implementation example</dt><dd>{item.example}</dd></div>
+                <div><dt>Evidence to examine</dt><dd>{item.evidence}</dd></div>
+              </dl>
+            </details>
+          ))}
+        </section>
+      </Panel>
+      <Panel title="Official references">
+        <p>Reviewed 27 November 2026. Use the publisher’s full text and apply its requirements to the specific role, system and jurisdiction.</p>
+        {project.framework === "nist-800-53" && <p><Link to="/x1-academic/standards/800-53">Open the full NIST catalogue and assessment procedures</Link></p>}
+        <ul>{edition.sources.map(([label, url]) => <li key={url}><a href={url} target="_blank" rel="noreferrer">{label}</a></li>)}</ul>
+      </Panel>
     </div>
   );
 }
