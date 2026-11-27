@@ -18,9 +18,12 @@ import { baselineMembership, cases, catalogue, names } from "./catalogue";
 import { editions, frameworkMetadata } from "./editions";
 import { NistDetails } from "./NistDetails";
 import { FrameworkScope } from "./FrameworkScope";
+import { LearningGuide } from "./LearningGuide";
+import { LegalArticle } from "./LegalArticle";
 import { aiAnnexes, euStructure } from "../data/euStructure";
 import articles from "../data/eu-article-index.json";
 import { pciSections } from "../data/pci401";
+import { isoClauses } from "../data/isoClauses";
 import { evidenceStates, stats, unassessed, type Assessment } from "./project";
 import { Dialog, Empty, Panel, Radar, dot } from "./ui";
 
@@ -636,6 +639,7 @@ export function Learn() {
           <NistOnOpen locator={item.locator} />
         </>
         : <p>{item.explanation}</p>}
+      {project.framework === "nist-ai-rmf" && <p><a href={`https://airc.nist.gov/airmf-resources/playbook/${item.locator}/`} target="_blank" rel="noreferrer">NIST Playbook suggestions for {item.group}</a></p>}
       {!item.withdrawn && <dl>
         <div><dt>Implementation example</dt><dd>{item.example}</dd></div>
         <div><dt>Evidence to examine</dt><dd>{item.evidence}</dd></div>
@@ -657,6 +661,7 @@ export function Learn() {
         <h3>Practical example</h3>
         <p>{edition.scenario}</p>
       </Panel>
+      <LearningGuide />
       <Panel title="Framework architecture">
         <p>Select an area to explore its requirements, evidence and implementation examples.</p>
         <div className="xc-learn-groups" role="group" aria-label="Framework architecture areas">
@@ -671,19 +676,30 @@ export function Learn() {
           <p>{group.description}</p>
           {chapter?.sections && <ul>{chapter.sections.map(([title, first, last]) => <li key={first}>{title} · {first === last ? `Article ${first}` : `Articles ${first}–${last}`}</li>)}</ul>}
           {law && <details><summary>Official article index ({legalRows.length})</summary><ul>
-            {legalRows.map(([id, , title]) => <li key={id}><a href={articles[law].source + (law === "eu-ai-act" ? "" : "#art_" + id)} target="_blank" rel="noreferrer">Article {id} · {title}</a></li>)}
+            {legalRows.map(([id, , title]) => <li key={id}>
+              {law === "eu-ai-act"
+                ? <a href={articles[law].source} target="_blank" rel="noreferrer">Article {id} · {title}</a>
+                : <RequirementDisclosure title={`Article ${id} · ${title}`}>
+                    <LegalArticle id={id} law={law} source={articles[law].source + "#art_" + id} />
+                  </RequirementDisclosure>}
+            </li>)}
           </ul></details>}
           {project.framework === "eu-ai-act" && ["III", "V", "XIII"].includes(group.id) && <details>
             <summary>Annexes I–XIII</summary><ul>{aiAnnexes.map(([id, title]) => <li key={id}>Annex {id} · {title}</li>)}</ul>
+          </details>}
+          {project.framework === "iso-27001" && isoClauses[group.id] && <details>
+            <summary>Clause references and review prompts</summary>
+            <ul>{isoClauses[group.id].map(([id, prompt]) => <li key={id}><strong>{id}</strong> {prompt}</li>)}</ul>
           </details>}
           {project.framework === "pci-dss" && <details>
             <summary>Requirement objectives and testing</summary>
             <ul>{pciSections[Number(group.id.slice(4)) - 1][1].map((title, index) => <li key={title}>{group.id.slice(4)}.{index + 1} · {title}</li>)}</ul>
             <p>Use the PCI SSC v4.0.1 testing procedures for each applicable requirement, verify the scoped population and retain examine, observe and interview records as directed. Review Appendices A1, A2 and A3 separately if they apply.</p>
           </details>}
+          {project.framework === "nist-ai-rmf" && <p>Subcategories state NIST Core outcomes. X1 practice examples guide assessment and the separate NIST Playbook offers voluntary suggested actions.</p>}
           {project.framework === "nist-csf-2" && <p>Outcomes are grouped by category. The four Tiers describe the practices of the organisation. Record Current and Target Profiles and Tiers in Assess &amp; Simulate.</p>}
           {groupItems.length > 12 && <input className="xc-search" type="search" aria-label="Search within this framework area" placeholder="Search identifiers and titles" value={search} onChange={event => setSearch(event.target.value)} />}
-          {project.framework === "nist-csf-2"
+          {["nist-csf-2", "nist-ai-rmf"].includes(project.framework)
             ? [...new Set(relevantItems.map((item) => item.category))].map((category) => <details key={category}><summary>{category}</summary>{relevantItems.filter((item) => item.category === category).map(showItem)}</details>)
             : relevantItems.filter((item) => !item.parent).map(showItem)}
           {term && !relevantItems.length && <p role="status">No identifiers or titles match.</p>}

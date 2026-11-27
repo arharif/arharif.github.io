@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import {
   Activity,
   ArrowRight,
@@ -32,6 +32,7 @@ import { frameworkIds, names, type Framework } from "./catalogue";
 import { downloadProject, ProjectProvider, useProject } from "./context";
 import { Dialog } from "./ui";
 import { Profile, Governance, Learn } from "./Controls";
+import { LearningGuide } from "./LearningGuide";
 import { AcademicFrame } from "./AcademicFrame";
 import { RiskDashboard } from "./Risks";
 import { DataFlow, Knowledge } from "./Maps";
@@ -108,7 +109,7 @@ function Workspace({
     importFile,
     change,
   } = useProject();
-  const navigate = useNavigate();
+  const [exporting, setExporting] = useState(false);
   const [params, setParams] = useSearchParams(),
     [projectMenu, setMenu] = useState(false),
     [compact, setCompact] = useState(true);
@@ -117,10 +118,7 @@ function Workspace({
   const [rename, setRename] = useState(project.name);
   function demoButton() {
     return (
-      <button className="xc-demo" onClick={() => {
-        if (space.path === "assess-simulate" && selected.id === "profile") tryDemo();
-        else navigate(`${base}/assess-simulate?standard=${project.framework}&view=profile&demo=1`);
-      }}>
+      <button className="xc-demo" onClick={tryDemo}>
         <Lightbulb />
         Try Demo
       </button>
@@ -200,13 +198,21 @@ function Workspace({
                   ))}
                 </select>
                 {demoButton()}
+                {space.path === "assess-simulate" && <button disabled={exporting} onClick={async () => {
+                  setExporting(true);
+                  try {
+                    const { downloadAssessment } = await import("./assessmentWorkbook");
+                    await downloadAssessment(project);
+                  } catch {
+                    notify("The Excel report could not be created. Please try again.");
+                  } finally {
+                    setExporting(false);
+                  }
+                }}>{exporting ? "Preparing Excel…" : "Download Assessment — Excel"}</button>}
                 {project.demo && <>
                   <button onClick={resetDemo}>Reset Demo</button>
-                  <button onClick={() => startBlank(() => navigate(`${base}/assess-simulate?standard=${project.framework}&view=profile`))}>Start New Assessment</button>
-                  <button onClick={() => {
-                    resume();
-                    navigate(`${base}/assess-simulate?standard=${project.framework}&view=profile`);
-                  }}>Return to my assessment</button>
+                  <button onClick={() => startBlank()}>{space.path === "implement-plan" ? "Start New Plan" : "Start New Assessment"}</button>
+                  <button onClick={resume}>{space.path === "implement-plan" ? "Return to my plan" : "Return to my assessment"}</button>
                 </>}
                 <button
                   className="xc-icon"
@@ -274,8 +280,11 @@ function Workspace({
         )}
         <div
           className={"xc-stage view-" + selected.id}
-          key={project.framework + "-" + selected.id + "-" + project.demo}
+          key={project.framework + "-" + selected.id}
         >
+          {project.demo && space.path === "explore" && selected.id !== "learn" && <details className="xc-framework-scope">
+            <summary>Guided example and cheat sheet</summary><LearningGuide />
+          </details>}
           {selected.id === "learn" ? (
             <Learn />
           ) : selected.id === "profile" ? (

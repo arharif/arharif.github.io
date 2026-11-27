@@ -1,5 +1,5 @@
 import { Github, Linkedin, Mail, ShoppingBag } from 'lucide-react';
-import { Component, lazy, ReactNode, Suspense, useEffect, useRef } from 'react';
+import { Component, lazy, ReactNode, Suspense, useEffect, useRef, useState } from 'react';
 import { Link, Route, Routes, useLocation, useNavigationType } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
 import { hasSupabaseCoreConfig } from '@/lib/config';
@@ -193,10 +193,14 @@ export default function App() {
   const usesMotion = /^\/(professional|personal|compliance-frameworks|Security_Mindmap|security-mindmap)(\/|$)/.test(location.pathname);
   const shell = usesMotion ? <MotionConfig reducedMotion="user"><Shell/></MotionConfig> : <Shell/>;
   const usesAuth = /^\/(admin|login|academic-library)\/?$/.test(location.pathname);
+  const [authStarted, setAuthStarted] = useState(usesAuth);
+  useEffect(() => {
+    if (usesAuth) setAuthStarted(true);
+  }, [usesAuth]);
+  const page = academic ? <Routes><Route path="/x1-academic/*" element={<AcademicApp/>}/></Routes> : shell;
   return <ErrorBoundary><UniverseTransition/>
     <Suspense fallback={<RouteLoading label={academic ? "X1 Academic" : "page"}/>}>
-      {academic ? <Routes><Route path="/x1-academic/*" element={<AcademicApp/>}/></Routes>
-        : usesAuth ? <AuthProvider>{shell}</AuthProvider> : shell}
+      {usesAuth || authStarted ? <AuthProvider>{page}</AuthProvider> : page}
     </Suspense>
     <Suspense fallback={null}><SiteAssistantLauncher/></Suspense>
   </ErrorBoundary>;

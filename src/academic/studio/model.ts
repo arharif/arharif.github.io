@@ -67,6 +67,7 @@ export const taskSchema = z
     id,
     title: short,
     stage: z.enum(stages),
+    subphase: z.string().max(120).optional(),
     sourceIds: z.array(short).min(1).max(30),
     priority: z.enum(["Low", "Medium", "High"]).optional(),
     owner: short,

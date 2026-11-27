@@ -3,6 +3,7 @@ import { expect, test } from "@playwright/test";
 import { featureGames } from "../../src/components/arcade/featureGames";
 
 const standards = [
+  ["NIST AI RMF", "nist-ai-rmf", "Juniper Payments"],
   ["NIST SP 800-53", "nist-800-53", "Aster Research Services"],
   ["DORA", "dora", "Bridgewater Mutual"],
   ["GDPR", "gdpr", "Cedar Member Services"],
@@ -30,9 +31,11 @@ for (const [name, id, scenario] of standards) {
     expect(content).toContain("Fictional educational demo");
     expect(content).toContain("Dependencies");
     expect(content).toContain("Priority");
-    await page.getByRole("button", { name: "Return to my assessment" }).click();
+    const planUrl = page.url();
+    await page.getByRole("button", { name: "Return to my plan" }).click();
     await expect(page.locator(".xc-workhead")).toContainText("Personal project");
-    await expect(page.locator(".xc-maturity b")).toHaveText("—");
+    await expect(page).toHaveURL(planUrl);
+    await expect(page.locator(".xc-ganttrow")).toHaveCount(0);
   });
 }
 

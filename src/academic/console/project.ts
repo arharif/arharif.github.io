@@ -297,6 +297,7 @@ export function demoProject(framework: Framework): Project {
     "pci-dss": ["7.2.2", "8.4.2", "", "10.5.1", "6.3.3", "", "5.4.1", "7.2.2"],
   } as const;
   const anchors = {
+    "nist-ai-rmf": [["MEASURE 2.11", "Uneven false positives by merchant cohort"], ["MEASURE 2.10", "Triage logs retain excessive merchant details"], ["MANAGE 4.1", "Model drift escalates too late"], ["GOVERN 6.1", "Supplier changes model behaviour without notice"]],
     "nist-800-53": [["AC-2", "Unreviewed privileged access"], ["SI-7", "Undetected integrity change"], ["SI-2", "Delayed flaw remediation"]],
     dora: [["Art. 5", "Unclear board accountability"], ["Art. 19", "Late major incident notification"], ["Art. 28", "Settlement provider outage"]],
     gdpr: [["Art. 30", "Incomplete processing inventory"], ["Arts. 5–6", "Undisclosed analytics use"], ["Arts. 33–34", "Delayed breach assessment"]],
@@ -341,6 +342,7 @@ export function demoProject(framework: Framework): Project {
   ].map((counts, i) => ({ date: addDays(scenarioDate, -7 * (5 - i)), counts }));
   const scheduled = syncPlan({ ...p, tasks: makePlan(framework, true, p.start) });
   const sources: Record<Framework, [string, string, string]> = {
+    "nist-ai-rmf": ["Transaction feed", "Vendor model", "Human triage queue"],
     "nist-800-53": ["Identity provider", "Build pipeline", "Component register"],
     dora: ["Payment switch", "Settlement provider", "Incident intake"],
     gdpr: ["Support portal", "Member directory", "Analytics collection"],
@@ -484,6 +486,7 @@ export function syncPlan(project: Project, previous?: Project): Project {
       tasks.push({
         ...newTask(first.id, group.title + " controls", "IMPLEMENT"),
         id, sourceIds, ...next,
+        subphase: group.title.slice(0, 120),
         owner: first.owner || (project.demo ? cases[project.framework].owner : "Unassigned"),
         dependencies: approval ? [approval.id] : [],
         evidence: (`${first.id}: ${first.example} Evidence: ${first.evidence}`).slice(0, 3000),

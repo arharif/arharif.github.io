@@ -1,7 +1,8 @@
-export const frameworkIds = ["nist-csf-2", "iso-27001", "pci-dss", "nist-800-53", "dora", "gdpr", "eu-ai-act"] as const;
+export const frameworkIds = ["nist-csf-2", "iso-27001", "pci-dss", "nist-800-53", "dora", "gdpr", "eu-ai-act", "nist-ai-rmf"] as const;
 export type Framework = (typeof frameworkIds)[number];
 export const names: Record<Framework, string> = {
   "nist-csf-2": "NIST CSF 2.0",
+  "nist-ai-rmf": "NIST AI RMF",
   "iso-27001": "ISO/IEC 27001",
   "pci-dss": "PCI DSS",
   "nist-800-53": "NIST SP 800-53",
@@ -10,9 +11,22 @@ export const names: Record<Framework, string> = {
   "eu-ai-act": "EU AI Act",
 };
 export const primaryStandards = ["nist-800-53", "dora", "gdpr", "eu-ai-act"] as const;
-export const moreStandards = ["nist-csf-2", "iso-27001", "pci-dss"] as const;
+export const moreStandards = ["nist-csf-2", "nist-ai-rmf", "iso-27001", "pci-dss"] as const;
 
 export const editions = {
+  "nist-ai-rmf": {
+    name: "Artificial Intelligence Risk Management Framework",
+    edition: "AI RMF 1.0 · NIST AI 100-1",
+    description: "Evaluate and manage AI risks in context across governance, mapping, measurement and ongoing treatment.",
+    category: "Voluntary framework",
+    application: "Published 26 January 2023. Organisations can adapt the Core to AI lifecycle roles, context and risk tolerance. NIST is revising 1.0. The final 1.0 edition and the separate optional Playbook guide this workspace.",
+    scenario: "A merchant fraud model makes recommendations to payment teams. Treat its operating envelope like an agreement about what the system can do, in which conditions, and when an operator should take control.",
+    sources: [
+      ["NIST AI 100-1 · AI RMF 1.0", "https://doi.org/10.6028/NIST.AI.100-1"],
+      ["Official Core · Tables 1–4", "https://airc.nist.gov/airmf-resources/airmf/5-sec-core/"],
+      ["NIST Playbook · suggested actions", "https://airc.nist.gov/airmf-resources/playbook/"],
+    ],
+  },
   "nist-800-53": {
     name: "Security and Privacy Controls for Information Systems and Organizations",
     edition: "Revision 5 · Release 5.2.0",
@@ -115,6 +129,7 @@ const checked = "2026-11-27";
 const nistReuse = "NIST publication and OSCAL data. The publisher’s publication is authoritative. Evidence and recommendations labelled as examples are X1 guidance.";
 const lawReuse = "Official Journal and consolidated references via EUR-Lex. X1 uses article identifiers and original educational summaries. Check authentic acts, corrigenda and applicable national measures.";
 export const frameworkMetadata: Record<Framework, { verified: string; reuse: string; focus: string; scope: string; plan: [string, string, string]; risk: string }> = {
+  "nist-ai-rmf": { verified: checked, reuse: nistReuse, focus: "AI trustworthiness and lifecycle risk", scope: "Intended use, affected parties, system components, AI actor roles, risk tolerance and limitations", plan: ["Assign AI governance and map the context", "Approve evaluation criteria and risk treatment", "Validate residual risk and rehearse monitoring, escalation and rollback"], risk: "Consider validity, safety, resilience, accountability, transparency, explainability, privacy and harmful bias in context. Capture uncertainty and the consequences of foreseeable misuse." },
   "nist-800-53": { verified: checked, reuse: nistReuse, focus: "System categorisation, baseline selection and documented tailoring", scope: "System boundary, information types, impact categorisation, overlays and inherited controls", plan: ["Categorise the system and approve the baseline", "Specify selected and inherited safeguards", "Apply SP 800-53A procedures and update the POA&M"], risk: "Consider confidentiality, integrity and availability impacts, threat likelihood, inherited safeguards and residual exposure within the system boundary." },
   "nist-csf-2": { verified: checked, reuse: nistReuse, focus: "Current and Target Profiles", scope: "Organisational scope, stakeholders, risk appetite and relevant outcomes", plan: ["Define the Current Profile scope", "Agree a risk-prioritised Target Profile", "Verify outcomes and refresh the Current Profile"], risk: "Use business and cybersecurity objectives to judge the consequence of an outcome gap. CSF Tiers describe governance practices and are recorded separately." },
   "iso-27001": { verified: checked, reuse: "ISO/IEC retains copyright. X1 uses references and original summaries. Consult the licensed text for requirements, Annex A and conformity criteria.", focus: "ISMS risk treatment and Statement of Applicability", scope: "ISMS boundaries, relevant external and internal issues and interested parties, including applicable climate considerations", plan: ["Set ISMS scope and risk acceptance criteria", "Agree treatments and approve the Statement of Applicability", "Audit treatment evidence and obtain management review"], risk: "Use your approved ISMS risk criteria and document risk owners, treatment choices and residual risk acceptance. The X1 risk matrix is an optional local prioritisation method." },

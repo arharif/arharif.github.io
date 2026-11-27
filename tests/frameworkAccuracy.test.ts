@@ -112,3 +112,31 @@ test("ISO and PCI references have distinct IDs, expected group sizes and officia
     assert.ok(frameworkMetadata[id].reuse);
   }
 });
+
+test("AI RMF 1.0 has 72 uniquely identified outcomes in 19 categories", () => {
+  const core = data("ai-rmf-core");
+  assert.equal(core.version, "1.0");
+  assert.equal(core.source, "https://doi.org/10.6028/NIST.AI.100-1");
+  const counts: Record<string, number[]> = {
+    GOVERN: [7, 3, 2, 3, 2, 2], MAP: [6, 3, 5, 2, 2],
+    MEASURE: [3, 13, 3, 3], MANAGE: [4, 4, 2, 3],
+  };
+  const expected = Object.entries(counts).flatMap(([group, categories]) =>
+    categories.flatMap((count, i) => Array.from({ length: count }, (_, k) => `${group} ${i + 1}.${k + 1}`)));
+  assert.equal(expected.length, 72);
+  assert.equal(core.outcomes.length, 72);
+  assert.deepEqual(new Set(core.outcomes.map(([id]: string[]) => id)), new Set(expected));
+  for (const [, description] of core.outcomes) assert.ok(description.length > 36);
+});
+
+test("each ISO reference and PCI objective has a nonempty original review prompt", async () => {
+  const { isoGuidance } = await import("../src/academic/data/isoGuidance.ts");
+  const { pciGuidance } = await import("../src/academic/data/pciGuidance.ts");
+  const iso = annexA.flatMap(group => isoGuidance[group.section]);
+  const pci = pciGuidance.flatMap(rows => [...rows]);
+  assert.equal(iso.length, 93);
+  assert.equal(pci.length, 63);
+  assert.equal(new Set([...iso, ...pci]).size, 156);
+  assert.deepEqual(pciGuidance.map(r => r.length), pciSections.map(([, rows]) => rows.length));
+  for (const prompt of [...iso, ...pci]) assert.ok(prompt.length > 60, prompt);
+});

@@ -4,6 +4,7 @@ export interface AuthSession {
   access_token: string;
   refresh_token: string;
   expires_in: number;
+  expires_at?: number;
   token_type: string;
   user: { id: string; email?: string };
 }
@@ -23,6 +24,16 @@ const baseHeaders = {
 };
 
 const REQUEST_TIMEOUT_MS = 10_000;
+export class SupabaseConnectionError extends Error {}
+export class SupabaseAuthError extends Error {
+  constructor(public readonly status: number, public readonly code?: string) {
+    super(genericAuthError);
+  }
+}
+async function authError(response: Response) {
+  const payload = await response.json().catch(() => null);
+  return new SupabaseAuthError(response.status, payload?.error_code);
+}
 
 async function request(input: string, init: RequestInit = {}): Promise<Response> {
   const timeout = new AbortController();
@@ -32,7 +43,7 @@ async function request(input: string, init: RequestInit = {}): Promise<Response>
   try {
     return await fetch(input, { ...init, signal: timeout.signal });
   } catch {
-    throw new Error('Unable to complete request.');
+    throw new SupabaseConnectionError('Unable to complete request.');
   } finally {
     window.clearTimeout(timer);
     init.signal?.removeEventListener('abort', abort);
@@ -45,24 +56,33 @@ export async function signInWithPassword(email: string, password: string): Promi
     headers: baseHeaders,
     body: JSON.stringify({ email, password }),
   });
-  if (!res.ok) throw new Error(genericAuthError);
+  if (!res.ok) throw await authError(res);
   return res.json();
 }
 
-interface Factor { id: string; factor_type: string; status: string }
+export interface Factor { id: string; factor_type: string; status: string; friendly_name?: string }
 async function authPost<T>(path: string, body: unknown, token?: string): Promise<T> {
   const headers = new Headers(baseHeaders);
   if (token) headers.set('Authorization', 'Bearer ' + token);
   const response = await request(config.supabaseUrl + '/auth/v1/' + path, {
     method: 'POST', headers, body: JSON.stringify(body),
   });
-  if (!response.ok) throw new Error(genericAuthError);
+  if (!response.ok) throw await authError(response);
   return response.json();
 }
 
-export const enrollTotp = (token: string) => authPost<{id: string; totp: {secret: string}}>(
-  'factors', { factor_type: 'totp', issuer: 'X1 Publishing' }, token,
+export const x1TotpName = 'X1 Publishing';
+export const enrollTotp = (token: string) => authPost<{id: string; totp: {secret: string; qr_code?: string}}>(
+  'factors', { factor_type: 'totp', issuer: x1TotpName, friendly_name: x1TotpName }, token,
 );
+export async function discardUnverifiedFactor(token: string, factor: Factor) {
+  if (factor.status !== 'unverified' || factor.factor_type !== 'totp' || factor.friendly_name !== x1TotpName) return;
+  const response = await request(config.supabaseUrl + '/auth/v1/factors/' + encodeURIComponent(factor.id), {
+    method: 'DELETE', headers: { ...baseHeaders, Authorization: 'Bearer ' + token },
+  });
+  if (!response.ok && response.status !== 404) throw await authError(response);
+}
+
 export async function verifyTotp(token: string, factorId: string, code: string) {
   const base = 'factors/' + encodeURIComponent(factorId);
   const challenge = await authPost<{id: string}>(base + '/challenge', {}, token);
@@ -74,7 +94,7 @@ export async function getUser(accessToken: string): Promise<{ id: string; email?
   const res = await request(`${config.supabaseUrl}/auth/v1/user`, {
     headers: { apikey: config.supabaseAnonKey ?? '', Authorization: `Bearer ${accessToken}` },
   });
-  if (!res.ok) throw new Error(genericAuthError);
+  if (!res.ok) throw await authError(res);
   return res.json();
 }
 

@@ -61,6 +61,7 @@ export function FrameworkScope() {
           {({
             "nist-800-53": "Categorisation and baseline rationale",
             "nist-csf-2": "Target Profile objectives",
+            "nist-ai-rmf": "AI operating limits, evaluation criteria and risk tolerance",
             "iso-27001": "Risk treatment and SoA approval criteria",
             "pci-dss": "Applicability and validation pathway",
             dora: "Regime, critical functions and authority determination",

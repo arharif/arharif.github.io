@@ -7,7 +7,7 @@ test("Academic offers one searchable framework directory with contextual learnin
   await page.goto(academic);
   await expect(page.getByRole("heading", { name: "Frameworks & Standards", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: /^(Resources|More Standards|Expert Frameworks)$/ })).toHaveCount(0);
-  await expect(page.getByRole("link", { name: /^Explore / })).toHaveCount(7);
+  await expect(page.getByRole("link", { name: /^Explore / })).toHaveCount(8);
   await page.getByRole("searchbox", { name: "Search frameworks and standards" }).fill("climate");
   await expect(page.getByRole("link", { name: /^Explore / })).toHaveCount(0);
   await page.getByRole("searchbox", { name: "Search frameworks and standards" }).fill("27001");
@@ -76,10 +76,12 @@ test("an assessment links its finding and a matching risk to an automatically sc
   const packageRow = csv.split("\r\n").find((row) => row.includes("Controller and processor controls"));
   expect(packageRow).toContain(id);
   expect(packageRow).toContain("High");
+  const planUrl = page.url();
   await page.getByRole("button", { name: "Try Demo", exact: true }).click();
   await expect(page.locator(".demo-status")).toContainText("SAMPLE DATA");
-  await expect(page.getByText(/Customer support, analytics and EU member records/)).toBeVisible();
-  await page.getByRole("button", { name: "Start New Assessment" }).click();
+  await expect(page).toHaveURL(planUrl);
+  await expect(page.locator(".xc-ganttrow").first()).toBeVisible();
+  await page.getByRole("button", { name: "Start New Plan" }).click();
   await page.getByRole("button", { name: "Cancel", exact: true }).click();
   await expect(page.locator(".demo-status")).toContainText("SAMPLE DATA");
 });
