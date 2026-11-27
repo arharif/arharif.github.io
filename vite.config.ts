@@ -21,7 +21,7 @@ export default defineConfig({
         {
           tag: "style",
           children:
-            rules + "html{background:var(--x1-bg);color:var(--x1-text)}",
+            rules + ":root[data-palette][data-arcade=true]{--x1-bg:#0c0922;--x1-surface:#181133;--x1-text:#f6f2ff;--x1-accent:#7cecf7;--x1-text-muted:#c5b9df;color-scheme:dark}html{background:var(--x1-bg);color:var(--x1-text)}",
           injectTo: "head",
         },
       ],

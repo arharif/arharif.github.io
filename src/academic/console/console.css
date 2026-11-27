@@ -2844,3 +2844,11 @@
 .xc-mobile-assessment { display: grid; gap: .65rem; margin-block: .75rem; }
 .xc-mobile-assessment > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
 .xc-mobile-assessment select { width: 100%; min-height: 2.65rem; }
+
+.xc-framework-scope { margin-block: .8rem; padding: .65rem .9rem; border: 1px solid var(--border-soft); border-radius: .75rem; }
+.xc-framework-scope summary { cursor: pointer; font-weight: 650; }
+.xc-scope-additions { display: flex; flex-wrap: wrap; gap: .5rem; padding-left: 0; list-style: none; }
+.xc-enhancements { margin-inline-start: .6rem; padding-inline-start: .75rem; border-inline-start: 2px solid var(--border-soft); }
+.xc-nist-detail { overflow-wrap: anywhere; }
+.xc-learn-detail :is(ul, dl) { padding-inline-start: 1rem; }
+.xc-learn :is(p, li) a { text-decoration: underline; text-underline-offset: .17em; }

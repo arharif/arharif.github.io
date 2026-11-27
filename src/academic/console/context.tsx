@@ -15,7 +15,7 @@ type Context = {
   project: Project;
   change: (update: Change) => void;
   tryDemo: () => void;
-  startBlank: () => void;
+  startBlank: (after?: () => void) => void;
   resetDemo: () => void;
   resume: () => void;
   importFile: (file: File) => Promise<void>;
@@ -119,7 +119,8 @@ export function ProjectProvider({
       consumedDemoRequest.current = false;
     } else if (!consumedDemoRequest.current) {
       consumedDemoRequest.current = true;
-      switchMode("demo");
+      if (!current.current.demo) switchMode("demo");
+      else commit(current.current, "SAMPLE DATA · Fictional scenario ready.");
     }
   }, [openDemo]);
 
@@ -132,7 +133,7 @@ export function ProjectProvider({
       },
     });
   }
-  function startBlank() {
+  function startBlank(after?: () => void) {
     try {
       const existing = read("work");
       const hasWork =
@@ -145,9 +146,12 @@ export function ProjectProvider({
       if (hasWork)
         confirm(
           "Replace the personal project for this standard with a blank assessment? Export it first to keep a copy.",
-          () => commit(blank(framework), "Blank project created."),
+          () => { commit(blank(framework), "Blank project created."); after?.(); },
         );
-      else commit(blank(framework), "Blank project ready.");
+      else {
+        commit(blank(framework), "Blank project ready.");
+        after?.();
+      }
     } catch {
       notify(
         "Your saved project could not be opened. Export the current project before leaving.",
@@ -187,7 +191,10 @@ export function ProjectProvider({
         change: (update) => {
           const before = current.current;
           const next = update(before);
-          commit(next.assessments === before.assessments ? next : syncPlan(next, before));
+          const result = next.assessments === before.assessments && next.risks === before.risks && next.scope === before.scope
+            ? next
+            : syncPlan(next, before);
+          commit(result, result.planIssue === before.planIssue ? "" : result.planIssue);
         },
         message,
         notify,

@@ -133,6 +133,14 @@ export function Knowledge() {
   const found = nodes.filter((n) =>
     (n.label + " " + n.id).toLowerCase().includes(query.toLowerCase()),
   );
+  const branch = active.kind === "Group" ? active.id : active.group;
+  const largeGraph = items.length > 160;
+  const detailNodes = largeGraph ? nodes.filter((n) => n.kind === "Control" && n.group === branch) : [];
+  const visible = largeGraph
+    ? nodes.filter((n) => n.kind !== "Control" && (n.kind !== "Category" || n.group === branch))
+      .concat(detailNodes.length > 24 ? [...detailNodes.slice(0, 23), ...detailNodes.filter(n => n.id === active.id && !detailNodes.slice(0, 23).includes(n))] : detailNodes)
+    : nodes;
+  const visibleIds = new Set(visible.map((n) => n.id));
   return (
     <div className="xc-knowledge">
       <aside>
@@ -149,7 +157,7 @@ export function Knowledge() {
           />
         </label>
         <small>{query ? "Search results" : "Framework groups"}</small>
-        {(query ? found : nodes.filter((n) => n.kind === "Group")).map((n) => (
+        {(query ? found.slice(0, 50) : nodes.filter((n) => n.kind === "Group")).map((n) => (
           <button
             key={n.id}
             aria-pressed={active.id === n.id}
@@ -174,7 +182,7 @@ export function Knowledge() {
           role="group"
           aria-label="Framework relationships"
         >
-          {links.map((l) => {
+          {links.filter((link) => visibleIds.has(link.from) && visibleIds.has(link.to)).map((l) => {
             const a = byId.get(l.from)!,
               b = byId.get(l.to)!;
             return (
@@ -190,8 +198,8 @@ export function Knowledge() {
               />
             );
           })}
-          {nodes
-            .filter((n) => n.parent)
+          {visible
+            .filter((n) => n.parent && visibleIds.has(n.parent))
             .map((n) => {
               const p = byId.get(n.parent!)!;
               return (
@@ -211,7 +219,7 @@ export function Knowledge() {
                 />
               );
             })}
-          {nodes.map((n) => {
+          {visible.map((n) => {
             const primary =
                 n.kind === "Framework" ||
                 n.kind === "Group" ||
@@ -274,7 +282,7 @@ export function Knowledge() {
           })}
         </svg>
         <footer>
-          <span>● Framework relationships</span>
+          <span>{largeGraph ? "Selected branch · search for any control" : "Framework relationships"}</span>
           <button
             aria-label="Zoom out"
             disabled={scale <= 0.8}

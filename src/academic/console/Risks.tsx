@@ -13,6 +13,7 @@ import {
   SlidersHorizontal,
   Timer,
 } from "lucide-react";
+import { frameworkMetadata } from "./editions";
 import { useProject } from "./context";
 import { stats } from "./project";
 import { ControlTable } from "./Controls";
@@ -136,6 +137,7 @@ export function RiskRegister({
             [
               "asset",
               "threat",
+              "vulnerability",
               "owner",
               "controls",
               "treatment",
@@ -152,6 +154,11 @@ export function RiskRegister({
               />
             </label>
           ))}
+          <label>
+            {project.framework === "gdpr" ? "Impact on individuals’ rights and freedoms" : "Impact rationale"}
+            <textarea maxLength={3000} value={draft.businessImpact} onChange={(event) => setDraft({ ...draft, businessImpact: event.target.value })} />
+          </label>
+          <small>Use exact assessment identifiers in controls. Separate references with semicolons.</small>
           <div className="xc-formgrid">
             {(
               [
@@ -545,6 +552,8 @@ export function RiskDashboard({
     </div>
   );
   const tools = (
+    <>
+    <p>{frameworkMetadata[project.framework].risk}</p>
     <div className="xc-toolbar risk-tools">
       <button onClick={() => openRisk("Risk register")}>
         <ListChecks /> Risk register
@@ -556,6 +565,7 @@ export function RiskDashboard({
         <Shield /> Assess controls
       </button>
     </div>
+    </>
   );
   const gain = [...s.gaps]
     .map((c) => c.target - c.current!)
@@ -829,14 +839,14 @@ export function RiskDashboard({
             </div>
           </Panel>
           <Panel
-            title="Compliance profile"
+            title="Assessment coverage"
             action={() => openControls("Control profile")}
           >
             <div className="xc-execpair">
               <Columns
                 rows={s.profiles.map((g) => ({
                   label: g.id.startsWith("pci-") ? g.title.split(" ")[0] : g.id,
-                  value: Math.round(g.current * 25),
+                  value: g.assessed,
                   colour: g.colour,
                 }))}
                 onPick={(i) =>
@@ -924,7 +934,7 @@ export function RiskDashboard({
                 }))}
                 onPick={(i) =>
                   openControls(
-                    "Maturity gap " + (4 - i),
+                    "Implementation gap " + (4 - i),
                     s.gaps.filter((c) => c.target - (c.current ?? 0) === 4 - i),
                   )
                 }
@@ -1026,7 +1036,7 @@ export function RiskDashboard({
             />
           </label>
           <p>
-            Projected maturity{" "}
+            Projected X1 implementation index{" "}
             <b>
               {s.scored.length
                 ? (s.current + gain / s.scored.length).toFixed(2)

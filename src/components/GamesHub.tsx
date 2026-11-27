@@ -13,7 +13,6 @@ import {
   CalendarDays,
   Dice5,
   Flame,
-  Check,
   Gamepad2,
   Heart,
   Play,
@@ -26,8 +25,6 @@ import {
 import { listPublishedContent } from "@/lib/cms";
 import type { ContentRecord } from "@/content/types";
 import { safeStorage } from "@/lib/storage";
-import { useTheme } from "@/lib/theme";
-import { palettes, type ThemeMode } from "@/lib/palettes";
 import { originals, type OriginalKey } from "./arcade/catalog";
 import { featureGames, isFeatureGame } from "./arcade/featureGames";
 import { legacyCatalog, type GameKey } from "./arcade/legacyCatalog";
@@ -176,7 +173,6 @@ function PlayRoom({
   );
 }
 export function GamesHub() {
-  const [theme, setTheme] = useTheme();
   const [params, setParams] = useSearchParams();
   const game = library.find((g) => g.key === params.get("game"));
   const [section, setSection] = useState(() => params.has("game") && !game ? "Games" : "Arcade"),
@@ -437,16 +433,6 @@ export function GamesHub() {
                 <button onClick={fetchPicks}>Retry loading CMS picks</button>
               )}
             </section>
-          )}
-          {dashboard && (
-            <div className="arcade-themes" aria-label="Arcade themes" role="group">
-              <strong>Arcade Themes</strong>
-              {(Object.keys(palettes) as ThemeMode[]).map((id) => (
-                <button key={id} onClick={() => setTheme(id)} aria-pressed={theme === id} data-choice={id}>
-                  <span aria-hidden="true" /> {palettes[id][0]} {theme === id && <Check size={15} aria-hidden="true" />}
-                </button>
-              ))}
-            </div>
           )}
           <div className="arcade-widgets">
             {(dashboard || section === "Challenges") && (

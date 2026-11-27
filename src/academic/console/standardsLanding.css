@@ -30,11 +30,8 @@
 .standard-compact { flex-direction: row; }
 .standard-compact .standard-art { width: clamp(3.2rem, 6vw, 5rem); flex: none; height: auto; border-right: 1px solid var(--border-soft); border-bottom: 0; }
 .standard-compact h3 { font-size: 1.4rem; }
-.standards-resources a, .standards-paths a { min-width: 0; display: flex; align-items: center; gap: .75rem; padding: 1rem; border-radius: .95rem; border: 1px solid var(--border-soft); background: var(--surface); }
-.standards-resources a:hover, .standards-paths a:hover { border-color: var(--x1-accent); }
-.standards-resources svg { flex: none; color: var(--x1-accent-ink); }
-.standards-resources span { flex: 1; display: grid; gap: .16rem; }
-.standards-resources small { font-size: .87rem; line-height: 1.35; }
+.standards-paths a { min-width: 0; display: flex; align-items: center; gap: .75rem; padding: 1rem; border-radius: .95rem; border: 1px solid var(--border-soft); background: var(--surface); }
+.standards-paths a:hover { border-color: var(--x1-accent); }
 .standards-breadcrumb { display: inline-block; margin-bottom: 1.5rem; text-decoration: underline; text-underline-offset: .24rem; }
 .standards-selected-icon { display: grid; width: 3.5rem; aspect-ratio: 1; place-items: center; color: var(--x1-accent-ink); border: 1px solid var(--border-soft); border-radius: .9rem; margin-bottom: 1rem; background: var(--x1-spectrum, var(--surface)); }
 .standards-paths a { flex-direction: column; align-items: start; padding: clamp(1rem, 3vw, 2rem); position: relative; }
@@ -107,3 +104,6 @@
 .standard-compact .standard-copy h3 { font-size: 1.13rem; }
 .standard-demo { background: var(--surface); }
 @media (max-width: 620px) { .standards-overview-heading p { max-width: 100%; } .standards-hero-trails { width: 50%; opacity: .28; } }
+.standard-index-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .7rem; margin-bottom: .8rem; }
+.standard-index-heading input { width: min(100%, 22rem); min-height: 2.75rem; border: 1px solid var(--control-border); border-radius: .65rem; padding: .5rem .75rem; }
+.standard-source { display: inline-block; width: fit-content; text-decoration: underline; text-underline-offset: .18em; font-size: .85rem; }

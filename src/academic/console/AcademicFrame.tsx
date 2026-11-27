@@ -10,7 +10,7 @@ import "./console.css";
 
 const base = "/x1-academic";
 const secondary = [
-  ["Resources", "/x1-academic#academic-resources"],
+  ["Frameworks & Standards", "/x1-academic"],
   ["X1 Insights", "/insights-innovation"],
   ["X1 Games", "/games"],
 ];
@@ -25,8 +25,7 @@ export function AcademicFrame({ children, focus = false, title = "X1 Academic", 
   const [menu, setMenu] = useState(false);
   useEffect(() => {
     setMenu(false);
-    if (loc.hash === "#academic-resources") document.getElementById("academic-resources")?.scrollIntoView();
-    else window.scrollTo(0, 0);
+    window.scrollTo(0, 0);
   }, [loc.pathname, loc.hash]);
   useEffect(() => {
     document.title = title;
@@ -65,7 +64,7 @@ export function AcademicFrame({ children, focus = false, title = "X1 Academic", 
             <X1Mark mode={theme} />
           </Link>
           <Link className="xc-section-name" to={base} aria-label="X1 Academic overview">Academic</Link>
-          <nav aria-label="Academic resources">
+          <nav aria-label="Academic navigation">
             {secondary.map(([label, path]) => (
               <Link key={path} to={path}>
                 {label}

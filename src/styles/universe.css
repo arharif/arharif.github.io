@@ -820,6 +820,15 @@ a:is(:hover,:focus-visible,:active) .mark-face { opacity:1; transform:scale(1); 
 :root[data-palette="rainbow"] :is(.universe-shell, .xc[data-theme]) {
   background: var(--x1-spectrum), var(--bg);
 }
+:root[data-palette][data-arcade="true"] {
+  --x1-spectrum: radial-gradient(ellipse at 64% 19%, #462071 0%, transparent 66%), var(--bg);
+  --accent-2: #ff8ee8;
+  --art-filter: none;
+  --art-tint: #8b43ad42;
+}
+:root[data-palette][data-arcade="true"] .universe-shell {
+  background: var(--x1-spectrum);
+}
 .palette-menu { grid-template-columns: minmax(0, 1fr); min-width: 9.5rem; }
 .standards-replay { margin-top: 1rem; }
 @media (prefers-reduced-motion: no-preference) {

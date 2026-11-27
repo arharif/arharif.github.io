@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { newTask } from "../studio/model";
+import type { ReactNode } from "react";
 import { useMemo, useState, useSyncExternalStore } from "react";
 import {
   ArrowRight,
@@ -13,8 +14,13 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { useProject } from "./context";
-import { cases, catalogue, names } from "./catalogue";
-import { editions } from "./editions";
+import { baselineMembership, cases, catalogue, names } from "./catalogue";
+import { editions, frameworkMetadata } from "./editions";
+import { NistDetails } from "./NistDetails";
+import { FrameworkScope } from "./FrameworkScope";
+import { aiAnnexes, euStructure } from "../data/euStructure";
+import articles from "../data/eu-article-index.json";
+import { pciSections } from "../data/pci401";
 import { evidenceStates, stats, unassessed, type Assessment } from "./project";
 import { Dialog, Empty, Panel, Radar, dot } from "./ui";
 
@@ -39,7 +45,8 @@ export function ControlTable({
     { items, source } = catalogue(project.framework);
   const compact = useSyncExternalStore(subscribeToControlViewport, compactControlEditor);
   const [query, setQuery] = useState(""),
-    [open, setOpen] = useState(ids[0] ?? "");
+    [open, setOpen] = useState(ids[0] ?? ""),
+    [page, setPage] = useState(0);
   const allowed = new Set(ids),
     rows = items.filter(
       (c) =>
@@ -48,7 +55,11 @@ export function ControlTable({
           .toLowerCase()
           .includes(query.toLowerCase()),
     );
-  const control = rows.find((c) => c.id === open) ?? rows[0];
+  const perPage = 24;
+  const lastPage = Math.max(0, Math.ceil(rows.length / perPage) - 1);
+  const pageNumber = Math.min(page, lastPage);
+  const visibleRows = rows.slice(pageNumber * perPage, (pageNumber + 1) * perPage);
+  const control = visibleRows.find((c) => c.id === open) ?? visibleRows[0];
   function patch(id: string, changes: Partial<Assessment>) {
     change((p) => ({
       ...p,
@@ -94,14 +105,14 @@ export function ControlTable({
         aria-label="Find control"
         placeholder="Find a control or category…"
         value={query}
-        onChange={(e) => setQuery(e.target.value)}
+        onChange={(e) => { setQuery(e.target.value); setPage(0); }}
       />
       {compact ? (
         <section className="xc-mobile-assessment">
           {control && <>
             <label>Choose control
               <select value={control.id} onChange={(event) => setOpen(event.target.value)}>
-                {rows.map((row) => <option key={row.id} value={row.id}>{row.id} · {row.title}</option>)}
+                {visibleRows.map((row) => <option key={row.id} value={row.id}>{row.id} · {row.title}</option>)}
               </select>
             </label>
             <div>
@@ -116,7 +127,7 @@ export function ControlTable({
               <th>Control</th><th>Applicability</th><th>Current</th><th>Target</th><th>Evidence</th>
             </tr></thead>
             <tbody>
-              {rows.map((row) => (
+              {visibleRows.map((row) => (
                 <tr key={row.id} className={control?.id === row.id ? "selected" : ""}>
                   <td><button className="xc-record" onClick={() => setOpen(row.id)}><b>{row.id}</b>{row.title}</button></td>
                   {fields(row.id).map(({label, input}) => <td key={label}>{input}</td>)}
@@ -126,6 +137,11 @@ export function ControlTable({
           </table>
         </div>
       )}
+      {lastPage > 0 && <nav className="xc-toolbar" aria-label="Assessment results pages">
+        <button disabled={pageNumber === 0} onClick={() => setPage(pageNumber - 1)}>Previous</button>
+        <span>Page {pageNumber + 1} of {lastPage + 1}</span>
+        <button disabled={pageNumber === lastPage} onClick={() => setPage(pageNumber + 1)}>Next</button>
+      </nav>}
       {!rows.length && <Empty>No controls match this selection.</Empty>}
       {control && selected && (
         <section className="xc-control-detail">
@@ -134,6 +150,8 @@ export function ControlTable({
             {control.id} · {control.title}
           </h3>
           <p>{control.explanation}</p>
+          <p><strong>Assessment question</strong> What evidence shows your project meets {control.id} for the scoped activity?</p>
+          {project.framework === "nist-800-53" && control.locator && <NistOnOpen key={control.id} locator={control.locator} />}
           <details>
             <summary>Implementation example and evidence</summary>
             <p>{control.example}</p>
@@ -149,6 +167,31 @@ export function ControlTable({
                   onChange={(event) => patch(control.id, { exclusion: event.target.value })} />
               </label>
             )}
+            {project.framework === "nist-800-53" && <>
+              <label>Implementation responsibility
+                <select value={selected.selection} onChange={(event) => patch(control.id, { selection: event.target.value as Assessment["selection"] })}>
+                  <option>System-specific</option><option>Inherited</option><option>Shared</option>
+                </select>
+              </label>
+              <label>Tailoring and parameter decisions
+                <textarea maxLength={3000} value={selected.tailoring} onChange={(event) => patch(control.id, { tailoring: event.target.value })} />
+              </label>
+            </>}
+            {control.id.startsWith("A.") && project.framework === "iso-27001" && <>
+              <label>Statement of Applicability decision
+                <select value={selected.soa} onChange={(event) => patch(control.id, { soa: event.target.value as Assessment["soa"] })}>
+                  <option>Pending</option><option>Included</option><option>Excluded</option>
+                </select>
+              </label>
+              <label>Risk treatment decision
+                <select value={selected.treatment} onChange={(event) => patch(control.id, { treatment: event.target.value as Assessment["treatment"] })}>
+                  <option>Undecided</option><option>Modify</option><option>Avoid</option><option>Share</option><option>Retain</option>
+                </select>
+              </label>
+              <label>SoA justification and risk reference
+                <textarea maxLength={3000} value={selected.tailoring} onChange={(event) => patch(control.id, { tailoring: event.target.value })} />
+              </label>
+            </>}
             <label>
               Control owner
               <input
@@ -289,10 +332,13 @@ export function Profile() {
           </div>
           <div className="xc-maturity">
             <b>{s.scored.length ? s.current.toFixed(1) : "—"}</b>
-            <small>Maturity / 4</small>
+            <small>X1 implementation / 4</small>
           </div>
         </section>
+        <FrameworkScope />
+        <p>{s.scored.length} rated of {s.applicable.length} applicable items · {s.rows.length - s.applicable.length} excluded</p>
         <nav className="xc-profile-actions" aria-label="Assessment outputs">
+          <Link to={`/x1-academic/assess-simulate?standard=${project.framework}&view=matrix`}>Open risk heatmap</Link>
           <Link to={`/x1-academic/assess-simulate?standard=${project.framework}&view=executive`}>Executive dashboard</Link>
           <Link to={`/x1-academic/implement-plan?standard=${project.framework}`}>Remediation schedule</Link>
         </nav>
@@ -311,8 +357,10 @@ export function Profile() {
             {project.framework === "nist-csf-2"
               ? "Functions"
               : project.framework === "iso-27001"
-                ? "ISMS clauses"
-                : "Requirement families"}
+                ? "ISMS clauses and Annex A"
+                : project.framework === "nist-800-53"
+                  ? "Control families"
+                  : project.framework === "pci-dss" ? "Requirements" : "Chapters"}
           </h3>
           <button onClick={() => open("Control assessment", s.rows)}>
             All controls <ArrowRight />
@@ -339,7 +387,7 @@ export function Profile() {
             >
               <div>
                 <span className="xc-monogram" style={{ background: g.colour }}>
-                  {project.framework === "nist-csf-2" ? g.id : i + 1}
+                  {project.framework === "nist-csf-2" || project.framework === "nist-800-53" ? g.id : i + 1}
                 </span>
                 <strong>{g.title}</strong>
                 <b>{g.assessed ? g.current.toFixed(1) : "—"}</b>
@@ -377,7 +425,7 @@ export function Profile() {
               Inspect gaps <ArrowRight />
             </button>
           </section>
-          <Panel title="Maturity by group">
+          <Panel title="Implementation by group">
             <Radar
               axes={axes}
               onPick={(id) =>
@@ -391,7 +439,7 @@ export function Profile() {
           <details>
             <summary>Scoring and source</summary>
             <p>
-              Current is the mean of scored applicable controls. Target includes all applicable controls. The X1 rubric is 0 absent, 1 planned, 2 partially operating, 3 implemented and 4 evidenced and reviewed. Use the publisher’s criteria for compliance, assurance or certification decisions.
+              The current index averages user-entered ratings for rated applicable items. The target index includes applicable items. X1 uses 0 absent, 1 planned, 2 partial, 3 operating and 4 consistently operating. Evidence coverage, risk and legal determinations are tracked separately.
             </p>
             <a href={source.source}>Publisher guidance ↗</a>
           </details>
@@ -527,18 +575,85 @@ export function Governance() {
   );
 }
 
+function RequirementDisclosure({ title, children }: { title: string; children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return <details onToggle={(event) => setOpen(event.currentTarget.open)}>
+    <summary>{title}</summary>
+    {open && children}
+  </details>;
+}
+
+function NistOnOpen({ locator }: { locator: string }) {
+  // A closed native disclosure does not need to fetch the full OSCAL asset.
+  const [open, setOpen] = useState(false);
+  return <details onToggle={(event) => setOpen(event.currentTarget.open)}>
+    <summary>NIST text and assessment procedures</summary>
+    {open && <NistDetails locator={locator} />}
+  </details>;
+}
+
+const resources = [
+  ["Security Mindmap", "/security-mindmap", "Trace relevant roles, safeguards and dependencies."],
+  ["Compliance Frameworks", "/compliance-frameworks", "Compare related regimes and assurance approaches."],
+  ["Academic Library", "/academic-library", "Find further readings and publisher materials."],
+];
+
 export function Learn() {
   const { project } = useProject();
   const { groups, items, source } = catalogue(project.framework);
   const edition = editions[project.framework];
+  const metadata = frameworkMetadata[project.framework];
   const [groupId, setGroup] = useState(groups[0].id);
+  const [search, setSearch] = useState("");
   const group = groups.find((entry) => entry.id === groupId) ?? groups[0];
+  const law = project.framework === "dora" || project.framework === "gdpr" || project.framework === "eu-ai-act" ? project.framework : undefined;
+  const chapter = law ? (euStructure[law] as readonly {id: string; sections?: ReadonlyArray<readonly [string, number, number]>}[]).find(entry => entry.id === group.id) : undefined;
+  const legalRows = law ? [...articles[law].articles, ...(law === "eu-ai-act" ? articles[law].inserted : [])]
+    .filter(([, section]) => section === group.id).sort(([a], [b]) => a.localeCompare(b, "en", { numeric: true })) : [];
+  const term = search.trim().toLowerCase();
+  const groupItems = items.filter((item) => item.group === group.id);
+  const matches = (item: typeof items[number]) => (item.id + " " + item.title).toLowerCase().includes(term);
+  const byId = new Map(groupItems.map((item) => [item.id, item]));
+  const visible = new Set<string>();
+  if (term) {
+    for (const item of groupItems) {
+      const lineage = [item];
+      let parent = item.parent ? byId.get(item.parent) : undefined;
+      while (parent) {
+        lineage.push(parent);
+        parent = parent.parent ? byId.get(parent.parent) : undefined;
+      }
+      if (lineage.some(matches)) for (const entry of lineage) visible.add(entry.id);
+    }
+  }
+  const relevantItems = term ? groupItems.filter((item) => visible.has(item.id)) : groupItems;
+  const showItem = (item: typeof items[number]) => (
+    <RequirementDisclosure key={item.id} title={`${item.id} · ${item.title}${item.withdrawn ? " · Withdrawn" : ""}`}>
+      {project.framework === "nist-800-53" && item.locator
+        ? <>
+          {item.parent && <p>Enhancement of {item.parent}.</p>}
+          <p>SP 800-53B starting baselines {baselineMembership(item.id).join(", ") || "None listed"}.</p>
+          <NistOnOpen locator={item.locator} />
+        </>
+        : <p>{item.explanation}</p>}
+      {!item.withdrawn && <dl>
+        <div><dt>Implementation example</dt><dd>{item.example}</dd></div>
+        <div><dt>Evidence to examine</dt><dd>{item.evidence}</dd></div>
+      </dl>}
+      {relevantItems.some((child) => child.parent === item.id) && <div className="xc-enhancements">
+        <h4>{project.framework === "pci-dss" ? "Subrequirements" : "Control enhancements"}</h4>
+        {relevantItems.filter((child) => child.parent === item.id).map(showItem)}
+      </div>}
+    </RequirementDisclosure>
+  );
   return (
     <div className="xc-learn">
       <Panel title={edition.name}>
         <p className="xc-learn-edition">{edition.edition} · {edition.category}</p>
         <p>{source.applicability}</p>
         <p>{edition.application}</p>
+        <h3>{metadata.focus}</h3>
+        <p>{metadata.scope}.</p>
         <h3>Practical example</h3>
         <p>{edition.scenario}</p>
       </Panel>
@@ -546,7 +661,7 @@ export function Learn() {
         <p>Select an area to explore its requirements, evidence and implementation examples.</p>
         <div className="xc-learn-groups" role="group" aria-label="Framework architecture areas">
           {groups.map((entry) => (
-            <button aria-pressed={entry.id === group.id} key={entry.id} onClick={() => setGroup(entry.id)}>
+            <button aria-pressed={entry.id === group.id} key={entry.id} onClick={() => { setGroup(entry.id); setSearch(""); }}>
               {entry.title}
             </button>
           ))}
@@ -554,22 +669,33 @@ export function Learn() {
         <section className="xc-learn-detail" key={group.id} aria-labelledby="xc-learn-group">
           <h3 id="xc-learn-group">{group.title}</h3>
           <p>{group.description}</p>
-          {items.filter((item) => item.group === group.id).map((item) => (
-            <details key={item.id}>
-              <summary>{item.id} · {item.title}</summary>
-              <p>{item.explanation}</p>
-              <dl>
-                <div><dt>Implementation example</dt><dd>{item.example}</dd></div>
-                <div><dt>Evidence to examine</dt><dd>{item.evidence}</dd></div>
-              </dl>
-            </details>
-          ))}
+          {chapter?.sections && <ul>{chapter.sections.map(([title, first, last]) => <li key={first}>{title} · {first === last ? `Article ${first}` : `Articles ${first}–${last}`}</li>)}</ul>}
+          {law && <details><summary>Official article index ({legalRows.length})</summary><ul>
+            {legalRows.map(([id, , title]) => <li key={id}><a href={articles[law].source + (law === "eu-ai-act" ? "" : "#art_" + id)} target="_blank" rel="noreferrer">Article {id} · {title}</a></li>)}
+          </ul></details>}
+          {project.framework === "eu-ai-act" && ["III", "V", "XIII"].includes(group.id) && <details>
+            <summary>Annexes I–XIII</summary><ul>{aiAnnexes.map(([id, title]) => <li key={id}>Annex {id} · {title}</li>)}</ul>
+          </details>}
+          {project.framework === "pci-dss" && <details>
+            <summary>Requirement objectives and testing</summary>
+            <ul>{pciSections[Number(group.id.slice(4)) - 1][1].map((title, index) => <li key={title}>{group.id.slice(4)}.{index + 1} · {title}</li>)}</ul>
+            <p>Use the PCI SSC v4.0.1 testing procedures for each applicable requirement, verify the scoped population and retain examine, observe and interview records as directed. Review Appendices A1, A2 and A3 separately if they apply.</p>
+          </details>}
+          {project.framework === "nist-csf-2" && <p>Outcomes are grouped by category. The four Tiers describe the practices of the organisation. Record Current and Target Profiles and Tiers in Assess &amp; Simulate.</p>}
+          {groupItems.length > 12 && <input className="xc-search" type="search" aria-label="Search within this framework area" placeholder="Search identifiers and titles" value={search} onChange={event => setSearch(event.target.value)} />}
+          {project.framework === "nist-csf-2"
+            ? [...new Set(relevantItems.map((item) => item.category))].map((category) => <details key={category}><summary>{category}</summary>{relevantItems.filter((item) => item.category === category).map(showItem)}</details>)
+            : relevantItems.filter((item) => !item.parent).map(showItem)}
+          {term && !relevantItems.length && <p role="status">No identifiers or titles match.</p>}
         </section>
       </Panel>
       <Panel title="Official references">
-        <p>Reviewed 27 November 2026. Use the publisher’s full text and apply its requirements to the specific role, system and jurisdiction.</p>
-        {project.framework === "nist-800-53" && <p><Link to="/x1-academic/standards/800-53">Open the full NIST catalogue and assessment procedures</Link></p>}
+        <p>Publisher references verified <time dateTime={metadata.verified}>{metadata.verified}</time>. {metadata.reuse}</p>
+        {project.framework === "nist-800-53" && <p><Link to="/x1-academic/standards/800-53">Open the advanced NIST implementation workspace</Link></p>}
         <ul>{edition.sources.map(([label, url]) => <li key={url}><a href={url} target="_blank" rel="noreferrer">{label}</a></li>)}</ul>
+      </Panel>
+      <Panel title="Related learning resources">
+        <ul>{resources.map(([title, path, text]) => <li key={path}><Link to={path}>{title}</Link> · {text}</li>)}</ul>
       </Panel>
     </div>
   );

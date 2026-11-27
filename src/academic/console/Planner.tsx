@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useState, type CSSProperties } from "react";
 import {
   CalendarDays,
@@ -9,11 +10,12 @@ import {
   Plus,
 } from "lucide-react";
 import { useProject } from "./context";
-import { makePlan, phaseNames, plan, resources, syncPlan } from "./project";
+import { makePlan, phaseNames, plan, resources, riskControls, stats, syncPlan, unassessed } from "./project";
 import { addDays } from "../studio/engines";
 import { newTask, stages, today, type Task } from "../studio/model";
 import { Dialog, Empty, Panel, Ring, Trend, fmtDate } from "./ui";
-import { names } from "./catalogue";
+import { catalogue, names } from "./catalogue";
+import { frameworkMetadata } from "./editions";
 import { csv } from "../utils/engines";
 import { download } from "../components/shared";
 
@@ -61,12 +63,25 @@ export function Planner() {
     addDays(project.start, Math.floor((i * range) / 6)),
   );
   const owners = [...new Set(rows.map((r) => r.task.owner))];
+  function exportSoA() {
+    const annex = catalogue("iso-27001").items.filter((item) => item.id.startsWith("A."));
+    download(`iso-27001-${project.demo ? "sample-" : ""}soa.csv`, csv(annex.map((item) => {
+      const row = project.assessments[item.id] ?? unassessed;
+      return {
+        Scenario: project.demo ? "SAMPLE DATA" : project.name, Control: item.id, Topic: item.title,
+        Decision: row.soa, "Assessment applicability": row.applicability,
+        "SoA justification and risk reference": row.tailoring, "Exclusion rationale": row.exclusion,
+        Treatment: row.treatment, "Implementation rating": row.current ?? "", Evidence: row.note, Owner: row.owner,
+      };
+    })), "text/csv;charset=utf-8");
+  }
   function exportSchedule() {
     download(`${project.framework}-${project.demo ? "fictional-demo" : "project"}-plan.csv`, csv(rows.map(({ task, start, end, late: overdue }) => ({
-      Scenario: project.demo ? "Fictional educational demo" : project.name,
+      Scenario: project.demo ? "SAMPLE DATA · Fictional educational demo" : project.name,
       Framework: names[project.framework],
       Action: task.title,
       "Control or group": task.sourceIds.join(", "),
+      "Linked risks": project.risks.filter((risk) => riskControls(risk.controls).some((id) => task.sourceIds.includes(id))).map((risk) => risk.id).join(", "),
       Phase: phaseNames[task.stage],
       Owner: task.owner,
       Priority: task.priority ?? "Medium",
@@ -187,6 +202,7 @@ export function Planner() {
               <option key={v}>{v}</option>
             ))}
           </select>
+          {project.framework === "iso-27001" && <button onClick={exportSoA}><Download size={16} /> Export SoA</button>}
           {rows.length > 0 && <button onClick={exportSchedule}><Download size={16} /> Export POA&M</button>}
           <button
             onClick={() =>
@@ -200,8 +216,18 @@ export function Planner() {
           </button>
         </div>
       </div>
+      {project.planIssue && <div className="xc-notice" role="status">
+        <p>Assessment changes were saved. The last valid schedule is shown below.</p>
+        <p>{project.planIssue} Review task estimates, available capacity or scope, then recalculate.</p>
+        <button type="button" onClick={() => change((current) => syncPlan(current, current))}>Recalculate schedule</button>
+      </div>}
+      <p>{frameworkMetadata[project.framework].focus}. {stats(project).gaps.length} rated requirements are below their recorded targets.</p>
+      <nav className="xc-profile-actions" aria-label="Remediation inputs">
+        <Link to={`/x1-academic/assess-simulate?standard=${project.framework}&view=profile`}>Reassess requirements</Link>
+        <Link to={`/x1-academic/assess-simulate?standard=${project.framework}&view=matrix`}>Review risk and treatment</Link>
+      </nav>
       {!!rows.length && <p className="xc-planning-method">
-        Generated remediation estimates use one working day per remaining maturity gap point with a minimum of one day, with six effort hours per estimated day. Adjust estimates from task details.
+        Generated work uses one working day per implementation gap point, up to 730 days per work package, and six effort hours per day. Linked residual risk and gap severity determine priority. Edit estimates, dependencies and evidence in task details.
       </p>}
       {!rows.length && (
         <div className="xc-plan-empty">
