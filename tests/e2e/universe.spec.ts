@@ -372,6 +372,7 @@ test("each world opens its compact guide and the game guide follows the active r
     await page.keyboard.press("Escape");
     await expect(trigger).toBeFocused();
   }
+  await page.getByRole('button', { name: /All games/ }).click();
   await page.getByLabel('Play Neon Stack').click();
   const room = page.getByRole('dialog',{name:'Neon Stack'});
   await expect(room.locator('.assistant-launcher')).toHaveAttribute('data-mood','selected');

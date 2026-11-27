@@ -179,7 +179,7 @@ export function GamesHub() {
   const [theme, setTheme] = useTheme();
   const [params, setParams] = useSearchParams();
   const game = library.find((g) => g.key === params.get("game"));
-  const [section, setSection] = useState("Arcade"),
+  const [section, setSection] = useState(() => params.has("game") && !game ? "Games" : "Arcade"),
     [query, setQuery] = useState(""),
     [category, setCategory] = useState("All");
   const [favorites, setFavorites] = useState(() =>
@@ -266,6 +266,7 @@ export function GamesHub() {
   return (
     <div className="arcade-layout" id="games-zone">
       <div className="arcade-main">
+        {!dashboard && <h1 className="sr-only">X1 Games</h1>}
         {dashboard && (
           <header className="arcade-hero">
             <img
