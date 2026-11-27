@@ -216,6 +216,11 @@ export function Planner() {
           </button>
         </div>
       </div>
+      {project.planIssue && <div className="xc-notice" role="status">
+        <p>Assessment changes were saved. The last valid schedule is shown below.</p>
+        <p>{project.planIssue} Review task estimates, available capacity or scope, then recalculate.</p>
+        <button type="button" onClick={() => change((current) => syncPlan(current, current))}>Recalculate schedule</button>
+      </div>}
       <p>{frameworkMetadata[project.framework].focus}. {stats(project).gaps.length} rated requirements are below their recorded targets.</p>
       <nav className="xc-profile-actions" aria-label="Remediation inputs">
         <Link to={`/x1-academic/assess-simulate?standard=${project.framework}&view=profile`}>Reassess requirements</Link>

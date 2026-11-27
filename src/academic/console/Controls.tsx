@@ -613,7 +613,20 @@ export function Learn() {
   const term = search.trim().toLowerCase();
   const groupItems = items.filter((item) => item.group === group.id);
   const matches = (item: typeof items[number]) => (item.id + " " + item.title).toLowerCase().includes(term);
-  const relevantItems = term ? groupItems.filter((item) => matches(item) || groupItems.some((child) => child.parent === item.id && matches(child))) : groupItems;
+  const byId = new Map(groupItems.map((item) => [item.id, item]));
+  const visible = new Set<string>();
+  if (term) {
+    for (const item of groupItems) {
+      const lineage = [item];
+      let parent = item.parent ? byId.get(item.parent) : undefined;
+      while (parent) {
+        lineage.push(parent);
+        parent = parent.parent ? byId.get(parent.parent) : undefined;
+      }
+      if (lineage.some(matches)) for (const entry of lineage) visible.add(entry.id);
+    }
+  }
+  const relevantItems = term ? groupItems.filter((item) => visible.has(item.id)) : groupItems;
   const showItem = (item: typeof items[number]) => (
     <RequirementDisclosure key={item.id} title={`${item.id} · ${item.title}${item.withdrawn ? " · Withdrawn" : ""}`}>
       {project.framework === "nist-800-53" && item.locator
@@ -629,7 +642,7 @@ export function Learn() {
       </dl>}
       {relevantItems.some((child) => child.parent === item.id) && <div className="xc-enhancements">
         <h4>{project.framework === "pci-dss" ? "Subrequirements" : "Control enhancements"}</h4>
-        {relevantItems.filter((child) => child.parent === item.id && (!term || matches(item) || matches(child))).map(showItem)}
+        {relevantItems.filter((child) => child.parent === item.id).map(showItem)}
       </div>}
     </RequirementDisclosure>
   );

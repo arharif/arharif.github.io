@@ -102,6 +102,11 @@ const scope = z.object({
 const defaultScope: z.infer<typeof scope> = {
   baseline: "ALL", privacy: false, added: [], overlay: "", context: "", decision: "", decisionType: "", evidenceRef: "", tier: "", targetTier: "",
 };
+const generatedEstimate = z.object({
+  duration: z.number().int().min(1).max(730),
+  effort: z.number().finite().min(0).max(10000),
+  priority: z.enum(["Low", "Medium", "High"]),
+});
 const projectSchema = z.object({
   version: z.literal(1),
   framework: z.enum(frameworkIds),
@@ -112,6 +117,8 @@ const projectSchema = z.object({
   assessments: z.record(short, assessment),
   risks: z.array(riskSchema).max(2000),
   tasks: z.array(taskSchema).max(500),
+  automaticEstimates: z.record(short, generatedEstimate).default({}),
+  planIssue: z.string().max(1000).default(""),
   flow: z.array(flow).max(120),
   history: z
     .array(
@@ -170,6 +177,8 @@ export function blank(framework: Framework): Project {
     assessments: {},
     risks: [],
     tasks: [],
+    automaticEstimates: {},
+    planIssue: "",
     flow: [],
     history: [],
     experiment: { model: 0, threshold: 0.5, prevalence: 30 },
@@ -330,7 +339,7 @@ export function demoProject(framework: Framework): Project {
     [2, 4, 5, 3],
     [2, 3, 4, 3],
   ].map((counts, i) => ({ date: addDays(scenarioDate, -7 * (5 - i)), counts }));
-  p.tasks = syncPlan({ ...p, tasks: makePlan(framework, true, p.start) }).tasks;
+  const scheduled = syncPlan({ ...p, tasks: makePlan(framework, true, p.start) });
   const sources: Record<Framework, [string, string, string]> = {
     "nist-800-53": ["Identity provider", "Build pipeline", "Component register"],
     dora: ["Payment switch", "Settlement provider", "Incident intake"],
@@ -360,7 +369,7 @@ export function demoProject(framework: Framework): Project {
     next,
     owner: scenario.owner,
   }));
-  return p;
+  return { ...p, tasks: scheduled.tasks, automaticEstimates: scheduled.automaticEstimates, planIssue: scheduled.planIssue };
 }
 export function stats(p: Project) {
   const { items, groups } = catalogue(p.framework);
@@ -434,15 +443,15 @@ export function syncPlan(project: Project, previous?: Project): Project {
   const prefix = `remediation:${project.framework}:`;
   const gaps = stats(project).gaps;
   const oldGaps = previous ? stats(previous).gaps : [];
-  if (!project.tasks.length && !gaps.length) return project;
+  if (!project.tasks.length && !gaps.length) return { ...project, planIssue: "" };
   const currentRisks = residualByControl(project);
   const previousRisks = residualByControl(previous);
   const estimates = (rows: typeof gaps, risks: Map<string, number>) => {
     const gap = Math.max(0, ...rows.map((row) => row.target - row.current!));
     const risk = Math.max(0, ...rows.map((row) => risks.get(row.id.toUpperCase()) ?? 0));
-    const priority: Task["priority"] = risk >= 10 || gap >= 3 ? "High" : risk >= 5 || gap >= 2 ? "Medium" : "Low";
+    const priority = risk >= 10 || gap >= 3 ? "High" : risk >= 5 || gap >= 2 ? "Medium" : "Low";
     const duration = Math.min(730, Math.max(1, rows.reduce((total, row) => total + row.target - row.current!, 0)));
-    return { priority, duration, effort: duration * 6 };
+    return { priority, duration, effort: duration * 6 } satisfies z.infer<typeof generatedEstimate>;
   };
   const generated = project.tasks.some(t => t.id.startsWith(`roadmap:${project.framework}:`));
   const scaffold = makePlan(project.framework, project.demo, project.start);
@@ -451,6 +460,7 @@ export function syncPlan(project: Project, previous?: Project): Project {
   const approval = schedule.find((task) => task.stage === "PLAN" && task.id.startsWith("roadmap:"));
   const assurance = schedule.find((task) => task.stage === "ASSURE" && task.id.startsWith("roadmap:"));
   const tasks = [...schedule];
+  const automaticEstimates = { ...project.automaticEstimates };
   for (const group of catalogue(project.framework).groups) {
     const id = prefix + group.id;
     const linked = gaps.filter((row) => row.group === group.id)
@@ -459,14 +469,15 @@ export function syncPlan(project: Project, previous?: Project): Project {
     const task = tasks[index];
     if (!linked.length && (!task || !oldGaps.some((row) => row.group === group.id))) continue;
     const next = estimates(linked, currentRisks);
-    const old = estimates(oldGaps.filter((row) => row.group === group.id), previousRisks);
+    const old = automaticEstimates[id] ?? estimates(oldGaps.filter((row) => row.group === group.id), previousRisks);
+    automaticEstimates[id] = next;
     const sourceIds = [group.id, ...linked.slice(0, 29).map((row) => row.id)];
     if (task) {
       tasks[index] = {
         ...task, sourceIds: linked.length ? sourceIds : task.sourceIds,
-        duration: !previous || task.duration === old.duration ? next.duration : task.duration,
-        effort: !previous || task.effort === old.effort ? next.effort : task.effort,
-        priority: !task.priority || !previous || task.priority === old.priority ? next.priority : task.priority,
+        duration: task.duration === old.duration ? next.duration : task.duration,
+        effort: task.effort === old.effort ? next.effort : task.effort,
+        priority: !task.priority || task.priority === old.priority ? next.priority : task.priority,
       };
     } else if (tasks.length < 500) {
       const first = linked[0];
@@ -490,5 +501,13 @@ export function syncPlan(project: Project, previous?: Project): Project {
       };
     }
   }
-  return { ...project, tasks };
+  try {
+    plan(tasks, project.start);
+    return { ...project, tasks, automaticEstimates, planIssue: "" };
+  } catch (error) {
+    // Assessments and risk edits remain valid even when the proposed schedule
+    // does not fit. Keep the last valid tasks and estimate provenance together.
+    const message = error instanceof Error ? error.message : "The revised schedule could not be calculated.";
+    return { ...project, planIssue: message.slice(0, 1000) };
+  }
 }

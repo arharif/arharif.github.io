@@ -191,9 +191,10 @@ export function ProjectProvider({
         change: (update) => {
           const before = current.current;
           const next = update(before);
-          commit(next.assessments === before.assessments && next.risks === before.risks && next.scope === before.scope
+          const result = next.assessments === before.assessments && next.risks === before.risks && next.scope === before.scope
             ? next
-            : syncPlan(next, before));
+            : syncPlan(next, before);
+          commit(result, result.planIssue === before.planIssue ? "" : result.planIssue);
         },
         message,
         notify,

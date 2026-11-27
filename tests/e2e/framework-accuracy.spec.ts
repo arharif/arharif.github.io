@@ -101,3 +101,46 @@ test("ISO SoA keeps a pending decision separate from assessed applicability", as
   expect(csv).toContain("Included");
   expect(csv).toContain("Pending");
 });
+
+test("PCI search reveals the full ancestor chain of a deeply nested subrequirement", async ({ page }) => {
+  await page.goto(academic + "/explore?standard=pci-dss&view=learn");
+  await page.getByRole("group", { name: "Framework architecture areas" }).getByRole("button", { name: "Physical access", exact: true }).click();
+  await page.getByRole("searchbox", { name: "Search within this framework area" }).fill("9.5.1.2.1");
+  await page.getByText(/^9\.5\.1 ·/).click();
+  await page.getByText(/^9\.5\.1\.2 ·/).click();
+  await expect(page.getByText(/^9\.5\.1\.2\.1 ·/)).toBeVisible();
+});
+
+test("a schedule beyond its horizon keeps all assessed controls recoverable", async ({ page }) => {
+  const index = JSON.parse(await readFile("src/academic/data/sp80053-index.json", "utf8")) as {
+    controls: { displayId: string; withdrawn: boolean }[];
+  };
+  const assessments = Object.fromEntries(index.controls.filter((r) => !r.withdrawn).map(({ displayId }) => [displayId, {
+    current: 0, target: 4, evidence: "Missing", note: "", owner: "", finding: "",
+  }]));
+  await page.addInitScript((rows) => {
+    const key = "x1-academic-console-v1-nist-800-53-work";
+    if (localStorage.getItem(key)) return;
+    localStorage.setItem(key, JSON.stringify({
+      framework: "nist-800-53", name: "All active controls", start: "2026-11-27",
+      assessments: rows, version: 1, demo: false, risks: [], tasks: [], flow: [], history: [],
+      experiment: { model: 0, threshold: .5, prevalence: 30 },
+    }));
+  }, assessments);
+  await page.goto(academic + "/assess-simulate?standard=nist-800-53&view=profile");
+  await page.getByRole("button", { name: "All controls" }).click();
+  await page.getByLabel("current AC-1", { exact: true }).selectOption("1");
+  await page.keyboard.press("Escape");
+  await expect(page.getByText(/Schedule exceeds the ten-year/)).toBeVisible();
+  await page.getByRole("link", { name: "Remediation schedule" }).click();
+  await expect(page.getByText(/Assessment changes were saved/)).toBeVisible();
+  await expect(page.locator(".xc-ganttrow")).toHaveCount(0);
+  const persisted = await page.evaluate(() => localStorage.getItem("x1-academic-console-v1-nist-800-53-work"));
+  const project = JSON.parse(persisted!);
+  expect(Object.keys(project.assessments)).toHaveLength(1014);
+  expect(project.assessments["AC-1"].current).toBe(1);
+  expect(project.tasks).toEqual([]);
+  await page.reload();
+  await expect(page.getByText(/Assessment changes were saved/)).toBeVisible();
+  await expect(page.locator(".xc-workhead")).toContainText("All active controls");
+});
