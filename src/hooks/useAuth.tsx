@@ -19,6 +19,8 @@ import {
 } from "@/lib/supabase";
 import { safeStorage } from "@/lib/storage";
 
+export class OwnerAccessDeniedError extends Error {}
+
 interface Challenge {
   token: string;
   factorId: string;
@@ -116,7 +118,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     try {
       first = await signInWithPassword(email, password);
       if (!(await allowed(first.access_token, "is_x1_owner")))
-        throw new Error(genericAuthError);
+        throw new OwnerAccessDeniedError();
       const user = await getUser(first.access_token);
       const verified = user.factors?.find(
         (f) => f.factor_type === "totp" && f.status === "verified",
@@ -130,8 +132,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
         });
         timer.current = window.setTimeout(clear, 5 * 60 * 1000);
       }
-    } catch {
+    } catch (error) {
       if (first) void supabaseLogout(first.access_token).catch(() => undefined);
+      if (error instanceof OwnerAccessDeniedError) throw error;
       throw new Error(genericAuthError);
     } finally {
       if (revision === generation.current) setLoading(false);

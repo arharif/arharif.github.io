@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Navigate } from 'react-router-dom';
 import { X1Mark } from '@/components/branding/X1Mark';
-import { useAuth } from '@/hooks/useAuth';
+import { OwnerAccessDeniedError, useAuth } from '@/hooks/useAuth';
 import { hasSupabaseCoreConfig, genericAuthError } from '@/lib/config';
 
 export default function LoginPage() {
@@ -29,11 +29,16 @@ export default function LoginPage() {
       if (pendingMfa) await verifyOtpCode(code);
       else { await beginSecureLogin(email.trim(),password); setPassword(''); }
       setCode(''); attempts.current = 0;
-    } catch {
-      if (++attempts.current >= 3) {
+    } catch (failure) {
+      if (failure instanceof OwnerAccessDeniedError) {
+        setPassword('');
+        setError('Sign in with the account configured for X1 owner access.');
+      } else if (++attempts.current >= 3) {
         attempts.current = 0; setLocked(true);
         setError('Please wait 30 seconds before trying again.');
-      } else setError(genericAuthError);
+      } else setError(pendingMfa
+        ? 'Verification failed. Try a fresh six-digit code from your authenticator.'
+        : genericAuthError);
     }
   }
   if (isAdmin) return <Navigate to="/admin" replace/>;

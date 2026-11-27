@@ -5,7 +5,6 @@ import { Link, useSearchParams } from "react-router-dom";
 import {
   ArrowUpRight,
   BookOpen,
-  FlaskConical,
   Brain,
   Cpu,
   Globe,
@@ -120,7 +119,6 @@ export default function Insights() {
         </p>
         <div className="insights-hero-actions">
           <a href="#published-insights">Explore Insights <ArrowUpRight size={16} aria-hidden="true" /></a>
-          <Link to="/x1-academic/assess-simulate?standard=eu-ai-act&view=experiment"><FlaskConical size={16} aria-hidden="true" /> Innovation Lab</Link>
         </div>
         </div>
       </header>
