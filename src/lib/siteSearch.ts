@@ -1,3 +1,5 @@
+import { editions } from '@/academic/console/editions';
+import { featureGames } from '@/components/arcade/featureGames';
 import { useEffect, useMemo, useState } from "react";
 import { listPublishedContent, listPublishedTopics } from "@/lib/cms";
 import { searchIndex } from "@/data/searchIndex";
@@ -10,7 +12,7 @@ type Result = { id: string; title: string; path: string; description?: string; k
 
 const tools: Result[] = [
   { id: "risk", title: "Cyber risk simulator", path: "/x1-academic/assess-simulate?view=risk", description: "Estimate loss exposure and compare risk treatments.", keywords: ["demo", "risk", "security"] },
-  { id: "profile", title: "Framework profile", path: "/x1-academic/explore?view=profile", description: "Assess controls against NIST CSF, ISO 27001 or PCI DSS." },
+  { id: "profile", title: "Framework profile", path: "/x1-academic/explore?view=profile", description: "Assess controls and requirements across seven frameworks." },
   { id: "ai", title: "AI experiment", path: "/x1-academic/assess-simulate?view=experiment", description: "Compare AI governance and risk scenarios." },
   { id: "planner", title: "Project dashboard", path: "/x1-academic/implement-plan?view=planner", description: "Plan and track control implementation." },
   { id: "graph", title: "Knowledge graph", path: "/x1-academic/explore?view=graph", description: "Explore relationships between cybersecurity controls." },
@@ -18,10 +20,15 @@ const tools: Result[] = [
   { id: "flow", title: "Data flow map", path: "/x1-academic/assess-simulate?view=flow", description: "Explore data flows and their security controls." },
   { id: "executive", title: "Executive summary", path: "/x1-academic/assess-simulate?view=executive", description: "Review risk and control outcomes for leadership." },
   { id: "governance", title: "Governance radar", path: "/x1-academic/explore?view=governance", description: "Review governance coverage across the framework." },
+  ...Object.entries(editions).map(([id, edition]) => ({
+    id, title: id === "dora" ? "DORA" : id === "gdpr" ? "GDPR" : id === "eu-ai-act" ? "EU AI Act" : edition.edition,
+    description: edition.description, path: "/x1-academic?standard=" + id,
+    keywords: [edition.name, edition.category, "standard", "framework", "assessment"],
+  })),
   ...searchIndex.filter((item) => !["admin", "landing", "games", "personal", "tech", "submitting"].includes(item.id)),
 ];
 
-const games: Result[] = [...originals, ...legacyCatalog].map((game) => ({
+const games: Result[] = [...featureGames, ...originals, ...legacyCatalog].map((game) => ({
   id: game.key, title: game.title, path: "/games?game=" + game.key, description: game.desc, keywords: ["game", "play"],
 }));
 

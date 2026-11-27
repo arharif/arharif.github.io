@@ -2,38 +2,22 @@ import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { readFile } from "node:fs/promises";
 const base = "/x1-academic";
-test("three workspace choices expand by standard and retain the official themes", async ({
-  page,
-}) => {
+test("seven standards lead to three workspaces and retain the selected theme", async ({ page }) => {
   await page.goto(base);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-    "X1 Academic.",
-  );
-  await expect(page.locator(".xc-homecards > section")).toHaveCount(3);
-  for (const title of [
-    "Explore Standards",
-    "Assess & Simulate",
-    "Implement & Plan",
-  ]) {
-    await page.getByRole("button", { name: new RegExp(title) }).click();
-    await expect(
-      page
-        .getByRole("navigation", { name: title + " standards" })
-        .getByRole("link"),
-    ).toHaveCount(3);
-  }
-  await page.getByRole("link", { name: "PCI DSS", exact: true }).click();
-  await expect(
-    page.getByRole("heading", { name: "Implement & Plan", exact: true }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("X1 Academic.");
+  await expect(page.locator(".standard-primary article")).toHaveCount(4);
+  await expect(page.locator(".standard-compact")).toHaveCount(3);
+  await page.getByRole("link", { name: "Explore PCI DSS", exact: true }).click();
+  const choices = page.getByRole("navigation", { name: "PCI DSS workspaces" });
+  await expect(choices.getByRole("link")).toHaveCount(3);
+  await choices.getByRole("link", { name: /Plan & Implement/ }).click();
+  await expect(page.getByRole("heading", { name: "Plan & Implement", exact: true })).toBeVisible();
   await expect(page.getByLabel("Standard edition")).toHaveValue("pci-dss");
   await page.getByRole("link", { name: "X1 Academic overview" }).click();
   await expect(page.locator(".x1-mark")).toBeVisible();
   await page.getByRole("button", { name: "Open theme selector" }).click();
-  await page
-    .getByRole("menuitemradio", { name: "Activate Aubergine" })
-    .click();
-  await expect(page.locator(".xc")).toHaveAttribute("data-theme", "aubergine");
+  await page.getByRole("menuitemradio", { name: "Activate Rainbow" }).click();
+  await expect(page.locator(".xc")).toHaveAttribute("data-theme", "rainbow");
 });
 test("standards architecture differs by source and CSF category drill-down reaches official outcomes", async ({
   page,
@@ -171,7 +155,7 @@ for (const theme of ["dark", "light"])
     await page.goto(`${base}/standards?previous=1`);
     await expect(page.locator(".xe-standard-tree").first()).toBeVisible();
     await page.getByRole("button", { name: "Open theme selector" }).click();
-      await page.getByRole("menuitemradio", { name: theme === "light" ? "Activate Editorial Ivory" : "Activate Midnight Slate" }).click();
+      await page.getByRole("menuitemradio", { name: theme === "light" ? "Activate Mature White" : "Activate Onyx Black" }).click();
     const result = await new AxeBuilder({ page })
       .include(".xa")
       .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])

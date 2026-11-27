@@ -9,10 +9,11 @@ import {
 import { addDays, schedule } from "../studio/engines";
 import {
   scenarioRisks,
+  blankRisk,
   validateRisk,
   type RiskRecord,
 } from "../workspace/risk";
-import { catalogue, frameworkIds, cases, type Framework } from "./catalogue";
+import { catalogue, frameworkIds, cases, names, type Framework } from "./catalogue";
 
 export const evidenceStates = [
   "Missing",
@@ -24,6 +25,8 @@ const rating = z.number().int().min(0).max(4);
 const short = z.string().max(240);
 const assessment = z.object({
   current: rating.nullable(),
+  applicability: z.enum(["Applicable", "Excluded"]).default("Applicable"),
+  exclusion: z.string().max(3000).default(""),
   target: rating,
   evidence: z.enum(evidenceStates),
   note: z.string().max(3000),
@@ -36,6 +39,8 @@ const assessment = z.object({
 export type Assessment = z.infer<typeof assessment>;
 export const unassessed: Assessment = {
   current: null,
+  applicability: "Applicable",
+  exclusion: "",
   target: 3,
   evidence: "Missing",
   note: "",
@@ -153,11 +158,7 @@ export function makePlan(
   start: string,
 ): Task[] {
   const { groups } = catalogue(framework);
-  const prefix = {
-    "nist-csf-2": "CSF Profile",
-    "pci-dss": "Cardholder environment",
-    "iso-27001": "ISMS",
-  }[framework];
+  const prefix = names[framework];
   const stages: [Task["stage"], string, string, number][] = [
     ["FRAME", prefix + " scope", "lead", 3],
     ["DIAGNOSE", "Inventory and evidence review", "assessor", 5],
@@ -176,13 +177,17 @@ export function makePlan(
   stages.forEach(([stage, title, resourceId, days], i) => {
     const t = newTask("objective:" + framework + ":" + stage, title, stage);
     const group = groups[i - 4];
-    if (stage === "IMPLEMENT" && group) t.sourceIds = [group.id];
+    t.id = `roadmap:${framework}:${i}`;
+    if (stage === "IMPLEMENT" && group) {
+      t.id = `remediation:${framework}:${group.id}`;
+      t.sourceIds = [group.id];
+    }
     const progress = demo ? (i < 4 ? 100 : i === 4 ? 65 : i === 5 ? 30 : 0) : 0;
     tasks.push({
       ...t,
       resourceId,
       owner:
-        resourceId === "lead"
+        !demo ? "Unassigned" : resourceId === "lead"
           ? cases[framework].owner
           : resourceId === "assessor"
             ? "Ellis Morgan"
@@ -205,22 +210,29 @@ export function demoProject(framework: Framework): Project {
     { items, groups } = catalogue(framework);
   p.demo = true;
   p.name = scenario.name;
-  p.start = addDays(today(), -23);
+  p.start = "2026-11-04";
+  const scenarioDate = "2026-11-27";
   items.forEach((c, i) => {
     const family = groups.findIndex((g) => g.id === c.group);
     const current = Math.max(
       0,
-      Math.min(4, [3, 2, 3, 1, 2, 1, 3][family] + [0, 1, 0, -1, 1][i % 5]),
+      Math.min(4, [3, 2, 3, 1, 2, 1, 3][family % 7] + [0, 1, 0, -1, 1][i % 5]),
     );
     const target = Math.min(
       4,
-      [4, 3, 4, 3, 3, 4, 4][family] - (i % 9 === 0 ? 1 : 0),
+      [4, 3, 4, 3, 3, 4, 4][family % 7] - (i % 9 === 0 ? 1 : 0),
     );
     const evidence = evidenceStates[Math.min(3, current)];
+    const excluded = (framework === "dora" && c.id === "Art. 26") ||
+      (framework === "eu-ai-act" && c.group === "model");
     p.assessments[c.id] = {
-      current,
+      current: excluded ? null : current,
+      applicability: excluded ? "Excluded" : "Applicable",
+      exclusion: excluded
+        ? framework === "dora" ? "Fictional assumption: the authority has not identified this entity for TLPT." : "Fictional assumption: the employer deploys an AI system and does not provide a GPAI model."
+        : "",
       target,
-      evidence,
+      evidence: excluded ? "Missing" : evidence,
       owner:
         i % 3 === 0
           ? scenario.owner
@@ -230,19 +242,46 @@ export function demoProject(framework: Framework): Project {
       unit: ["Operations", "Technology", "Assurance"][i % 3],
       location: ["North campus", "Field office", "Central office"][i % 3],
       asset: ["Service platform", "Identity provider", "Data store"][i % 3],
-      note: current > 0 ? "Sample " + (i + 1) + " · " + c.evidence : "",
+      note: !excluded && current > 0 ? "Fictional sample " + (i + 1) + " · " + c.evidence : "",
       finding:
-        current < target
+        !excluded && current < target
           ? "Follow up on " +
             c.title.toLowerCase() +
             " across the scoped service."
           : "",
     };
   });
-  p.risks = scenarioRisks(scenario.caseId).map((r, i) => ({
+  const legacyRisks = ["nist-csf-2", "iso-27001", "pci-dss"].includes(framework);
+  const anchors = {
+    "nist-800-53": ["Unreviewed privileged access", "Undetected integrity change", "Delayed flaw remediation"],
+    dora: ["Unclear board accountability", "Late major incident notification", "Settlement provider outage"],
+    gdpr: ["Incomplete processing inventory", "Undisclosed analytics use", "Delayed breach assessment"],
+    "eu-ai-act": ["Incorrect recruitment classification", "Biased candidate ranking", "Ineffective human oversight"],
+  };
+  const risks = legacyRisks
+    ? scenarioRisks(scenario.caseId)
+    : anchors[framework as keyof typeof anchors].map((threat, i) => {
+        const control = items.filter((item) => p.assessments[item.id].applicability === "Applicable")[i * 2];
+        return {
+          ...blankRisk(),
+          id: `R-${framework}-${i + 1}`,
+          asset: scenario.scope,
+          threat,
+          vulnerability: control.title,
+          controls: control.id,
+          likelihood: 4 - (i % 2),
+          impact: 5 - (i % 2),
+          residualLikelihood: 3 - (i % 2),
+          residualImpact: 5 - (i % 2),
+          treatment: control.example,
+          evidence: "Fictional example · " + control.evidence,
+          owner: scenario.owner,
+        };
+      });
+  p.risks = risks.map((r, i) => ({
     ...r,
-    openedDate: addDays(today(), -[98, 42, 18, 76, 8, 31][i % 6]),
-    reviewDate: addDays(today(), i * 8 - 5),
+    openedDate: addDays(scenarioDate, -[98, 42, 18, 76, 8, 31][i % 6]),
+    reviewDate: addDays(scenarioDate, i * 8 - 5),
   }));
   // Separate dated observations from today's register. Fictional histories are seeded only in demo mode.
   p.history = [
@@ -251,18 +290,22 @@ export function demoProject(framework: Framework): Project {
     [3, 5, 4, 2],
     [2, 4, 5, 3],
     [2, 3, 4, 3],
-  ].map((counts, i) => ({ date: addDays(today(), -7 * (5 - i)), counts }));
-  p.tasks = makePlan(framework, true, p.start);
-  const sources =
-    framework === "pci-dss"
-      ? ["Checkout", "Merchant portal", "Settlement file"]
-      : framework === "iso-27001"
-        ? ["Service desk", "Field operations", "Supplier portal"]
-        : ["Factory sensors", "Operator portal", "Supplier feed"];
+  ].map((counts, i) => ({ date: addDays(scenarioDate, -7 * (5 - i)), counts }));
+  p.tasks = syncPlan({ ...p, tasks: makePlan(framework, true, p.start) }).tasks;
+  const sources: Record<Framework, [string, string, string]> = {
+    "nist-800-53": ["Identity provider", "Build pipeline", "Component register"],
+    dora: ["Payment switch", "Settlement provider", "Incident intake"],
+    gdpr: ["Support portal", "Member directory", "Analytics collection"],
+    "eu-ai-act": ["Application portal", "Evaluation set", "Human review queue"],
+    "pci-dss": ["Checkout", "Merchant portal", "Settlement file"],
+    "iso-27001": ["Service desk", "Field operations", "Supplier portal"],
+    "nist-csf-2": ["Factory sensors", "Operator portal", "Supplier feed"],
+  };
+  const source = sources[framework];
   const flows: [string, number, string, string, string[]][] = [
-    ["a", 0, sources[0], "Event ID", ["d", "e"]],
-    ["b", 0, sources[1], "User ID", ["d"]],
-    ["c", 0, sources[2], "Account ID", ["e"]],
+    ["a", 0, source[0], "Event ID", ["d", "e"]],
+    ["b", 0, source[1], "User ID", ["d"]],
+    ["c", 0, source[2], "Account ID", ["e"]],
     ["d", 1, "Event gateway", "Session ID", ["f", "g"]],
     ["e", 1, "Batch intake", "Record ID", ["f"]],
     ["f", 2, "Analytics store", "Service ID", ["h", "i"]],
@@ -286,11 +329,12 @@ export function stats(p: Project) {
     ...c,
     ...(p.assessments[c.id] ?? unassessed),
   }));
-  const scored = rows.filter((r) => r.current !== null);
+  const applicable = rows.filter((r) => r.applicability === "Applicable");
+  const scored = applicable.filter((r) => r.current !== null);
   const avg = (values: number[]) =>
     values.length ? values.reduce((a, b) => a + b, 0) / values.length : 0;
   const profiles = groups.map((g) => {
-    const members = rows.filter((c) => c.group === g.id),
+    const members = applicable.filter((c) => c.group === g.id),
       rated = members.filter((r) => r.current !== null);
     return {
       ...g,
@@ -305,11 +349,43 @@ export function stats(p: Project) {
     profiles,
     scored,
     current: avg(scored.map((c) => c.current!)),
-    target: avg(rows.map((c) => c.target)),
+    target: avg(applicable.map((c) => c.target)),
     met: scored.filter((c) => c.current! >= c.target).length,
     gaps: scored.filter((c) => c.current! < c.target),
-    verified: rows.filter(
+    verified: applicable.filter(
       (c) => c.evidence === "Reviewed" || c.evidence === "Tested",
     ).length,
   };
+}
+
+// Recalculate generated work from remaining gap points while retaining manual task edits.
+export function syncPlan(project: Project, previous?: Project): Project {
+  const prefix = `remediation:${project.framework}:`;
+  if (!project.tasks.some((task) => task.id.startsWith(prefix))) return project;
+  const gaps = stats(project).gaps;
+  const before = previous ? stats(previous).gaps : [];
+  const estimate = (rows: typeof gaps) => Math.max(1, rows.reduce(
+    (total, row) => total + row.target - row.current!, 0,
+  ));
+  const priority = (rows: typeof gaps): Task["priority"] => {
+    const highest = Math.max(0, ...rows.map((row) => row.target - row.current!));
+    return highest >= 3 ? "High" : highest >= 2 ? "Medium" : "Low";
+  };
+  const tasks = project.tasks.map((task) => {
+    if (!task.id.startsWith(prefix)) return task;
+    const group = task.id.slice(prefix.length);
+    const old = previous?.tasks.find((row) => row.id === task.id);
+    const linked = gaps.filter((row) => row.group === group);
+    const oldRows = before.filter((row) => row.group === group);
+    const oldEstimate = estimate(oldRows);
+    const days = estimate(linked);
+    return {
+      ...task,
+      sourceIds: [group, ...linked.slice(0, 29).map((row) => row.id)],
+      priority: old?.priority && old.priority !== priority(oldRows) ? task.priority : priority(linked),
+      duration: old && old.duration !== oldEstimate ? task.duration : days,
+      effort: old && old.effort !== oldEstimate * 6 ? task.effort : days * 6,
+    };
+  });
+  return { ...project, tasks };
 }

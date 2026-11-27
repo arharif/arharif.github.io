@@ -3,7 +3,9 @@ import { EditorialImage } from '@/components/EditorialImage';
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
+  ArrowUpRight,
   BookOpen,
+  FlaskConical,
   Brain,
   Cpu,
   Globe,
@@ -107,10 +109,22 @@ export default function Insights() {
   return (
     <section className="insights">
       <header className="insights-hero">
-        <h1>Insights &amp; Innovation</h1>
+        <picture className="insights-panorama" aria-hidden="true">
+          <source media="(max-width: 620px)" srcSet="/art/insights-observatory-mobile.webp" />
+          <img src="/art/insights-observatory.webp" alt="" width="1536" height="513" fetchPriority="high" decoding="async" />
+        </picture>
+        <div className="insights-hero-copy">
+        <h1>X1 Insights &amp; Innovation<span>.</span></h1>
         <p className="insights-intro">
           Articles on technology, philosophy, human behaviour and emerging trends.
         </p>
+        <div className="insights-hero-actions">
+          <a href="#published-insights">Explore Insights <ArrowUpRight size={16} aria-hidden="true" /></a>
+          <Link to="/x1-academic/assess-simulate?standard=eu-ai-act&view=experiment"><FlaskConical size={16} aria-hidden="true" /> Innovation Lab</Link>
+        </div>
+        </div>
+      </header>
+      <div className="insights-discovery" id="published-insights">
         <div className="insights-search">
           <Search size={19} aria-hidden="true" />
           <input
@@ -139,7 +153,7 @@ export default function Insights() {
             </button>
           ))}
         </div>
-      </header>
+      </div>
       {status === "ready" && (
         <div className="editorial-grid">
           {filtered.map((row) => {
@@ -150,6 +164,7 @@ export default function Insights() {
                 <Link to={articlePath(row)}>
                   <EditorialImage
                     src={cover(row, index)}
+                    fallbackSrc={`/art/editorial-${index % 4}.webp`}
                     alt=""
                     width="380"
                     height="210"

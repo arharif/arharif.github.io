@@ -65,7 +65,7 @@ try {
   await visit("/");
   await page.getByLabel("Open theme selector").click();
   await page
-    .getByRole("menuitemradio", { name: "Activate Editorial Ivory" })
+    .getByRole("menuitemradio", { name: "Activate Mature White" })
     .click();
   await page.setViewportSize({ width: 390, height: 844 });
   for (const [name, path] of [

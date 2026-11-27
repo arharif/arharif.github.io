@@ -1,3 +1,4 @@
+import { featureGames } from '@/components/arcade/featureGames';
 import { articlePath } from "@/lib/articlePath";
 import { originals } from '@/components/arcade/catalog';
 import { legacyCatalog } from '@/components/arcade/legacyCatalog';
@@ -46,14 +47,15 @@ export async function querySiteAssistant(rawQuery: string, pathname = '/', activ
   const answer = (text: string, title: string, route: string): AssistantReply => ({
     text, sources: [{ title, route, excerpt: text }], quickActions: contextual,
   });
-  const game = originals.find(game => query.includes(game.title.toLowerCase()));
+  const playable = [...featureGames, ...originals];
+  const game = playable.find(game => query.includes(game.title.toLowerCase()));
   const selected = section === 'games' && /controls?|instructions?|how (do|to)|help me play/.test(query)
-    ? originals.find(item => item.key === activeGame) : undefined;
+    ? playable.find(item => item.key === activeGame) : undefined;
   if (!game && selected) return answer(selected.instructions,selected.title,'/games?game='+selected.key);
   if (game) return answer(game.instructions, game.title, '/games?game='+game.key);
   const classic = legacyCatalog.find(game => query.includes(game.title.toLowerCase()));
   if (classic) return answer(classic.desc, classic.title, '/games?game='+classic.key);
-  if (/games|arcade/.test(query)) return answer('X1 Originals include '+originals.map(g=>g.title).join(', ')+'. Open All Games for the complete catalogue of quizzes and classics.', 'X1 Arcade', '/games');
+  if (/games|arcade/.test(query)) return answer('X1 Originals include '+featureGames.map(g=>g.title).join(', ')+'. Open All Games for the complete catalogue of quizzes and classics.', 'X1 Arcade', '/games');
   if (/privacy/.test(query) && /assess|resource|simulat/.test(query))
     return answer('Open the privacy workspace to explore processing flows and assess individual harm.', 'Privacy workspace', '/x1-academic/simulate/privacy?previous=1');
   if (/nist|csf/.test(query) && /simulat|assess/.test(query))

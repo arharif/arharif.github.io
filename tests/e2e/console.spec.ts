@@ -109,7 +109,7 @@ test("control ratings update profile, radar, evidence and linked remediation", a
   await page
     .getByLabel("Evidence status PCI-1", { exact: true })
     .selectOption("Missing");
-  await page.getByRole("button", { name: "Create remediation task" }).click();
+  await expect(page.getByRole("link", { name: "Open remediation plan", exact: false })).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.locator(".xc-maturity b")).not.toHaveText(before);
   await expect(page.locator(".xc-kpis button").last()).not.toHaveText(reviewed);
@@ -121,10 +121,10 @@ test("control ratings update profile, radar, evidence and linked remediation", a
   await page.getByLabel("Governance scope").selectOption("Operations");
   expect(await radar.getAttribute("points")).not.toBe(points);
   await page
-    .getByRole("link", { name: "Implement & Plan", exact: true })
+    .getByRole("link", { name: "Plan & Implement", exact: true })
     .click();
   await expect(
-    page.locator(".xc-ganttlabel").filter({ hasText: "Close PCI-1 gap" }),
+    page.locator(".xc-ganttlabel").filter({ hasText: "Network & system security controls" }),
   ).toBeVisible();
 });
 test("CSV, Excel and manual risk records recalculate risk distribution and treatment simulation", async ({
@@ -279,8 +279,8 @@ test("main-site navigation, resource links, themes, keyboard and responsive layo
     page
       .getByRole("navigation", { name: "Academic resources" })
       .getByRole("link"),
-  ).toHaveCount(5);
-  for (const theme of ["Editorial Ivory", "Midnight Slate"]) {
+  ).toHaveCount(3);
+  for (const theme of ["Mature White", "Onyx Black"]) {
     await page.getByRole("button", { name: "Open theme selector" }).click();
     await page
       .getByRole("menuitemradio", { name: "Activate " + theme })
@@ -332,7 +332,7 @@ test("bookmarked dashboards open their rebuilt views and historic project links 
 }) => {
   await page.goto(base + "/implement?standard=iso-27001");
   await expect(
-    page.getByRole("heading", { name: "Implement & Plan", exact: true }),
+    page.getByRole("heading", { name: "Plan & Implement", exact: true }),
   ).toBeVisible();
   await expect(page.getByLabel("Standard edition")).toHaveValue("iso-27001");
   await page.goto(base + "/knowledge-graph");
@@ -356,7 +356,7 @@ test("dashboard accessibility in dark and light themes", async ({ page }) => {
     for (const view of views) {
       await page.goto(base + "/" + space + "?view=" + view);
       await demo(page);
-      for (const theme of ["Midnight Slate", "Editorial Ivory"]) {
+      for (const theme of ["Onyx Black", "Mature White", "Rainbow"]) {
         await page.getByLabel("Open theme selector").click();
         await page
           .getByRole("menuitemradio", { name: "Activate " + theme })

@@ -26,7 +26,7 @@ const SecurityMindmapPage = lazy(() => import('@/pages/SecurityMindmapPage').the
 const SiteAssistantLauncher = lazy(() => import('@/components/site-assistant/SiteAssistantLauncher').then((m) => ({ default: m.SiteAssistantLauncher })));
 
 const RouteLoading = ({ label }: { label: string }) => (
-  <div className="glass rounded-2xl p-6" role="status" aria-live="polite">Loading {label}…</div>
+  <div className="route-loading p-6" role="status" aria-live="polite">Loading {label}…</div>
 );
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; message?: string }> {
@@ -137,7 +137,7 @@ function Shell() {
   return (
     <div className="universe-shell" data-page={location.pathname.replace(/\/$/, "") || "/"}>
       <a href="#main-content" className="skip-link">Skip to main content</a>
-      {location.pathname.replace(/\/$/, "") !== "/games" && <Navbar />}
+      <Navbar />
       <main id="main-content" ref={mainRef} tabIndex={-1} className="mx-auto max-w-6xl p-4 md:p-8">
         {!hasSupabaseCoreConfig && ["/login", "/admin"].includes(location.pathname) && <div className="glass mb-4 rounded-xl p-3 text-xs text-amber-300">Configuration is incomplete. Some authenticated features may be unavailable.</div>}
         <div key={location.pathname} data-route={location.pathname}>
@@ -150,7 +150,7 @@ function Shell() {
               <Route path="/personal" element={<CuriositiesHub />} />
               <Route path="/personal/post/:slug" element={<CuriosityPost />} />
               <Route path="/compliance-frameworks" element={<Suspense fallback={<div className="glass rounded-2xl p-6">Loading compliance frameworks…</div>}><ComplianceFrameworksPage /></Suspense>} />
-              <Route path="/about-x1" element={<Suspense fallback={<div className="glass rounded-2xl p-6">Loading capability portfolio…</div>}><AboutX1Page /></Suspense>} />
+              <Route path="/about-x1" element={<Suspense fallback={<RouteLoading label="the advisory portfolio" />}><AboutX1Page /></Suspense>} />
               <Route path="/academic-library" element={<Suspense fallback={<div className="glass rounded-2xl p-6">Loading academic library…</div>}><AcademicLibraryPage /></Suspense>} />
               <Route path="/submitting" element={<SubmittingPage />} />
               <Route path="/games" element={<Suspense fallback={<RouteLoading label="games" />}><GamesHub /></Suspense>} />

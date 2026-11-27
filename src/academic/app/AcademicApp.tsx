@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import StandardsLanding from "../console/StandardsLanding";
 
 const Console = lazy(() => import("../console/Console"));
 const LegacyAcademy = lazy(() => import("./LegacyAcademy"));
@@ -60,12 +61,13 @@ export default function AcademicApp() {
     query.set("view", destination[1]);
     return <Navigate replace to={base + "/" + destination[0] + "?" + query} />;
   }
+  const workspace = path ? <Console /> : <StandardsLanding />;
   return (
     <Suspense fallback={<main role="status">Opening X1 Academic…</main>}>
       {hasPreviousSession || !inConsole ? (
-        <LegacyAcademy>{inConsole ? <Console /> : undefined}</LegacyAcademy>
+        <LegacyAcademy>{inConsole ? workspace : undefined}</LegacyAcademy>
       ) : (
-        <Console />
+        workspace
       )}
     </Suspense>
   );

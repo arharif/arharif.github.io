@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { Link, useLocation } from 'react-router-dom';
 import { originals } from '../arcade/catalog';
+import { featureGames } from '../arcade/featureGames';
 import { AssistantPortrait, assistantIdentity } from './AssistantPortrait';
 import { getAssistantWelcome } from './assistantContext';
 
@@ -24,7 +25,7 @@ export function SiteAssistantPanel({ open, onClose }: { open: boolean; onClose: 
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
-  const selectedGame = welcome.section === 'games' ? originals.find(game => game.key === new URLSearchParams(location.search).get('game')) : undefined;
+  const selectedGame = welcome.section === 'games' ? [...featureGames, ...originals].find(game => game.key === new URLSearchParams(location.search).get('game')) : undefined;
   const guide = assistantIdentity(welcome.section);
   const lastMessage = messages[messages.length - 1];
   const settledExpression = lastMessage?.unavailable ? "reassuring" : "pleased";
@@ -108,6 +109,10 @@ export function SiteAssistantPanel({ open, onClose }: { open: boolean; onClose: 
           </div>
 
           <div className="assistant-body">
+            {welcome.section === 'academic' && !messages.length && <nav aria-label="Academic guidance" className="flex flex-wrap gap-2 p-2">
+              <Link className="assistant-source" to="/x1-academic" onClick={onClose}>Browse standards</Link>
+              <Link className="assistant-source" to="/x1-academic/assess-simulate?standard=dora&view=profile&demo=1" onClick={onClose}>Open the DORA demo</Link>
+            </nav>}
             {welcome.section === 'landing' && !messages.length && <nav aria-label="Explore X1" className="flex flex-wrap gap-2 p-2">
               <Link className="assistant-source" to="/games" onClick={onClose}>Games</Link>
               <Link className="assistant-source" to="/insights-innovation" onClick={onClose}>Insights</Link>

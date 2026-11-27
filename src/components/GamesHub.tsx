@@ -10,26 +10,26 @@ import { Link, useSearchParams } from "react-router-dom";
 import {
   Award,
   BarChart3,
-  BookOpen,
   CalendarDays,
   Dice5,
   Flame,
+  Check,
   Gamepad2,
-  GraduationCap,
   Heart,
-  Home,
   Play,
   Search,
   Star,
   Trophy,
-  UserRound,
   X,
   Zap,
 } from "lucide-react";
 import { listPublishedContent } from "@/lib/cms";
 import type { ContentRecord } from "@/content/types";
 import { safeStorage } from "@/lib/storage";
+import { useTheme } from "@/lib/theme";
+import { palettes, type ThemeMode } from "@/lib/palettes";
 import { originals, type OriginalKey } from "./arcade/catalog";
+import { featureGames, isFeatureGame } from "./arcade/featureGames";
 import { legacyCatalog, type GameKey } from "./arcade/legacyCatalog";
 import {
   addRound,
@@ -40,14 +40,16 @@ import {
 } from "./arcade/progress";
 import "./arcade/arcade.css";
 
+const Feature = lazy(() => import("./arcade/FeatureGame"));
 const TableGame = lazy(() => import("./arcade/TableGame"));
 const Action = lazy(() => import("./arcade/ActionGame")),
   Memory = lazy(() => import("./arcade/MemoryGame"));
 const Maze = lazy(() => import("./arcade/MazeGame")),
   Quiz = lazy(() => import("./arcade/QuizGame")),
   Legacy = lazy(() => import("./arcade/LegacyGame"));
+const allOriginals = [...featureGames, ...originals];
 const library = [
-  ...originals.map((g) => ({
+  ...allOriginals.map((g) => ({
     ...g,
     original: true,
     category: "Entertainment",
@@ -80,7 +82,8 @@ function PlayRoom({
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [round, setRound] = useState(0),
-    [result, setResult] = useState<number | null>(null);
+    [result, setResult] = useState<number | null>(null),
+    [outcomeMessage, setOutcomeMessage] = useState("");
   const ended = useRef(false);
   const [mood,setMood] = useState("selected");
   useEffect(() => { window.dispatchEvent(new Event("x1-play-room")); }, [mood]);
@@ -93,10 +96,11 @@ function PlayRoom({
     return () => { node?.close(); window.dispatchEvent(new Event("x1-play-room")); };
   }, []);
   const complete = useCallback(
-    (score: number, outcome?: "win" | "loss") => {
+    (score: number, outcome?: "win" | "loss", message = "") => {
       if (ended.current) return;
       ended.current = true;
       setResult(score);
+      setOutcomeMessage(message);
       setMood(outcome ?? (["haunted-memory","neon-maze-escape","quiz-chaos"].includes(game.key) ? "win" : "loss"));
       finish(game.key, score);
     },
@@ -129,13 +133,14 @@ function PlayRoom({
       {game.original && (
         <div className="game-controls">
           {result !== null && (
-            <strong role="status">Round complete · Score {result}</strong>
+            <strong role="status">{outcomeMessage || "Round complete"} · Score {result}</strong>
           )}
           <button
             onClick={() => {
               ended.current = false;
               setMood("playing");
               setResult(null);
+              setOutcomeMessage("");
               setRound((r) => r + 1);
             }}
           >
@@ -150,7 +155,9 @@ function PlayRoom({
           round > 0 &&
           result === null && (
             <div key={round}>
-              {id === "bubble-blitz" || id === "neon-stack" ? (
+              {isFeatureGame(game.key) ? (
+                <Feature game={game.key} onFinish={complete} />
+              ) : id === "bubble-blitz" || id === "neon-stack" ? (
                 <TableGame mode={id} onFinish={complete}/>
               ) : id === "haunted-memory" ? (
                 <Memory onFinish={complete} />
@@ -169,6 +176,7 @@ function PlayRoom({
   );
 }
 export function GamesHub() {
+  const [theme, setTheme] = useTheme();
   const [params, setParams] = useSearchParams();
   const game = library.find((g) => g.key === params.get("game"));
   const [section, setSection] = useState("Arcade"),
@@ -241,7 +249,7 @@ export function GamesHub() {
     dashboard || section === "Games" || section === "Favorites" || !!query;
   const visible = library.filter(
     (g) =>
-      (!dashboard || g.original) &&
+      (!dashboard || isFeatureGame(g.key)) &&
       (section !== "Favorites" || favorites.includes(g.key)) &&
       (category === "All" || category === g.category) &&
       (g.title + " " + g.type + " " + g.desc)
@@ -257,11 +265,36 @@ export function GamesHub() {
   ] as const;
   return (
     <div className="arcade-layout" id="games-zone">
-      <aside className="arcade-sidebar">
-        <Link to="/" aria-label="X1 home" className="arcade-logo">
-          X1
-        </Link>
-        <nav aria-label="Arcade navigation">
+      <div className="arcade-main">
+        {dashboard && (
+          <header className="arcade-hero">
+            <img
+              className="arcade-mascot"
+              src="/art/mascot.webp"
+              width="260"
+              height="220"
+              alt=""
+            />
+            <div className="arcade-hero-copy">
+              <h1>X1 Games<span>.</span></h1>
+              <p>Three original games for a quick reset.</p>
+              <div className="arcade-hero-actions">
+              <button onClick={() => play(featureGames[0].key)}>
+                <Play size={16} fill="currentColor" /> Play Now
+              </button>
+              <button
+                onClick={() =>
+                  play(library[Math.floor(Math.random() * library.length)].key)
+                }
+              >
+                <Dice5 size={17} /> Random Game
+              </button>
+              </div>
+            </div>
+          </header>
+        )}
+        <div className="arcade-content">
+          <div className="arcade-utility">        <nav className="arcade-tabs" aria-label="Arcade navigation">
           {sections.map(([name, Icon]) => (
             <button
               key={name}
@@ -277,27 +310,7 @@ export function GamesHub() {
             </button>
           ))}
         </nav>
-        <nav aria-label="Other universes">
-          <Link to="/">
-            <Home />
-            Home
-          </Link>
-          <Link to="/insights-innovation">
-            <BookOpen />
-            X1 Insights
-          </Link>
-          <Link to="/x1-academic">
-            <GraduationCap />
-            X1 Academic
-          </Link>
-        </nav>
-      </aside>
-      <div className="arcade-main">
-        <header className="arcade-top">
-          <span>
-            <Gamepad2 /> X1 Arcade
-          </span>
-          <label>
+          <label className="arcade-search">
             <Search size={15} />
             <input
               type="search"
@@ -310,36 +323,7 @@ export function GamesHub() {
               }}
             />
           </label>
-          <Link aria-label="Account" to="/admin">
-            <UserRound size={18} />
-          </Link>
-        </header>
-        {dashboard && (
-          <header className="arcade-hero">
-            <img
-              className="arcade-mascot"
-              src="/art/mascot.webp"
-              width="260"
-              height="220"
-              alt=""
-            />
-            <h1>X1 Arcade</h1>
-            <p>Play • Challenge • Unlock • Have Fun</p>
-            <div>
-              <button onClick={() => play(originals[0].key)}>
-                <Play size={16} fill="currentColor" /> Play Now
-              </button>
-              <button
-                onClick={() =>
-                  play(library[Math.floor(Math.random() * library.length)].key)
-                }
-              >
-                <Dice5 size={17} /> Random Game
-              </button>
-            </div>
-          </header>
-        )}
-        <div className="arcade-content">
+          </div>
           {params.has("game") && !game && (
             <p role="status">
               This game is unavailable. Choose a game from the library.
@@ -374,7 +358,7 @@ export function GamesHub() {
                   </select>
                 )}
               </header>
-              <div className="arcade-cards">
+              <div className={`arcade-cards${dashboard ? " arcade-featured" : ""}`}>
                 {visible.map((g, i) => (
                   <article
                     key={g.key}
@@ -403,7 +387,10 @@ export function GamesHub() {
                       <img
                         src={"/art/" + g.key + ".webp"}
                         alt=""
-                        loading="lazy"
+                        srcSet={isFeatureGame(g.key) ? `/art/${g.key}-small.webp 392w, /art/${g.key}.webp 612w` : undefined}
+                        sizes={isFeatureGame(g.key) ? "(max-width: 720px) calc(100vw - 24px), 27vw" : undefined}
+                        loading={dashboard && i === 0 ? "eager" : "lazy"}
+                        fetchPriority={dashboard && i === 0 ? "high" : "auto"}
                         width={256}
                         height={160}
                       />
@@ -449,6 +436,16 @@ export function GamesHub() {
                 <button onClick={fetchPicks}>Retry loading CMS picks</button>
               )}
             </section>
+          )}
+          {dashboard && (
+            <div className="arcade-themes" aria-label="Arcade themes" role="group">
+              <strong>Arcade Themes</strong>
+              {(Object.keys(palettes) as ThemeMode[]).map((id) => (
+                <button key={id} onClick={() => setTheme(id)} aria-pressed={theme === id} data-choice={id}>
+                  <span aria-hidden="true" /> {palettes[id][0]} {theme === id && <Check size={15} aria-hidden="true" />}
+                </button>
+              ))}
+            </div>
           )}
           <div className="arcade-widgets">
             {(dashboard || section === "Challenges") && (
@@ -513,7 +510,7 @@ export function GamesHub() {
                 to 110 XP. Every 250 XP earns a level. Scores are saved on this
                 device.
               </p>
-              {originals.map((g) => (
+              {allOriginals.map((g) => (
                 <p key={g.key}>
                   {g.title} · {progress.best[g.key] ?? "Unplayed"}
                 </p>

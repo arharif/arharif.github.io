@@ -1,13 +1,10 @@
 import { controls, csfFunctions } from "../workspace/frameworks";
 import { standards } from "../data/standards";
+import { priorityControls } from "./priorityStandards";
 
-export const frameworkIds = ["nist-csf-2", "iso-27001", "pci-dss"] as const;
-export type Framework = (typeof frameworkIds)[number];
-export const names: Record<Framework, string> = {
-  "nist-csf-2": "NIST CSF 2.0",
-  "iso-27001": "ISO/IEC 27001",
-  "pci-dss": "PCI DSS",
-};
+import type { Framework } from "./editions";
+export { frameworkIds, names, type Framework } from "./editions";
+
 export const colours = [
   "#7476ee",
   "#3688e8",
@@ -33,6 +30,10 @@ export type Group = {
   colour: string;
 };
 export const cases = {
+  "nist-800-53": { name: "Aster Research Services", scope: "Research data platform and software supply chain", owner: "Jo Rivera", caseId: "smartfactory" },
+  dora: { name: "Bridgewater Mutual", scope: "EU credit institution’s payments and outsourced ICT settlement", owner: "Samira Hart", caseId: "paysecure" },
+  gdpr: { name: "Cedar Member Services", scope: "Customer support, analytics and EU member records", owner: "Alex Morgan", caseId: "paysecure" },
+  "eu-ai-act": { name: "Spindle Talent Systems", scope: "Candidate-ranking system used in EU recruitment", owner: "Robin Vale", caseId: "smartfactory" },
   "nist-csf-2": {
     name: "Northstar Manufacturing",
     scope: "Connected production and industrial telemetry",
@@ -106,7 +107,20 @@ const clauses = [
 export function catalogue(framework: Framework) {
   const source = standards.find((s) => s.id === framework)!;
   let groups: Group[], items: Control[];
-  if (framework === "iso-27001") {
+  if (framework in priorityControls) {
+    items = priorityControls[framework as keyof typeof priorityControls];
+    groups = [...new Set(items.map((row) => row.group))].map((id, index) => {
+      const node = source.nodes.find((entry) => entry.id === id);
+      const member = items.find((item) => item.group === id)!;
+      const aiGroups: Record<string, string> = { scope: "Scope and classification", lifecycle: "High-risk lifecycle", oversight: "Oversight and transparency", model: "General-purpose models" };
+      return {
+        id,
+        title: node?.title ?? aiGroups[id] ?? member.category,
+        description: node?.objective ?? (framework === "eu-ai-act" ? member.explanation : `Tailor the ${member.category.toLowerCase()} controls to the selected system and document operating evidence.`),
+        colour: colours[index % colours.length],
+      };
+    });
+  } else if (framework === "iso-27001") {
     groups = clauses.map(([id, title, description], i) => ({
       id: "CL-" + id,
       title,

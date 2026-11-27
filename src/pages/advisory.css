@@ -1,0 +1,83 @@
+.advisory-journey .roadmap {
+  margin-top: 1.5rem;
+  background: var(--x1-spectrum, linear-gradient(130deg, var(--surface), var(--bg)));
+  border: 1px solid var(--border-soft);
+  border-radius: 1.25rem;
+}
+.advisory-journey .roadmap .milestone-copy { color: var(--muted); padding: .5rem; }
+.advisory-journey .roadmap .milestone-copy svg { color: var(--x1-accent-ink); }
+.advisory-journey .roadmap .milestone-copy strong { color: var(--text); font-size: .83rem; }
+.advisory-journey .roadmap .milestone-copy small { color: var(--muted); font-size: .72rem; }
+.advisory-journey .roadmap button[data-reached="true"] .milestone-node { border-color: var(--accent); }
+.advisory-journey .roadmap button.is-active .milestone-copy { background: var(--accent-soft); border-radius: .75rem; }
+.advisory-journey .journey-detail {
+  display: block;
+  min-width: 0;
+  padding: clamp(1.15rem, 3vw, 2.4rem);
+  border: 1px solid var(--border-soft);
+  border-radius: 1.25rem;
+  background: var(--surface);
+  box-shadow: var(--x1-shadow);
+}
+.journey-content { display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr); gap: clamp(1rem, 4vw, 3rem); }
+.advisory-journey .journey-content h3 { font: 550 clamp(1.6rem, 3vw, 2.6rem)/1.12 var(--serif); color: var(--text); }
+.journey-content h4 { margin-top: .85rem; font-size: .9rem; font-weight: 650; }
+.journey-content .journey-primary h4 + p { margin-top: .35rem; }
+.advisory-journey .journey-detail dl div { padding: .85rem 1rem; border: 1px solid var(--border-soft); border-radius: .7rem; background: var(--bg); }
+@media (max-width: 767px) {
+  .advisory-journey .roadmap { padding-block: .35rem; }
+  .journey-content { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .journey-content { animation: advisory-stage-in .24s ease-out both; }
+  .journey-path-progress { transition: stroke-dasharray .46s cubic-bezier(.22,.82,.33,1); }
+  .advisory-journey .is-active .milestone-node { animation: advisory-node 3.8s ease-in-out infinite; }
+}
+@keyframes advisory-stage-in { from { opacity: .47; transform: translateY(.2rem); } }
+@keyframes advisory-node { 50% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--accent) 19%, transparent); } }
+
+.advisory-journey .roadmap button .milestone-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  left: 50%;
+  width: calc(100% - 1rem);
+  height: auto;
+  min-height: 3.4rem;
+  gap: .16rem;
+  border: 0;
+  border-radius: .7rem;
+  background: transparent;
+  transform: translateX(-50%);
+}
+.advisory-journey .roadmap button .milestone-copy :is(strong, small) { margin: 0; }
+.advisory-journey .roadmap button.is-active .milestone-copy { background: var(--accent-soft); box-shadow: none; }
+.advisory-journey .roadmap button:nth-of-type(odd) .milestone-copy { top: .5rem; }
+.advisory-journey .roadmap button:nth-of-type(even) .milestone-copy { top: 10.65rem; }
+@media (max-width: 767px) {
+  .advisory-journey .roadmap button .milestone-copy {
+    align-items: start;
+    transform: none;
+  }
+  .advisory-journey .roadmap button .milestone-copy small { text-align: left; }
+}
+
+.advisory-trails { position: absolute; bottom: 0; left: 0; width: 100%; height: 46%; opacity: .5; pointer-events: none; }
+.advisory-journey .roadmap button:nth-of-type(3n+1) { --stage-tint: #8a65cb; }
+.advisory-journey .roadmap button:nth-of-type(3n+2) { --stage-tint: #5376be; }
+.advisory-journey .roadmap button:nth-of-type(3n+3) { --stage-tint: #357d92; }
+.advisory-journey .roadmap button .milestone-node {
+  display: grid;
+  place-items: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  color: var(--text);
+  background: color-mix(in srgb, var(--stage-tint) 34%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--stage-tint) 65%, var(--text));
+}
+.advisory-journey .roadmap button.is-active .milestone-node {
+  border-color: color-mix(in srgb, var(--stage-tint) 45%, var(--text));
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--stage-tint) 24%, transparent);
+}
+@media (max-width: 767px) { .advisory-trails { opacity: .19; } }
